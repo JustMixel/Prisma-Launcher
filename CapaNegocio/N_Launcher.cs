@@ -20,5 +20,9 @@ namespace CapaNegocio
         {
             return objDatos.getMod(name);
         }
+        public Mod givePicture(byte[] image, int ID)
+        {
+            return objDatos.givePicture(image, ID);
+        }
     }
 }

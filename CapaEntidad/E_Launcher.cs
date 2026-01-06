@@ -23,5 +23,6 @@ namespace CapaEntidad
         public string Mod_Logo { get; set; }
         public int Mod_Dwnlds { get; set; }
         public string Mod_Link { get; set; }
+        public byte[] Mod_Picture { get; set; }
     }
 }

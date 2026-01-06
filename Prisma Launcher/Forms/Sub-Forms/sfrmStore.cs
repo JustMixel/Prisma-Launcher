@@ -1,5 +1,6 @@
 ﻿using CapaEntidad;
 using CapaNegocio;
+using Prisma_Studios_Launcher;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -31,7 +32,9 @@ namespace Prisma_Launcher
                 uc_mod_store_item storeItem = new uc_mod_store_item();
                 storeItem.Mod_Name = mod.Mod_Name;
                 storeItem.Mod_Dev = mod.Mod_Dev;
-                storeItem.Mod_BKC = Color.WhiteSmoke;
+                byte[] tryout = mod.Mod_Picture;
+                Image modCover = ConvertImage2D.ByteArrayToImage(tryout);
+                storeItem.Mod_Pic = modCover;
                 fopContent.Controls.Add(storeItem);
             }
         }

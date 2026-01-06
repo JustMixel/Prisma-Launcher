@@ -1,4 +1,5 @@
 ﻿using CapaEntidad;
+using CapaNegocio;
 using Newtonsoft.Json;
 using Prisma_Launcher;
 using Prisma_Studios_Launcher;
@@ -165,5 +166,19 @@ namespace Prisma_Launcher
                 byte[] carajo = ConvertImage2D.ImageToByteArray(pbUser.Image);           
             }
         }
+
+        /*private void updatePic_Click(object sender, EventArgs e)
+        {
+            N_Launcher sexo = new N_Launcher();
+            
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "Select a picture";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                yeat.Image = Image.FromFile(ofd.FileName);
+                byte[] carajo = ConvertImage2D.ImageToByteArray(yeat.Image);
+                sexo.givePicture(carajo, 2);
+            }
+        }*/
     }
 }

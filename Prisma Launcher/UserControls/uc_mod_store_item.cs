@@ -21,6 +21,6 @@ namespace Prisma_Launcher
 
         public string Mod_Name { get => lblModName.Text; set => lblModName.Text = value; }
         public string Mod_Dev { get => lblModDev.Text; set => lblModDev.Text = value; }
-        public Color Mod_BKC { get => this.BackColor; set => this.BackColor = value; }
+        public Image Mod_Pic { get => this.BackgroundImage; set => this.BackgroundImage = value; }
     }
 }

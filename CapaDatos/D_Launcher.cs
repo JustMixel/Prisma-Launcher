@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using CapaEntidad;
 
 namespace CapaDatos
@@ -42,7 +43,8 @@ namespace CapaDatos
                         Mod_Dev = dr["Mod_Dev"].ToString(),
                         Mod_Logo = dr["Mod_Logo"].ToString(),
                         Mod_Dwnlds = dr.GetInt32(5),
-                        Mod_Link = dr["Mod_Link"].ToString()
+                        Mod_Link = dr["Mod_Link"].ToString(),
+                        Mod_Picture = (byte[])dr["Mod_Picture"]
                     });
                 }
                 dr.Close();
@@ -50,5 +52,21 @@ namespace CapaDatos
             return mod;
         }
 
+        public Mod givePicture(Byte[] image, int ID) 
+        {
+            using (SqlConnection conn = new SqlConnection(_db))
+            {
+                conn.Open();
+                SqlCommand cmd = new SqlCommand("SP_GIVPIC", conn);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@ID", ID);
+                cmd.Parameters.AddWithValue("@PICTURE", image);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            return null;
+        }
     }
 }

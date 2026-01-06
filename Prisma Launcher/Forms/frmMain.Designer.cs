@@ -48,7 +48,6 @@
             this.bunifuDragControl = new Bunifu.Framework.UI.BunifuDragControl(this.components);
             this.t_countdown = new System.Windows.Forms.Timer(this.components);
             this.pnlScreen = new System.Windows.Forms.Panel();
-            this.sas = new System.Windows.Forms.Label();
             this.pnlSideBar.SuspendLayout();
             this.pnlUser.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbSettings)).BeginInit();
@@ -57,7 +56,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.btnMinimize)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnSize)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnExit)).BeginInit();
-            this.pnlScreen.SuspendLayout();
             this.SuspendLayout();
             // 
             // pnlSideBar
@@ -70,9 +68,9 @@
             this.pnlSideBar.Controls.Add(this.pnlUser);
             this.pnlSideBar.Dock = System.Windows.Forms.DockStyle.Left;
             this.pnlSideBar.Location = new System.Drawing.Point(0, 0);
-            this.pnlSideBar.Margin = new System.Windows.Forms.Padding(2);
+            this.pnlSideBar.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.pnlSideBar.Name = "pnlSideBar";
-            this.pnlSideBar.Size = new System.Drawing.Size(246, 630);
+            this.pnlSideBar.Size = new System.Drawing.Size(328, 775);
             this.pnlSideBar.TabIndex = 2;
             // 
             // button2
@@ -83,9 +81,10 @@
             this.button2.ForeColor = System.Drawing.Color.Gainsboro;
             this.button2.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
             this.button2.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button2.Location = new System.Drawing.Point(0, 342);
+            this.button2.Location = new System.Drawing.Point(0, 421);
+            this.button2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(246, 41);
+            this.button2.Size = new System.Drawing.Size(328, 50);
             this.button2.TabIndex = 8;
             this.button2.Text = "Configuration";
             this.button2.UseVisualStyleBackColor = true;
@@ -98,9 +97,10 @@
             this.button1.ForeColor = System.Drawing.Color.Gainsboro;
             this.button1.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
             this.button1.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button1.Location = new System.Drawing.Point(0, 295);
+            this.button1.Location = new System.Drawing.Point(0, 363);
+            this.button1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(246, 41);
+            this.button1.Size = new System.Drawing.Size(328, 50);
             this.button1.TabIndex = 7;
             this.button1.Text = "Downloads";
             this.button1.UseVisualStyleBackColor = true;
@@ -113,9 +113,10 @@
             this.btnLibr.ForeColor = System.Drawing.Color.Gainsboro;
             this.btnLibr.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
             this.btnLibr.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnLibr.Location = new System.Drawing.Point(0, 251);
+            this.btnLibr.Location = new System.Drawing.Point(0, 309);
+            this.btnLibr.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnLibr.Name = "btnLibr";
-            this.btnLibr.Size = new System.Drawing.Size(246, 41);
+            this.btnLibr.Size = new System.Drawing.Size(328, 50);
             this.btnLibr.TabIndex = 6;
             this.btnLibr.Text = "Library";
             this.btnLibr.UseVisualStyleBackColor = true;
@@ -128,9 +129,10 @@
             this.btnStore.ForeColor = System.Drawing.Color.Gainsboro;
             this.btnStore.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
             this.btnStore.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnStore.Location = new System.Drawing.Point(0, 204);
+            this.btnStore.Location = new System.Drawing.Point(0, 251);
+            this.btnStore.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnStore.Name = "btnStore";
-            this.btnStore.Size = new System.Drawing.Size(246, 41);
+            this.btnStore.Size = new System.Drawing.Size(328, 50);
             this.btnStore.TabIndex = 5;
             this.btnStore.Text = "Store";
             this.btnStore.UseVisualStyleBackColor = true;
@@ -143,18 +145,18 @@
             this.pnlUser.Controls.Add(this.lblType);
             this.pnlUser.Controls.Add(this.pbUser);
             this.pnlUser.Controls.Add(this.lblUsername);
-            this.pnlUser.Location = new System.Drawing.Point(-1, 26);
-            this.pnlUser.Margin = new System.Windows.Forms.Padding(2);
+            this.pnlUser.Location = new System.Drawing.Point(-1, 32);
+            this.pnlUser.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.pnlUser.Name = "pnlUser";
-            this.pnlUser.Size = new System.Drawing.Size(252, 150);
+            this.pnlUser.Size = new System.Drawing.Size(336, 185);
             this.pnlUser.TabIndex = 4;
             // 
             // pbSettings
             // 
-            this.pbSettings.Location = new System.Drawing.Point(212, 2);
-            this.pbSettings.Margin = new System.Windows.Forms.Padding(2);
+            this.pbSettings.Location = new System.Drawing.Point(283, 2);
+            this.pbSettings.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.pbSettings.Name = "pbSettings";
-            this.pbSettings.Size = new System.Drawing.Size(30, 30);
+            this.pbSettings.Size = new System.Drawing.Size(40, 37);
             this.pbSettings.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbSettings.TabIndex = 2;
             this.pbSettings.TabStop = false;
@@ -164,9 +166,10 @@
             this.lblType.AutoSize = true;
             this.lblType.Font = new System.Drawing.Font("Bahnschrift SemiLight", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblType.ForeColor = System.Drawing.Color.Gainsboro;
-            this.lblType.Location = new System.Drawing.Point(89, 73);
+            this.lblType.Location = new System.Drawing.Point(119, 90);
+            this.lblType.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblType.Name = "lblType";
-            this.lblType.Size = new System.Drawing.Size(42, 19);
+            this.lblType.Size = new System.Drawing.Size(51, 24);
             this.lblType.TabIndex = 1;
             this.lblType.Text = "Type";
             // 
@@ -174,10 +177,10 @@
             // 
             this.pbUser.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.pbUser.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.pbUser.Location = new System.Drawing.Point(9, 33);
-            this.pbUser.Margin = new System.Windows.Forms.Padding(2);
+            this.pbUser.Location = new System.Drawing.Point(12, 41);
+            this.pbUser.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.pbUser.Name = "pbUser";
-            this.pbUser.Size = new System.Drawing.Size(75, 74);
+            this.pbUser.Size = new System.Drawing.Size(100, 91);
             this.pbUser.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbUser.TabIndex = 0;
             this.pbUser.TabStop = false;
@@ -188,9 +191,10 @@
             this.lblUsername.AutoSize = true;
             this.lblUsername.Font = new System.Drawing.Font("Bahnschrift", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblUsername.ForeColor = System.Drawing.Color.Gainsboro;
-            this.lblUsername.Location = new System.Drawing.Point(89, 54);
+            this.lblUsername.Location = new System.Drawing.Point(119, 66);
+            this.lblUsername.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblUsername.Name = "lblUsername";
-            this.lblUsername.Size = new System.Drawing.Size(52, 19);
+            this.lblUsername.Size = new System.Drawing.Size(63, 24);
             this.lblUsername.TabIndex = 0;
             this.lblUsername.Text = "Name";
             // 
@@ -202,9 +206,10 @@
             this.pnTop.Controls.Add(this.btnSize);
             this.pnTop.Controls.Add(this.btnExit);
             this.pnTop.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pnTop.Location = new System.Drawing.Point(246, 0);
+            this.pnTop.Location = new System.Drawing.Point(328, 0);
+            this.pnTop.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.pnTop.Name = "pnTop";
-            this.pnTop.Size = new System.Drawing.Size(1043, 26);
+            this.pnTop.Size = new System.Drawing.Size(1391, 32);
             this.pnTop.TabIndex = 3;
             this.pnTop.DoubleClick += new System.EventHandler(this.pnTop_DoubleClick);
             // 
@@ -213,9 +218,10 @@
             this.btnMinimize.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnMinimize.Dock = System.Windows.Forms.DockStyle.Right;
             this.btnMinimize.Image = global::Prisma_Launcher.Properties.Resources.Minimize_app;
-            this.btnMinimize.Location = new System.Drawing.Point(968, 0);
+            this.btnMinimize.Location = new System.Drawing.Point(1292, 0);
+            this.btnMinimize.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnMinimize.Name = "btnMinimize";
-            this.btnMinimize.Size = new System.Drawing.Size(25, 26);
+            this.btnMinimize.Size = new System.Drawing.Size(33, 32);
             this.btnMinimize.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.btnMinimize.TabIndex = 1;
             this.btnMinimize.TabStop = false;
@@ -226,9 +232,10 @@
             // 
             // pnCenter
             // 
-            this.pnCenter.Location = new System.Drawing.Point(251, 26);
+            this.pnCenter.Location = new System.Drawing.Point(335, 32);
+            this.pnCenter.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.pnCenter.Name = "pnCenter";
-            this.pnCenter.Size = new System.Drawing.Size(1038, 630);
+            this.pnCenter.Size = new System.Drawing.Size(1384, 775);
             this.pnCenter.TabIndex = 2;
             // 
             // btnSize
@@ -236,9 +243,10 @@
             this.btnSize.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnSize.Dock = System.Windows.Forms.DockStyle.Right;
             this.btnSize.Image = global::Prisma_Launcher.Properties.Resources.maximize_app;
-            this.btnSize.Location = new System.Drawing.Point(993, 0);
+            this.btnSize.Location = new System.Drawing.Point(1325, 0);
+            this.btnSize.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnSize.Name = "btnSize";
-            this.btnSize.Size = new System.Drawing.Size(25, 26);
+            this.btnSize.Size = new System.Drawing.Size(33, 32);
             this.btnSize.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.btnSize.TabIndex = 2;
             this.btnSize.TabStop = false;
@@ -253,9 +261,10 @@
             this.btnExit.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnExit.Dock = System.Windows.Forms.DockStyle.Right;
             this.btnExit.Image = global::Prisma_Launcher.Properties.Resources.Close_app;
-            this.btnExit.Location = new System.Drawing.Point(1018, 0);
+            this.btnExit.Location = new System.Drawing.Point(1358, 0);
+            this.btnExit.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnExit.Name = "btnExit";
-            this.btnExit.Size = new System.Drawing.Size(25, 26);
+            this.btnExit.Size = new System.Drawing.Size(33, 32);
             this.btnExit.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.btnExit.TabIndex = 0;
             this.btnExit.TabStop = false;
@@ -279,34 +288,24 @@
             // pnlScreen
             // 
             this.pnlScreen.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.pnlScreen.Controls.Add(this.sas);
             this.pnlScreen.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlScreen.Location = new System.Drawing.Point(246, 26);
+            this.pnlScreen.Location = new System.Drawing.Point(328, 32);
+            this.pnlScreen.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.pnlScreen.Name = "pnlScreen";
-            this.pnlScreen.Size = new System.Drawing.Size(1043, 604);
+            this.pnlScreen.Size = new System.Drawing.Size(1391, 743);
             this.pnlScreen.TabIndex = 5;
-            // 
-            // sas
-            // 
-            this.sas.AutoSize = true;
-            this.sas.Font = new System.Drawing.Font("JetBrains Mono", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.sas.ForeColor = System.Drawing.Color.OrangeRed;
-            this.sas.Location = new System.Drawing.Point(280, 155);
-            this.sas.Name = "sas";
-            this.sas.Size = new System.Drawing.Size(77, 27);
-            this.sas.TabIndex = 0;
-            this.sas.Text = "LABEL";
             // 
             // frmMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1289, 630);
+            this.ClientSize = new System.Drawing.Size(1719, 775);
             this.Controls.Add(this.pnlScreen);
             this.Controls.Add(this.pnTop);
             this.Controls.Add(this.pnlSideBar);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "frmMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "prisma";
@@ -319,8 +318,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.btnMinimize)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnSize)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnExit)).EndInit();
-            this.pnlScreen.ResumeLayout(false);
-            this.pnlScreen.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -347,7 +344,6 @@
         private System.Windows.Forms.Label reward;
         private System.Windows.Forms.Timer t_countdown;
         private System.Windows.Forms.Panel pnlScreen;
-        private System.Windows.Forms.Label sas;
     }
 }
 
