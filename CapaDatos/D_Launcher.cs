@@ -33,7 +33,7 @@ namespace CapaDatos
 
                 SqlDataReader dr = cmd.ExecuteReader();
 
-                if (dr.Read())
+                while (dr.Read())
                 {
                     mod.Add(new Mod
                     {

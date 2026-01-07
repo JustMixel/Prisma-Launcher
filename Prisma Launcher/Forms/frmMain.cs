@@ -16,6 +16,8 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace Prisma_Launcher
 {
@@ -38,12 +40,32 @@ namespace Prisma_Launcher
             string user = encryptionService.Decrypt(json);
 
             User userData = JsonConvert.DeserializeObject<User>(user);
-
+            pbUser.Image = Properties.Resources.unkUser;
             lblUsername.Text = userData.User_Name;
-            // Profile Picture Management
-            pbUser.Image = (userData.User_Picture == null) ? pbUser.Image = Properties.Resources.unkUser /*false - get picture from json*/ : pbUser.Image = Properties.Resources.unkUser; /*true - default pfp*/
+            
+            // Profile Picture Management           
+            pbUser.Image = (userData.User_Picture == null) ? pbUser.Image = Properties.Resources.unkUser /*false - default pfp*/ : pbUser.Image = ConvertImage2D.ByteArrayToImage(userData.User_Picture); /*true - get picture from byte array*/
+            
             pnlScreen.BackgroundImage = Properties.Resources.app_base;
             pbUser.Region = ConvertImage2D.GetRoundedImage(pbUser);
+
+            userData.User_Type = 0; // DELETE THIS - THIS IS FOR TESTING!!!!
+            // This is just a concept IDEA - if his type is different than -1, then connect to the DB, look him up and get his type data.
+            switch (userData.User_Type)
+            {
+                case -1:
+                    lblType.Visible = false;
+                    break;
+                case 0:
+                    lblType.Text = "Creator";
+                    break;
+                case 1:
+                    lblType.Text = "Moderator";
+                    break;
+                default:
+                    lblType.Text = "Unknown user type";
+                    break;
+            }
             //t_countdown.Start();
         }
         public void newForm(object Form)
@@ -59,7 +81,46 @@ namespace Prisma_Launcher
             this.pnlScreen.Tag = form;
             form.Show();
         }
+        private void updateCredentials()
+        {
+            User user = new User();
+            user.User_Name = lblUsername.Text;
+            byte[] userPic = ConvertImage2D.ImageToByteArray(pbUser.Image);
+            user.User_Picture = userPic;
 
+            // If the user is of type > -1, then loggin in the DB and get his ID.
+            //user.User_ID = int.Parse(lblType.Text);
+            user.User_ID = -1;
+
+            user.User_Type = -1;
+
+            // This is just a concept IDEA - if his type is different than -1, then connect to the DB, look him up and get his type data.
+            switch (user.User_Type) 
+            {
+                case -1:
+                    lblType.Visible = false;
+                    break;
+                case 0:
+                    lblType.Text = "Creator";
+                    break;
+                case 1:
+                    lblType.Text = "Moderator";
+                    break;
+                default:
+                    lblType.Text = "Unkown user type";
+                    break;
+            }
+
+            string json = JsonConvert.SerializeObject(user, Formatting.Indented);
+            var encryptionService = new EncryptionService("testing123");
+
+            string encryptedJson = encryptionService.Encrypt(json);
+
+            File.WriteAllText(appDataPath + @"\userData.json", encryptedJson);
+
+            string decryptedJson = encryptionService.Decrypt(encryptedJson);
+            File.WriteAllText(appDataPath + @"\decrpytedStuff.json", decryptedJson); 
+        }
         private void t_countdown_Tick(object sender, EventArgs e)
         {
 
@@ -163,22 +224,21 @@ namespace Prisma_Launcher
             {
                 pbUser.Image = Image.FromFile(ofd.FileName);
                 pbUser.Region = ConvertImage2D.GetRoundedImage(pbUser);
-                byte[] carajo = ConvertImage2D.ImageToByteArray(pbUser.Image);           
+                updateCredentials();         
             }
         }
-
-        /*private void updatePic_Click(object sender, EventArgs e)
+        private void button3_Click_1(object sender, EventArgs e)
         {
             N_Launcher sexo = new N_Launcher();
-            
+
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Title = "Select a picture";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 yeat.Image = Image.FromFile(ofd.FileName);
                 byte[] carajo = ConvertImage2D.ImageToByteArray(yeat.Image);
-                sexo.givePicture(carajo, 2);
+                sexo.givePicture(carajo, 1);
             }
-        }*/
+        }
     }
 }

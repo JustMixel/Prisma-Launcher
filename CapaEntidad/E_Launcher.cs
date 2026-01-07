@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Drawing;
 
 namespace CapaEntidad
 {
@@ -11,9 +12,10 @@ namespace CapaEntidad
         public int User_ID { get ; set; }
         public int User_Type { get; set; }
         public string User_Name { get; set; }
-        public string User_Picture { get; set; }
+        public byte[] User_Picture { get; set; }
         public string User_DevGroup { get; set; }
     }
+    
     public class Mod
     {
         public int Mod_ID { get; set; }

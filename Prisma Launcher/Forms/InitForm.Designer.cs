@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(InitForm));
             this.decor1 = new System.Windows.Forms.PictureBox();
             this.dragPnl = new System.Windows.Forms.Panel();
             this.bunifuDragControl1 = new Bunifu.Framework.UI.BunifuDragControl(this.components);
@@ -140,10 +141,12 @@
             this.Controls.Add(this.dragPnl);
             this.Controls.Add(this.decor1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "InitForm";
             this.Opacity = 0.84D;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "InitForm";
+            this.Text = "Prisma Launcher";
             this.Load += new System.EventHandler(this.InitForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.decor1)).EndInit();
             this.ResumeLayout(false);

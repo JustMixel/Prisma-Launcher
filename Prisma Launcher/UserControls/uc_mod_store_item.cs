@@ -17,10 +17,12 @@ namespace Prisma_Launcher
         public uc_mod_store_item()
         {
             InitializeComponent();
+            lblModDev.BackColor = Color.Transparent;
+            lblModName.BackColor = Color.Transparent;
         }
 
         public string Mod_Name { get => lblModName.Text; set => lblModName.Text = value; }
         public string Mod_Dev { get => lblModDev.Text; set => lblModDev.Text = value; }
-        public Image Mod_Pic { get => this.BackgroundImage; set => this.BackgroundImage = value; }
+        public Image Mod_Pic { get => this.pbCover.Image; set => this.pbCover.Image = value; }
     }
 }

@@ -27,6 +27,7 @@ namespace Prisma_Launcher
             focusCall.Focus();
             tbName.Visible = false;
             btnSend.Visible = false;
+            this.ShowInTaskbar = false;
         }
 
         private void InitForm_Load(object sender, EventArgs e)
@@ -37,6 +38,7 @@ namespace Prisma_Launcher
             }
             else 
             {
+                this.ShowInTaskbar = true;
                 tbName.Visible = true;
                 btnSend.Visible = true;
                 Random random = new Random();
@@ -45,6 +47,7 @@ namespace Prisma_Launcher
         }
         private void openMain()
         {
+            this.Hide();
             frmMain frm = new frmMain(File.ReadAllText(appDataPath + @"\userData.json"));
             frm.ShowDialog();
             this.Close();
@@ -107,7 +110,6 @@ namespace Prisma_Launcher
 
             string decryptedJson = encryptionService.Decrypt(encryptedJson);
             File.WriteAllText(appDataPath + @"\decrpytedStuff.json", decryptedJson);   
-            MessageBox.Show("DIRECTORY AND FILES CREATED... ig");
             logIn();
         }
 
