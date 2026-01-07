@@ -146,7 +146,7 @@ namespace Prisma_Launcher
 
         private void btnSize_Click(object sender, EventArgs e)
         {
-            if (btnSize.Tag == "canBeMaximized")
+            if (btnSize.Tag.Equals("canBeMaximized"))
             {
                 this.WindowState = FormWindowState.Maximized;
                 //btnSize.Image = Resources.restore_down;
@@ -168,7 +168,7 @@ namespace Prisma_Launcher
         // If you double-click the handling bar, the window will maximize
         private void pnTop_DoubleClick(object sender, EventArgs e)
         {
-            if (btnSize.Tag == "canBeMaximized")
+            if (btnSize.Tag.Equals("canBeMaximized"))
             {
                 this.WindowState = FormWindowState.Maximized;
                 //btnSize.Image = Resources.restore_down;
