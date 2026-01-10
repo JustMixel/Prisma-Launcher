@@ -18,8 +18,6 @@ namespace Prisma_Launcher
     public partial class InitForm : Form
     {
         String[] textInit = { "What's your name?", "Can I have your name?", "Mind lending me your name?", "Your name! - NOW!", "Hold on, I need your name...", "Can I borrow your name?" };
-        static string filePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string appDataPath = Path.Combine(path1: filePath, path2: ".prisma");
         string encryptedJson;
         public InitForm()
         {
@@ -32,7 +30,7 @@ namespace Prisma_Launcher
 
         private void InitForm_Load(object sender, EventArgs e)
         {
-            if (Directory.Exists(appDataPath))
+            if (Directory.Exists(AppPath.appDataPath))
             {
                 logIn();
             }
@@ -48,7 +46,7 @@ namespace Prisma_Launcher
         private void openMain()
         {
             this.Hide();
-            frmMain frm = new frmMain(File.ReadAllText(appDataPath + @"\userData.json"));
+            frmMain frm = new frmMain(File.ReadAllText(AppPath.appDataPath + @"\userData.json"));
             frm.ShowDialog();
             this.Close();
         }
@@ -80,7 +78,7 @@ namespace Prisma_Launcher
         {
             if (tbName.Text != string.Empty)
             {
-                if (!Directory.Exists(appDataPath))
+                if (!Directory.Exists(AppPath.appDataPath))
                 {
                     generateCredentials();
                 }
@@ -97,19 +95,19 @@ namespace Prisma_Launcher
             user.User_Picture = null;
             user.User_ID = -1;
             user.User_Type = -1;
-            user.User_DevGroup = null;
+            //user.User_DevGroup = null;
 
-            Directory.CreateDirectory(appDataPath);
+            Directory.CreateDirectory(AppPath.appDataPath);
 
             string json = JsonConvert.SerializeObject(user, Formatting.Indented);
             var encryptionService = new EncryptionService("testing123");
             
             encryptedJson = encryptionService.Encrypt(json);
 
-            File.WriteAllText(appDataPath + @"\userData.json", encryptedJson);
+            File.WriteAllText(AppPath.appDataPath + @"\userData.json", encryptedJson);
 
             string decryptedJson = encryptionService.Decrypt(encryptedJson);
-            File.WriteAllText(appDataPath + @"\decrpytedStuff.json", decryptedJson);   
+            File.WriteAllText(AppPath.appDataPath + @"\decrpytedStuff.json", decryptedJson);   
             logIn();
         }
 

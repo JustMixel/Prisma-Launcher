@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(sfrmModPage));
             this.pnlScreen = new System.Windows.Forms.Panel();
             this.Banner = new System.Windows.Forms.Panel();
             this.btnBack = new System.Windows.Forms.Button();
@@ -36,18 +35,19 @@
             this.lblModRelease = new System.Windows.Forms.Label();
             this.lblModTitle = new System.Windows.Forms.Label();
             this.midSquare2 = new System.Windows.Forms.Panel();
-            this.rtbContent = new System.Windows.Forms.RichTextBox();
             this.rightPanel = new System.Windows.Forms.Panel();
             this.btnDwnld = new System.Windows.Forms.Button();
             this.lblModSize = new System.Windows.Forms.Label();
             this.lblDevName = new System.Windows.Forms.Label();
             this.pbDev = new System.Windows.Forms.PictureBox();
+            this.webView = new Microsoft.Web.WebView2.WinForms.WebView2();
             this.pnlScreen.SuspendLayout();
             this.Banner.SuspendLayout();
             this.midSquare1.SuspendLayout();
             this.midSquare2.SuspendLayout();
             this.rightPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbDev)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.webView)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlScreen
@@ -66,6 +66,7 @@
             // Banner
             // 
             this.Banner.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(140)))), ((int)(((byte)(0)))), ((int)(((byte)(35)))));
+            this.Banner.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.Banner.Controls.Add(this.btnBack);
             this.Banner.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.Banner.Location = new System.Drawing.Point(0, 0);
@@ -127,27 +128,12 @@
             // midSquare2
             // 
             this.midSquare2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(24)))), ((int)(((byte)(24)))));
-            this.midSquare2.Controls.Add(this.rtbContent);
+            this.midSquare2.Controls.Add(this.webView);
             this.midSquare2.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.midSquare2.Location = new System.Drawing.Point(0, 334);
             this.midSquare2.Name = "midSquare2";
             this.midSquare2.Size = new System.Drawing.Size(785, 270);
             this.midSquare2.TabIndex = 12;
-            // 
-            // rtbContent
-            // 
-            this.rtbContent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(24)))), ((int)(((byte)(24)))));
-            this.rtbContent.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.rtbContent.Cursor = System.Windows.Forms.Cursors.No;
-            this.rtbContent.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rtbContent.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rtbContent.ForeColor = System.Drawing.Color.Gainsboro;
-            this.rtbContent.Location = new System.Drawing.Point(0, 0);
-            this.rtbContent.Name = "rtbContent";
-            this.rtbContent.ReadOnly = true;
-            this.rtbContent.Size = new System.Drawing.Size(785, 270);
-            this.rtbContent.TabIndex = 0;
-            this.rtbContent.Text = resources.GetString("rtbContent.Text");
             // 
             // rightPanel
             // 
@@ -164,6 +150,7 @@
             // 
             // btnDwnld
             // 
+            this.btnDwnld.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.btnDwnld.BackColor = System.Drawing.Color.Green;
             this.btnDwnld.FlatAppearance.BorderColor = System.Drawing.Color.Gainsboro;
             this.btnDwnld.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -178,6 +165,7 @@
             // 
             // lblModSize
             // 
+            this.lblModSize.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.lblModSize.AutoSize = true;
             this.lblModSize.BackColor = System.Drawing.Color.DarkGreen;
             this.lblModSize.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -209,6 +197,18 @@
             this.pbDev.TabIndex = 6;
             this.pbDev.TabStop = false;
             // 
+            // webView
+            // 
+            this.webView.AllowExternalDrop = true;
+            this.webView.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.webView.CreationProperties = null;
+            this.webView.DefaultBackgroundColor = System.Drawing.Color.White;
+            this.webView.Location = new System.Drawing.Point(0, 0);
+            this.webView.Name = "webView";
+            this.webView.Size = new System.Drawing.Size(785, 270);
+            this.webView.TabIndex = 0;
+            this.webView.ZoomFactor = 1D;
+            // 
             // sfrmModPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -228,6 +228,7 @@
             this.rightPanel.ResumeLayout(false);
             this.rightPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbDev)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.webView)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -245,6 +246,6 @@
         private System.Windows.Forms.Label lblModRelease;
         private System.Windows.Forms.Label lblModSize;
         private System.Windows.Forms.Button btnDwnld;
-        private System.Windows.Forms.RichTextBox rtbContent;
+        private Microsoft.Web.WebView2.WinForms.WebView2 webView;
     }
 }

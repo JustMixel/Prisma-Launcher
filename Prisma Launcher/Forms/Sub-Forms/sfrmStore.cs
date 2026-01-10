@@ -72,7 +72,7 @@ namespace Prisma_Launcher
             // O abrir detalles, instalar, etc.
             newForm(new sfrmModPage(mod/*, devve*/));
         }
-
+ 
         private void StoreItem_MouseEnter(object sender, EventArgs e)
         {
             uc_mod_store_item item = (uc_mod_store_item)sender;

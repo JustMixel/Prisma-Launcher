@@ -44,7 +44,9 @@ namespace CapaDatos
                         Mod_Logo = dr["Mod_Logo"].ToString(),
                         Mod_Dwnlds = dr.GetInt32(5),
                         Mod_Link = dr["Mod_Link"].ToString(),
-                        Mod_Picture = (byte[])dr["Mod_Picture"]
+                        Mod_Picture = (byte[])dr["Mod_Picture"],
+                        Mod_Banner = (byte[])dr["Mod_Banner"],
+                        Mod_ReleaseYear = dr.GetDateTime(9)
                     });
                 }
                 dr.Close();
@@ -62,6 +64,23 @@ namespace CapaDatos
 
                 cmd.Parameters.AddWithValue("@ID", ID);
                 cmd.Parameters.AddWithValue("@PICTURE", image);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            return null;
+        }
+
+        public Mod giveBanner(Byte[] image, int ID)
+        {
+            using (SqlConnection conn = new SqlConnection(_db))
+            {
+                conn.Open();
+                SqlCommand cmd = new SqlCommand("SP_GIVBANN", conn);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@ID", ID);
+                cmd.Parameters.AddWithValue("@BANNER", image);
 
                 cmd.ExecuteNonQuery();
             }

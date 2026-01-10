@@ -66,13 +66,13 @@ namespace Prisma_Launcher
                     lblType.Text = "Unknown user type";
                     break;
             }
-            //t_countdown.Start();
+
         }
         public void newForm(object Form)
         {
             if (this.pnlScreen.Controls.Count > 0)
             {
-                this.pnlScreen.Controls.RemoveAt(0);
+                this.pnlScreen.Controls.Clear();
             }
             Form form = Form as Form;
             form.TopLevel = false;
@@ -149,13 +149,13 @@ namespace Prisma_Launcher
             if (btnSize.Tag.Equals("canBeMaximized"))
             {
                 this.WindowState = FormWindowState.Maximized;
-                //btnSize.Image = Resources.restore_down;
+                btnSize.Image = Properties.Resources.restore_down;
                 btnSize.Tag = "ButtonIsMaximized";
             }
             else
             {
                 this.WindowState = FormWindowState.Normal;
-                //btnSize.Image = Resources.maximize_app;
+                btnSize.Image = Properties.Resources.maximize_app;
                 btnSize.Tag = "canBeMaximized";
             }
         }
@@ -238,6 +238,20 @@ namespace Prisma_Launcher
                 yeat.Image = Image.FromFile(ofd.FileName);
                 byte[] carajo = ConvertImage2D.ImageToByteArray(yeat.Image);
                 sexo.givePicture(carajo, 1);
+            }
+        }
+
+        private void btnBanner_Click(object sender, EventArgs e)
+        {
+            N_Launcher sexo = new N_Launcher();
+
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "Select a picture";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                Bann.Image = Image.FromFile(ofd.FileName);
+                byte[] carajo = ConvertImage2D.ImageToByteArray(Bann.Image);
+                sexo.giveBanner(carajo, 1);
             }
         }
     }

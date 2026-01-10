@@ -13,7 +13,6 @@ namespace CapaEntidad
         public int User_Type { get; set; }
         public string User_Name { get; set; }
         public byte[] User_Picture { get; set; }
-        public string User_DevGroup { get; set; }
     }
     
     public class Mod
@@ -26,5 +25,14 @@ namespace CapaEntidad
         public int Mod_Dwnlds { get; set; }
         public string Mod_Link { get; set; }
         public byte[] Mod_Picture { get; set; }
+        public byte[] Mod_Banner { get; set; }
+        public DateTime Mod_ReleaseYear { get; set; }
+    }
+
+    public class UserDevGroup 
+    {
+        public string userName { get; set; }
+        public string userGroup { get; set; }
+        public string userRole { get; set; }
     }
 }

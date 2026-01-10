@@ -22,7 +22,7 @@ namespace Prisma_Studios_Launcher
         public static byte[] ImageToByteArray(Image imageIn)
         {
             MemoryStream ms = new MemoryStream();
-            imageIn.Save(ms, ImageFormat.Jpeg);
+            imageIn.Save(ms, ImageFormat.Png);
             return ms.ToArray();
         }
         public static Region GetRoundedImage(PictureBox pfp)

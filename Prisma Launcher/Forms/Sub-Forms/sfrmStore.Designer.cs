@@ -80,6 +80,7 @@
             // 
             // lblStore
             // 
+            this.lblStore.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.lblStore.AutoSize = true;
             this.lblStore.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(4)))), ((int)(((byte)(4)))));
             this.lblStore.Font = new System.Drawing.Font("Bahnschrift Condensed", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));

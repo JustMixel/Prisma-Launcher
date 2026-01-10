@@ -24,5 +24,9 @@ namespace CapaNegocio
         {
             return objDatos.givePicture(image, ID);
         }
+        public Mod giveBanner(byte[] image, int ID)
+        {
+            return objDatos.giveBanner(image, ID);
+        }
     }
 }

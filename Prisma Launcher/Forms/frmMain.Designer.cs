@@ -50,6 +50,8 @@
             this.pnlScreen = new System.Windows.Forms.Panel();
             this.yeat = new System.Windows.Forms.PictureBox();
             this.button3 = new System.Windows.Forms.Button();
+            this.btnBanner = new System.Windows.Forms.Button();
+            this.Bann = new System.Windows.Forms.PictureBox();
             this.pnlSideBar.SuspendLayout();
             this.pnlUser.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbSettings)).BeginInit();
@@ -60,6 +62,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.btnExit)).BeginInit();
             this.pnlScreen.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.yeat)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Bann)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlSideBar
@@ -281,6 +284,8 @@
             // pnlScreen
             // 
             this.pnlScreen.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.pnlScreen.Controls.Add(this.Bann);
+            this.pnlScreen.Controls.Add(this.btnBanner);
             this.pnlScreen.Controls.Add(this.yeat);
             this.pnlScreen.Controls.Add(this.button3);
             this.pnlScreen.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -292,7 +297,7 @@
             // yeat
             // 
             this.yeat.BackColor = System.Drawing.SystemColors.MenuHighlight;
-            this.yeat.Location = new System.Drawing.Point(503, 178);
+            this.yeat.Location = new System.Drawing.Point(501, 96);
             this.yeat.Name = "yeat";
             this.yeat.Size = new System.Drawing.Size(172, 214);
             this.yeat.TabIndex = 10;
@@ -308,14 +313,40 @@
             this.button3.ForeColor = System.Drawing.Color.Gainsboro;
             this.button3.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
             this.button3.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button3.Location = new System.Drawing.Point(210, 225);
+            this.button3.Location = new System.Drawing.Point(141, 109);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(246, 41);
             this.button3.TabIndex = 9;
-            this.button3.Text = "Store";
+            this.button3.Text = "Mod Cover";
             this.button3.UseVisualStyleBackColor = false;
             this.button3.Visible = false;
             this.button3.Click += new System.EventHandler(this.button3_Click_1);
+            // 
+            // btnBanner
+            // 
+            this.btnBanner.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.btnBanner.FlatAppearance.BorderSize = 0;
+            this.btnBanner.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnBanner.Font = new System.Drawing.Font("Bahnschrift SemiBold", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnBanner.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnBanner.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
+            this.btnBanner.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnBanner.Location = new System.Drawing.Point(414, 357);
+            this.btnBanner.Name = "btnBanner";
+            this.btnBanner.Size = new System.Drawing.Size(246, 41);
+            this.btnBanner.TabIndex = 11;
+            this.btnBanner.Text = "Mod Banner";
+            this.btnBanner.UseVisualStyleBackColor = false;
+            this.btnBanner.Click += new System.EventHandler(this.btnBanner_Click);
+            // 
+            // Bann
+            // 
+            this.Bann.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.Bann.Location = new System.Drawing.Point(141, 404);
+            this.Bann.Name = "Bann";
+            this.Bann.Size = new System.Drawing.Size(785, 188);
+            this.Bann.TabIndex = 12;
+            this.Bann.TabStop = false;
             // 
             // frmMain
             // 
@@ -341,6 +372,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.btnExit)).EndInit();
             this.pnlScreen.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.yeat)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Bann)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -369,6 +401,8 @@
         private System.Windows.Forms.Panel pnlScreen;
         private System.Windows.Forms.PictureBox yeat;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.PictureBox Bann;
+        private System.Windows.Forms.Button btnBanner;
     }
 }
 
