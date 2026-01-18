@@ -41,6 +41,7 @@
             this.lblModSize = new System.Windows.Forms.Label();
             this.lblDevName = new System.Windows.Forms.Label();
             this.pbDev = new System.Windows.Forms.PictureBox();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.pnlScreen.SuspendLayout();
             this.Banner.SuspendLayout();
             this.midSquare1.SuspendLayout();
@@ -150,6 +151,7 @@
             // rightPanel
             // 
             this.rightPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(12)))), ((int)(((byte)(12)))), ((int)(((byte)(12)))));
+            this.rightPanel.Controls.Add(this.btnCancel);
             this.rightPanel.Controls.Add(this.btnDwnld);
             this.rightPanel.Controls.Add(this.lblModSize);
             this.rightPanel.Controls.Add(this.lblDevName);
@@ -168,6 +170,8 @@
             this.btnDwnld.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnDwnld.Font = new System.Drawing.Font("Bahnschrift", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnDwnld.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnDwnld.Image = global::Prisma_Launcher.Properties.Resources.dwnld_ico;
+            this.btnDwnld.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnDwnld.Location = new System.Drawing.Point(28, 540);
             this.btnDwnld.Name = "btnDwnld";
             this.btnDwnld.Size = new System.Drawing.Size(206, 43);
@@ -191,6 +195,7 @@
             // 
             // lblDevName
             // 
+            this.lblDevName.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.lblDevName.AutoSize = true;
             this.lblDevName.BackColor = System.Drawing.Color.DarkGreen;
             this.lblDevName.Font = new System.Drawing.Font("Century Gothic", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -209,6 +214,21 @@
             this.pbDev.Size = new System.Drawing.Size(128, 128);
             this.pbDev.TabIndex = 6;
             this.pbDev.TabStop = false;
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.BackColor = System.Drawing.Color.Maroon;
+            this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnCancel.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCancel.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnCancel.Location = new System.Drawing.Point(199, 505);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(35, 32);
+            this.btnCancel.TabIndex = 12;
+            this.btnCancel.Text = "x";
+            this.btnCancel.UseVisualStyleBackColor = false;
+            this.btnCancel.Visible = false;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // sfrmModPage
             // 
@@ -248,5 +268,6 @@
         private System.Windows.Forms.Label lblModSize;
         private System.Windows.Forms.Button btnDwnld;
         private Microsoft.Web.WebView2.WinForms.WebView2 webView;
+        private System.Windows.Forms.Button btnCancel;
     }
 }

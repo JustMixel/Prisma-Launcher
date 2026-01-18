@@ -27,8 +27,13 @@ namespace Prisma_Launcher
     {
         private Mod modTemplate = null;
         private User userTemplate = null;
-        private N_Launcher objNegocio = null;
+        private N_Launcher objNegocio = null;       
         string path;
+
+        // DOWNLOADER VARS
+        private CancellationTokenSource _cts;
+        private FileDownloader _downloader;
+        private bool isModDownloading = false;
 
         public sfrmModPage(Mod mod/*, User developer*/)
         {
@@ -37,7 +42,7 @@ namespace Prisma_Launcher
             //this.userTemplate = developer;
             lblModTitle.BackColor = Color.Transparent;
             lblModRelease.BackColor = Color.Transparent;
-
+            lblModSize.Text = $"Size: {modTemplate.Mod_Size} GB";
             /* 
                For the dev name maybe we can implement a way to show 2 names. One is the singular dev name, and the other one is the development group,
                the creator can choose wether to display one of those
@@ -118,42 +123,66 @@ namespace Prisma_Launcher
         {
             try 
             {
-                FolderBrowserDialog sfd = new FolderBrowserDialog();
-                if(sfd.ShowDialog() == DialogResult.OK) 
-                {                    
-                    path = sfd.SelectedPath;
-                    double diskSize = AppHandle.getDiskSpace(path.Substring(0, 3));                 
-                    diskSize = diskSize / 1024d / 1024 / 1024;
-                    Debug.WriteLine(Math.Round(diskSize, 1));
-
-                    // Round the MOD SIZE up and then compare it with the free space on disk
-                    double modSize = modTemplate.Mod_Size;
-                    modSize = Math.Ceiling(modSize);
-
-                    try 
+                if (isModDownloading.Equals(false)) 
+                {
+                    FolderBrowserDialog sfd = new FolderBrowserDialog();
+                    if (sfd.ShowDialog() == DialogResult.OK)
                     {
+                        path = sfd.SelectedPath;
+                        double diskSize = AppHandle.getDiskSpace(path.Substring(0, 3));
+                        diskSize = diskSize / 1024d / 1024 / 1024;
+                        Debug.WriteLine(Math.Round(diskSize, 1));
 
-                        if (diskSize > modSize)
-                        {
-                            if (!Directory.Exists(AppHandle.currentWorkshopFolder))
+                        // Round the MOD SIZE up and then compare it with the free space on disk
+                        double modSize = modTemplate.Mod_Size;
+                        modSize = Math.Ceiling(modSize);
+
+                        try
+                        {   
+                            if (diskSize > modSize)
                             {
-                                AppHandle.generateWorkshopFolder(path);
-                                downloadMod();
+                                if (!Directory.Exists(AppHandle.currentWorkshopFolder))
+                                {
+                                    AppHandle.generateWorkshopFolder(path);
+                                    btnDwnld.Text = "...";
+                                    btnDwnld.Image = null;
+                                    btnCancel.Visible = true;
+                                    btnDwnld.BackColor = Color.ForestGreen;
+                                    downloadMod();
+                                }
+                                else
+                                {
+                                    btnDwnld.Text = "...";
+                                    btnDwnld.Image = null;
+                                    btnCancel.Visible = true;
+                                    btnDwnld.BackColor = Color.ForestGreen;
+                                    downloadMod();
+                                }
                             }
                             else
                             {
-                                downloadMod();
+                                // Make a pop-up appear saying that the user doesnt have enough space.
                             }
                         }
-                        else 
+                        catch
                         {
-                            // Make a pop-up appear saying that the user doesnt have enough space.
+
                         }
                     }
-                    catch 
-                    {
-
-                    }
+                }
+                else if (_downloader.IsPaused)
+                {
+                    _downloader.Resume();
+                    btnDwnld.Text = "Resumed";
+                    btnDwnld.BackColor = Color.ForestGreen;
+                    btnDwnld.Image = Properties.Resources.dwnld_ico;
+                }
+                else 
+                {
+                    _downloader.Pause();
+                    btnDwnld.Text = "Paused";
+                    btnDwnld.BackColor = Color.DarkOrange;
+                    btnDwnld.Image = Properties.Resources.resum_ico;
                 }
             }
             catch 
@@ -161,28 +190,90 @@ namespace Prisma_Launcher
 
             } 
         }
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            btnCancel.Visible = false;
+            _cts?.Cancel();
+            _downloader?.Resume();
+            // Button setup
+            btnDwnld.BackColor = Color.Green;
+            btnDwnld.Text = "Download";
+            btnDwnld.Image = Properties.Resources.dwnld_ico;
+        }
 
-       public async void downloadMod()
+        public async void downloadMod()
        {
-            var downloader = new FileDownloader(timeoutSeconds: 600);
+            _downloader = new FileDownloader(timeoutSeconds: 600);
+            _cts = new CancellationTokenSource();
+
             var progress = new Progress<DownloadProgress>(reporte => {
-                btnDwnld.Text = $"Descargando: {reporte.GetFormattedProgress()}";
+                btnDwnld.Text = reporte.GetFormattedProgress(); // Muestra "[PAUSADO]" cuando pausas
             });
-            var _cts = new CancellationTokenSource();
 
+            var extractProgress = new Progress<ExtractionProgress>(p => {
+                btnDwnld.Text = $"Extrayendo: {p.GetFormattedProgress()}";
+            });
+
+            // ... tu código de limpieza del nombre ...
+            Char[] symbols = { ':', '\'', '/', '*', '?', '<', '>', '|', ' ' };
             string modName = modTemplate.Mod_Name;
-            modName.Replace(":", "");
-            modName.Replace(@"\", "");
-            modName.Replace("/", "");
-            modName.Replace("*", "");
-            modName.Replace("?", "");
-            modName.Replace("<", "");
-            modName.Replace(">", "");
-            modName.Replace("|", "");
+            for (int i = 0; i < symbols.Length; i++)
+            {
+                foreach (char c in symbols)
+                {
+                    if (modName.Contains(c))
+                    {
+                        if (c.Equals(' '))
+                        {
+                            modName = modName.Replace(c, '_');
+                        }
+                        modName = modName.Replace(c.ToString(), "");
+                    }
+                }
+            }
 
-            await downloader.DownloadFileAsync(modTemplate.Mod_Link, AppHandle.currentWorkshopFolder + $@"\{modName}.rar", progress, _cts.Token);
+            isModDownloading = true;
+            try
+            {
+                await _downloader.DownloadFileAsync(
+                    url: modTemplate.Mod_Link,
+                    destinationPath: AppHandle.currentWorkshopFolder + $@"\{modName}.rar",
+                    progress: progress,
+                    autoExtract: true,
+                    extractToFolder: AppHandle.currentWorkshopFolder + $@"\{modName}",
+                    extractProgress: extractProgress,
+                    deleteAfterExtraction: true,
+                    cancellationToken: _cts.Token
+                );
 
-            //await downloader.DownloadFileAsync(url, outputPath, progress, cts.Token);
+                // PLAY
+                btnDwnld.Text = "PLAY";
+                btnDwnld.BackColor = Color.Green;
+                btnDwnld.Image = Properties.Resources.play_ico;
+            }
+            catch (TaskCanceledException)
+            {
+                // CANCELADO
+                btnDwnld.Text = "Download";
+                btnDwnld.BackColor = Color.Green;    
+            }
+            catch (Exception ex)
+            {
+                // ERROR
+                btnDwnld.Text = "Download";
+                btnDwnld.BackColor = Color.Green;
+                btnDwnld.Image = Properties.Resources.dwnld_ico;
+                btnCancel.Visible = false;
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+            finally
+            {
+                isModDownloading = false;
+                _downloader?.Dispose();
+                _cts?.Dispose();
+                _downloader = null;
+                _cts = null;
+            }
         }
     }
 }

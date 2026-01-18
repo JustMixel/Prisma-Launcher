@@ -48,10 +48,10 @@
             this.bunifuDragControl = new Bunifu.Framework.UI.BunifuDragControl(this.components);
             this.t_countdown = new System.Windows.Forms.Timer(this.components);
             this.pnlScreen = new System.Windows.Forms.Panel();
+            this.Bann = new System.Windows.Forms.PictureBox();
+            this.btnBanner = new System.Windows.Forms.Button();
             this.yeat = new System.Windows.Forms.PictureBox();
             this.button3 = new System.Windows.Forms.Button();
-            this.btnBanner = new System.Windows.Forms.Button();
-            this.Bann = new System.Windows.Forms.PictureBox();
             this.pnlSideBar.SuspendLayout();
             this.pnlUser.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbSettings)).BeginInit();
@@ -61,8 +61,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.btnSize)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnExit)).BeginInit();
             this.pnlScreen.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.yeat)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Bann)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yeat)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlSideBar
@@ -294,6 +294,34 @@
             this.pnlScreen.Size = new System.Drawing.Size(1043, 604);
             this.pnlScreen.TabIndex = 5;
             // 
+            // Bann
+            // 
+            this.Bann.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.Bann.Location = new System.Drawing.Point(141, 404);
+            this.Bann.Name = "Bann";
+            this.Bann.Size = new System.Drawing.Size(785, 188);
+            this.Bann.TabIndex = 12;
+            this.Bann.TabStop = false;
+            this.Bann.Visible = false;
+            // 
+            // btnBanner
+            // 
+            this.btnBanner.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.btnBanner.FlatAppearance.BorderSize = 0;
+            this.btnBanner.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnBanner.Font = new System.Drawing.Font("Bahnschrift SemiBold", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnBanner.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnBanner.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
+            this.btnBanner.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnBanner.Location = new System.Drawing.Point(414, 357);
+            this.btnBanner.Name = "btnBanner";
+            this.btnBanner.Size = new System.Drawing.Size(246, 41);
+            this.btnBanner.TabIndex = 11;
+            this.btnBanner.Text = "Mod Banner";
+            this.btnBanner.UseVisualStyleBackColor = false;
+            this.btnBanner.Visible = false;
+            this.btnBanner.Click += new System.EventHandler(this.btnBanner_Click);
+            // 
             // yeat
             // 
             this.yeat.BackColor = System.Drawing.SystemColors.MenuHighlight;
@@ -322,32 +350,6 @@
             this.button3.Visible = false;
             this.button3.Click += new System.EventHandler(this.button3_Click_1);
             // 
-            // btnBanner
-            // 
-            this.btnBanner.BackColor = System.Drawing.SystemColors.MenuHighlight;
-            this.btnBanner.FlatAppearance.BorderSize = 0;
-            this.btnBanner.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnBanner.Font = new System.Drawing.Font("Bahnschrift SemiBold", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnBanner.ForeColor = System.Drawing.Color.Gainsboro;
-            this.btnBanner.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
-            this.btnBanner.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnBanner.Location = new System.Drawing.Point(414, 357);
-            this.btnBanner.Name = "btnBanner";
-            this.btnBanner.Size = new System.Drawing.Size(246, 41);
-            this.btnBanner.TabIndex = 11;
-            this.btnBanner.Text = "Mod Banner";
-            this.btnBanner.UseVisualStyleBackColor = false;
-            this.btnBanner.Click += new System.EventHandler(this.btnBanner_Click);
-            // 
-            // Bann
-            // 
-            this.Bann.BackColor = System.Drawing.SystemColors.MenuHighlight;
-            this.Bann.Location = new System.Drawing.Point(141, 404);
-            this.Bann.Name = "Bann";
-            this.Bann.Size = new System.Drawing.Size(785, 188);
-            this.Bann.TabIndex = 12;
-            this.Bann.TabStop = false;
-            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -371,8 +373,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.btnSize)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnExit)).EndInit();
             this.pnlScreen.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.yeat)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Bann)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yeat)).EndInit();
             this.ResumeLayout(false);
 
         }
