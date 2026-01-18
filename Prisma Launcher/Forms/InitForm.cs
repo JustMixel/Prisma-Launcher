@@ -30,7 +30,7 @@ namespace Prisma_Launcher
 
         private void InitForm_Load(object sender, EventArgs e)
         {
-            if (Directory.Exists(AppPath.appDataPath))
+            if (Directory.Exists(AppHandle.appDataPath))
             {
                 logIn();
             }
@@ -46,7 +46,7 @@ namespace Prisma_Launcher
         private void openMain()
         {
             this.Hide();
-            frmMain frm = new frmMain(File.ReadAllText(AppPath.appDataPath + @"\userData.json"));
+            frmMain frm = new frmMain(File.ReadAllText(AppHandle.appDataPath + @"\userData.json"));
             frm.ShowDialog();
             this.Close();
         }
@@ -78,7 +78,7 @@ namespace Prisma_Launcher
         {
             if (tbName.Text != string.Empty)
             {
-                if (!Directory.Exists(AppPath.appDataPath))
+                if (!Directory.Exists(AppHandle.appDataPath))
                 {
                     generateCredentials();
                 }
@@ -97,17 +97,17 @@ namespace Prisma_Launcher
             user.User_Type = -1;
             //user.User_DevGroup = null;
 
-            Directory.CreateDirectory(AppPath.appDataPath);
+            Directory.CreateDirectory(AppHandle.appDataPath);
 
             string json = JsonConvert.SerializeObject(user, Formatting.Indented);
             var encryptionService = new EncryptionService("testing123");
             
             encryptedJson = encryptionService.Encrypt(json);
 
-            File.WriteAllText(AppPath.appDataPath + @"\userData.json", encryptedJson);
+            File.WriteAllText(AppHandle.appDataPath + @"\userData.json", encryptedJson);
 
             string decryptedJson = encryptionService.Decrypt(encryptedJson);
-            File.WriteAllText(AppPath.appDataPath + @"\decrpytedStuff.json", decryptedJson);   
+            File.WriteAllText(AppHandle.appDataPath + @"\decrpytedStuff.json", decryptedJson);   
             logIn();
         }
 

@@ -35,19 +35,19 @@
             this.lblModRelease = new System.Windows.Forms.Label();
             this.lblModTitle = new System.Windows.Forms.Label();
             this.midSquare2 = new System.Windows.Forms.Panel();
+            this.webView = new Microsoft.Web.WebView2.WinForms.WebView2();
             this.rightPanel = new System.Windows.Forms.Panel();
             this.btnDwnld = new System.Windows.Forms.Button();
             this.lblModSize = new System.Windows.Forms.Label();
             this.lblDevName = new System.Windows.Forms.Label();
             this.pbDev = new System.Windows.Forms.PictureBox();
-            this.webView = new Microsoft.Web.WebView2.WinForms.WebView2();
             this.pnlScreen.SuspendLayout();
             this.Banner.SuspendLayout();
             this.midSquare1.SuspendLayout();
             this.midSquare2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.webView)).BeginInit();
             this.rightPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbDev)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.webView)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlScreen
@@ -135,6 +135,18 @@
             this.midSquare2.Size = new System.Drawing.Size(785, 270);
             this.midSquare2.TabIndex = 12;
             // 
+            // webView
+            // 
+            this.webView.AllowExternalDrop = true;
+            this.webView.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.webView.CreationProperties = null;
+            this.webView.DefaultBackgroundColor = System.Drawing.Color.White;
+            this.webView.Location = new System.Drawing.Point(0, 0);
+            this.webView.Name = "webView";
+            this.webView.Size = new System.Drawing.Size(785, 270);
+            this.webView.TabIndex = 0;
+            this.webView.ZoomFactor = 1D;
+            // 
             // rightPanel
             // 
             this.rightPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(12)))), ((int)(((byte)(12)))), ((int)(((byte)(12)))));
@@ -162,6 +174,7 @@
             this.btnDwnld.TabIndex = 9;
             this.btnDwnld.Text = "Download";
             this.btnDwnld.UseVisualStyleBackColor = false;
+            this.btnDwnld.Click += new System.EventHandler(this.btnDwnld_Click);
             // 
             // lblModSize
             // 
@@ -197,18 +210,6 @@
             this.pbDev.TabIndex = 6;
             this.pbDev.TabStop = false;
             // 
-            // webView
-            // 
-            this.webView.AllowExternalDrop = true;
-            this.webView.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.webView.CreationProperties = null;
-            this.webView.DefaultBackgroundColor = System.Drawing.Color.White;
-            this.webView.Location = new System.Drawing.Point(0, 0);
-            this.webView.Name = "webView";
-            this.webView.Size = new System.Drawing.Size(785, 270);
-            this.webView.TabIndex = 0;
-            this.webView.ZoomFactor = 1D;
-            // 
             // sfrmModPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -225,10 +226,10 @@
             this.midSquare1.ResumeLayout(false);
             this.midSquare1.PerformLayout();
             this.midSquare2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.webView)).EndInit();
             this.rightPanel.ResumeLayout(false);
             this.rightPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbDev)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.webView)).EndInit();
             this.ResumeLayout(false);
 
         }

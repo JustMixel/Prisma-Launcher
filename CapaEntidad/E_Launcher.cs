@@ -27,6 +27,7 @@ namespace CapaEntidad
         public byte[] Mod_Picture { get; set; }
         public byte[] Mod_Banner { get; set; }
         public DateTime Mod_ReleaseYear { get; set; }
+        public float Mod_Size { get; set; }
     }
 
     public class UserDevGroup 

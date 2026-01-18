@@ -46,13 +46,15 @@ namespace CapaDatos
                         Mod_Link = dr["Mod_Link"].ToString(),
                         Mod_Picture = (byte[])dr["Mod_Picture"],
                         Mod_Banner = (byte[])dr["Mod_Banner"],
-                        Mod_ReleaseYear = dr.GetDateTime(9)
+                        Mod_ReleaseYear = dr.GetDateTime(9),
+                        Mod_Size = (float)dr.GetDecimal(10)
                     });
                 }
                 dr.Close();
             }
             return mod;
         }
+
 
         public Mod givePicture(Byte[] image, int ID) 
         {

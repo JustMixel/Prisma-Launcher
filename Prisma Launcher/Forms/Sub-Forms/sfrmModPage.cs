@@ -1,18 +1,25 @@
 ﻿using CapaEntidad;
+using CapaNegocio;
+using Markdig;
+using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Prisma_Studios_Launcher;
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Markdig;
-using CapaNegocio;
+using System.Xml.Linq;
 
 namespace Prisma_Launcher
 {
@@ -21,6 +28,7 @@ namespace Prisma_Launcher
         private Mod modTemplate = null;
         private User userTemplate = null;
         private N_Launcher objNegocio = null;
+        string path;
 
         public sfrmModPage(Mod mod/*, User developer*/)
         {
@@ -45,10 +53,10 @@ namespace Prisma_Launcher
             ///
                         //// MOD DESCRIPTION
 
-            var markdown = File.ReadAllText(AppPath.appDataPath + @"\modDesc.md");
+            var markdown = File.ReadAllText(AppHandle.appDataPath + @"\modDesc.md");
             var html = Markdown.ToHtml(markdown);
 
-            File.WriteAllText(AppPath.appDataPath + @"\html.html", html);
+            File.WriteAllText(AppHandle.appDataPath + @"\html.html", html);
             navigateHTML();
 
         }
@@ -75,7 +83,7 @@ namespace Prisma_Launcher
         {
             await webView.EnsureCoreWebView2Async(null);
 
-            webView.CoreWebView2.Navigate(AppPath.appDataPath + @"\Welcome.html");
+            webView.CoreWebView2.Navigate(AppHandle.appDataPath + @"\Welcome.html");
         }
 
         private void btnBack_Click(object sender, EventArgs e)
@@ -95,6 +103,86 @@ namespace Prisma_Launcher
             this.pnlScreen.Controls.Add(form);
             this.pnlScreen.Tag = form;
             form.Show();
+        }
+
+        // DOWNLOAD THE MOD
+        /*
+            FIRST  - FROM THE SELECTED PATH, PULL THE DISK UNIT AND CHECK IF THE USER HAS SPACE ENOUGH TO DOWNLOAD THE JUNK
+            SECOND - IF SO, CHECK IF A FOLDER OF 'PRISMA LAUNCHER MODS' EXISTS
+                ** IF NOT, CREATE IT **
+            THIRD  - IF ANY OF THE FOLDERS EXISTS, ASK THE USER ABOUT WHERE TO INSTALL IT
+            FOURTH - OBTAIN THE LINK FROM THE DB AND THEN DOWNLOAD THE FILES IN THE DESIRED BRANCH OF THE 'PRISMA LAUNCHER MODS' FOLDER
+            FIFTH  - EXTRACT THE FILES AND ADD THE MOD TO THE LIBRARY
+        */
+        private void btnDwnld_Click(object sender, EventArgs e)
+        {
+            try 
+            {
+                FolderBrowserDialog sfd = new FolderBrowserDialog();
+                if(sfd.ShowDialog() == DialogResult.OK) 
+                {                    
+                    path = sfd.SelectedPath;
+                    double diskSize = AppHandle.getDiskSpace(path.Substring(0, 3));                 
+                    diskSize = diskSize / 1024d / 1024 / 1024;
+                    Debug.WriteLine(Math.Round(diskSize, 1));
+
+                    // Round the MOD SIZE up and then compare it with the free space on disk
+                    double modSize = modTemplate.Mod_Size;
+                    modSize = Math.Ceiling(modSize);
+
+                    try 
+                    {
+
+                        if (diskSize > modSize)
+                        {
+                            if (!Directory.Exists(AppHandle.currentWorkshopFolder))
+                            {
+                                AppHandle.generateWorkshopFolder(path);
+                                downloadMod();
+                            }
+                            else
+                            {
+                                downloadMod();
+                            }
+                        }
+                        else 
+                        {
+                            // Make a pop-up appear saying that the user doesnt have enough space.
+                        }
+                    }
+                    catch 
+                    {
+
+                    }
+                }
+            }
+            catch 
+            {
+
+            } 
+        }
+
+       public async void downloadMod()
+       {
+            var downloader = new FileDownloader(timeoutSeconds: 600);
+            var progress = new Progress<DownloadProgress>(reporte => {
+                btnDwnld.Text = $"Descargando: {reporte.GetFormattedProgress()}";
+            });
+            var _cts = new CancellationTokenSource();
+
+            string modName = modTemplate.Mod_Name;
+            modName.Replace(":", "");
+            modName.Replace(@"\", "");
+            modName.Replace("/", "");
+            modName.Replace("*", "");
+            modName.Replace("?", "");
+            modName.Replace("<", "");
+            modName.Replace(">", "");
+            modName.Replace("|", "");
+
+            await downloader.DownloadFileAsync(modTemplate.Mod_Link, AppHandle.currentWorkshopFolder + $@"\{modName}.rar", progress, _cts.Token);
+
+            //await downloader.DownloadFileAsync(url, outputPath, progress, cts.Token);
         }
     }
 }

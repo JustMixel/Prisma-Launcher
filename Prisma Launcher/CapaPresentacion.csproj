@@ -98,9 +98,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\AppPath.cs" />
+    <Compile Include="Classes\AppHandle.cs" />
     <Compile Include="Classes\ConvertImage2D.cs" />
     <Compile Include="Classes\EncryptionService.cs" />
+    <Compile Include="Classes\FileDownloader.cs" />
     <Compile Include="Forms\Form1.cs">
       <SubType>Form</SubType>
     </Compile>
