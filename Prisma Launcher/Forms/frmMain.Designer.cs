@@ -52,6 +52,8 @@
             this.btnBanner = new System.Windows.Forms.Button();
             this.yeat = new System.Windows.Forms.PictureBox();
             this.button3 = new System.Windows.Forms.Button();
+            this.sds = new System.Windows.Forms.PictureBox();
+            this.btnPFP = new System.Windows.Forms.Button();
             this.pnlSideBar.SuspendLayout();
             this.pnlUser.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbSettings)).BeginInit();
@@ -63,6 +65,7 @@
             this.pnlScreen.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Bann)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.yeat)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.sds)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlSideBar
@@ -284,6 +287,8 @@
             // pnlScreen
             // 
             this.pnlScreen.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.pnlScreen.Controls.Add(this.btnPFP);
+            this.pnlScreen.Controls.Add(this.sds);
             this.pnlScreen.Controls.Add(this.Bann);
             this.pnlScreen.Controls.Add(this.btnBanner);
             this.pnlScreen.Controls.Add(this.yeat);
@@ -350,6 +355,35 @@
             this.button3.Visible = false;
             this.button3.Click += new System.EventHandler(this.button3_Click_1);
             // 
+            // sds
+            // 
+            this.sds.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.sds.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.sds.Location = new System.Drawing.Point(186, 236);
+            this.sds.Margin = new System.Windows.Forms.Padding(2);
+            this.sds.Name = "sds";
+            this.sds.Size = new System.Drawing.Size(75, 74);
+            this.sds.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.sds.TabIndex = 13;
+            this.sds.TabStop = false;
+            // 
+            // btnPFP
+            // 
+            this.btnPFP.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.btnPFP.FlatAppearance.BorderSize = 0;
+            this.btnPFP.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnPFP.Font = new System.Drawing.Font("Bahnschrift SemiBold", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnPFP.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnPFP.Image = global::Prisma_Launcher.Properties.Resources.add_mod;
+            this.btnPFP.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnPFP.Location = new System.Drawing.Point(103, 315);
+            this.btnPFP.Name = "btnPFP";
+            this.btnPFP.Size = new System.Drawing.Size(246, 41);
+            this.btnPFP.TabIndex = 14;
+            this.btnPFP.Text = "Profile Picture";
+            this.btnPFP.UseVisualStyleBackColor = false;
+            this.btnPFP.Click += new System.EventHandler(this.btnPFP_Click);
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -375,6 +409,7 @@
             this.pnlScreen.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.Bann)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.yeat)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.sds)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -405,6 +440,8 @@
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.PictureBox Bann;
         private System.Windows.Forms.Button btnBanner;
+        private System.Windows.Forms.PictureBox sds;
+        private System.Windows.Forms.Button btnPFP;
     }
 }
 

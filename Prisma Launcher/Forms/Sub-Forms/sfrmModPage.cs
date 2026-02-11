@@ -26,8 +26,8 @@ namespace Prisma_Launcher
     public partial class sfrmModPage : Form
     {
         private Mod modTemplate = null;
-        private User userTemplate = null;
-        private N_Launcher objNegocio = null;       
+        //private User userTemplate = null;
+        private N_Launcher objNegocio = new N_Launcher();           
         string path;
 
         // DOWNLOADER VARS
@@ -35,11 +35,10 @@ namespace Prisma_Launcher
         private FileDownloader _downloader;
         private bool isModDownloading = false;
 
-        public sfrmModPage(Mod mod/*, User developer*/)
+        public sfrmModPage(Mod mod)
         {
             InitializeComponent();
             this.modTemplate = mod;
-            //this.userTemplate = developer;
             lblModTitle.BackColor = Color.Transparent;
             lblModRelease.BackColor = Color.Transparent;
             lblModSize.Text = $"Size: {modTemplate.Mod_Size} GB";
@@ -50,10 +49,16 @@ namespace Prisma_Launcher
             lblDevName.BackColor = Color.Transparent;
             lblModSize.BackColor = Color.Transparent;
 
-            //Image userPic = ConvertImage2D.ByteArrayToImage(developer.User_Picture);
 
-            //pbDev.Image = userPic;
+            //// MOD CREATOR DATA
+            UserDevGroup developer = objNegocio.getDev(modTemplate.Mod_ID);
+
+            // Profile Picture Management
+            pbDev.Image = (developer.userPicture == null) ? pbDev.Image = Properties.Resources.unkUser /*false - default pfp*/ : pbDev.Image = ConvertImage2D.ByteArrayToImage(developer.userPicture); /*true - get picture from byte array*/
             pbDev.Region = ConvertImage2D.GetRoundedImage(pbDev);
+
+            // Show name
+            lblDevName.Text = developer.userName;
             /////////////
             ///
                         //// MOD DESCRIPTION

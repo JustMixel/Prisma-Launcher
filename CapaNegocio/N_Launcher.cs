@@ -20,10 +20,22 @@ namespace CapaNegocio
         {
             return objDatos.getMod(name);
         }
+
+        public UserDevGroup getDev(int ID)
+        {
+            return objDatos.getDev(ID);
+        }
+
         public Mod givePicture(byte[] image, int ID)
         {
             return objDatos.givePicture(image, ID);
         }
+
+        public User givePFP(byte[] image, int ID)
+        {
+            return objDatos.givePFP(image, ID);
+        }
+
         public Mod giveBanner(byte[] image, int ID)
         {
             return objDatos.giveBanner(image, ID);

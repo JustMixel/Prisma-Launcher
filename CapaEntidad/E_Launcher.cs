@@ -33,6 +33,7 @@ namespace CapaEntidad
     public class UserDevGroup 
     {
         public string userName { get; set; }
+        public byte[] userPicture { get; set; }
         public string userGroup { get; set; }
         public string userRole { get; set; }
     }

@@ -254,5 +254,19 @@ namespace Prisma_Launcher
                 sexo.giveBanner(carajo, 1);
             }
         }
+
+        private void btnPFP_Click(object sender, EventArgs e)
+        {
+            N_Launcher sexo = new N_Launcher();
+
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "Select a picture";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                sds.Image = Image.FromFile(ofd.FileName);
+                byte[] carajo = ConvertImage2D.ImageToByteArray(sds.Image);
+                sexo.givePFP(carajo, 2);
+            }
+        }
     }
 }

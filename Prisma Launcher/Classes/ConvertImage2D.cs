@@ -25,6 +25,7 @@ namespace Prisma_Studios_Launcher
             imageIn.Save(ms, ImageFormat.Png);
             return ms.ToArray();
         }
+
         public static Region GetRoundedImage(PictureBox pfp)
         {
             GraphicsPath path = new GraphicsPath();
