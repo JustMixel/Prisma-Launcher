@@ -139,6 +139,32 @@ namespace CapaDatos
             return null;
         }
 
+        public Mod updateDesc(int ID, string content)
+        {
+            using (SqlConnection conn = new SqlConnection(_db))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("SP_UPDATEDESC", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@ID", ID);
+                    cmd.Parameters.AddWithValue("@CONTENT", content);
+
+                    cmd.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    if (ex.Number == 40 || ex.Number == 18456)
+                    {
+                        MessageBox.Show("There has been an issued connecting to the server.");
+                    }
+                }
+            }
+            return null;
+        }
+
         public Mod giveBanner(Byte[] image, int ID)
         {
             using (SqlConnection conn = new SqlConnection(_db))

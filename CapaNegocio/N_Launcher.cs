@@ -40,5 +40,10 @@ namespace CapaNegocio
         {
             return objDatos.giveBanner(image, ID);
         }
+
+        public Mod updateDesc(int ID, string content)
+        {
+            return objDatos.updateDesc(ID, content);
+        }
     }
 }

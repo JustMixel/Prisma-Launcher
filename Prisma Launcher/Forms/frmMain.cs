@@ -12,6 +12,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
@@ -214,6 +215,10 @@ namespace Prisma_Launcher
         {
             newForm(new sfrmStore());
         }
+        private void btnLibr_Click(object sender, EventArgs e)
+        {
+            newForm(new sfrmLibrary());
+        }
 
         // QUICK FEATURE - CHANGE PFP
         private void pbUser_DoubleClick(object sender, EventArgs e)
@@ -267,6 +272,15 @@ namespace Prisma_Launcher
                 byte[] carajo = ConvertImage2D.ImageToByteArray(sds.Image);
                 sexo.givePFP(carajo, 2);
             }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            N_Launcher sexo = new N_Launcher();
+            string HTML =
+                "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n  <meta charset=\"utf-8\">\r\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n  <title>Welcome file</title>\r\n  <link rel=\"stylesheet\" href=\"https://stackedit.io/style.css\" />\r\n\r\n  <style>\r\n    html, body {\r\n      background-color: rgb(24, 24, 24) !important;\r\n      color: #e0e0e0;\r\n    }\r\n\r\n    .stackedit {\r\n      background-color: rgb(24, 24, 24) !important;\r\n    }\r\n\r\n    .stackedit__html {\r\n      background-color: rgb(24, 24, 24) !important;\r\n    }\r\n  </style>\r\n</head>\r\n\r\n<body class=\"stackedit\">\r\n  <div class=\"stackedit__html\">\r\n    <h1>Sinopsis</h1>\r\n    <p>Día 12 de Abril, del año 2011:</p>\r\n    <p>Los criminales Nick Redfield, Aaron Crossley y Tyler Wilson acuerdan ir a Los Santos para efectuar un trato con unos traficantes; luego de que el trato fuera una farsa, Aaron contacta con un amigo que los ayudaría a ganar dinero. Lo que no sabían, es que lentamente iban hacia su propia perdición.</p>\r\n    <p>Experimenta la historia de The Empire desde la perspectiva de Nick Redfield, y observa como a medida que va subiendo la cantidad de sangre derramada en sus manos, también aumenta su deseo por el dinero.</p>\r\n\r\n    <h1>Actualizaciones</h1>\r\n    <h3><strong>v1.4.1</strong></h3>\r\n    <p>Esta versión contiene mejoras y varios cambios comparada a la <strong>Standard Edition v1.3</strong>. Se agregaron características y se hicieron correcciones a varias misiones.</p>\r\n\r\n    <h3><strong>Patch Notes (v1.4.1)</strong></h3>\r\n    <ul>\r\n      <li>El coche de policía de LS fue cambiado</li>\r\n      <li>Se modificó un segmento en “Merchandise On The Run”</li>\r\n      <li>Se ha reformulado el sistema del 100%</li>\r\n      <li>Se revisó y fortaleció la estructura de algunas misiones</li>\r\n      <li>Ahora el monólogo al inicio del juego es saltable</li>\r\n    </ul>\r\n\r\n    <p><strong>Advertencia: Si usas Windows 11, es MUY PROBABLE que encuentres errores debido a incompatibilidades con archivos .asi.</strong></p>\r\n  </div>\r\n</body>\r\n</html>";
+            sexo.updateDesc(2, HTML);
+            
         }
     }
 }

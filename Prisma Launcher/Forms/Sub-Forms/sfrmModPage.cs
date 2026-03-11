@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -46,34 +47,36 @@ namespace Prisma_Launcher
                For the dev name maybe we can implement a way to show 2 names. One is the singular dev name, and the other one is the development group,
                the creator can choose wether to display one of those
             */
-            lblDevName.BackColor = Color.Transparent;
+            /*lblDevName.BackColor = Color.Transparent;
+            lblDevName.TextAlign = ContentAlignment.MiddleCenter;
+            lblDevName.AutoSize = false;*/
+
             lblModSize.BackColor = Color.Transparent;
 
 
             //// MOD CREATOR DATA
-            UserDevGroup developer = objNegocio.getDev(modTemplate.Mod_ID);
+            //UserDevGroup developer = objNegocio.getDev(modTemplate.Mod_ID);
 
             // Profile Picture Management
-            pbDev.Image = (developer.userPicture == null) ? pbDev.Image = Properties.Resources.unkUser /*false - default pfp*/ : pbDev.Image = ConvertImage2D.ByteArrayToImage(developer.userPicture); /*true - get picture from byte array*/
-            pbDev.Region = ConvertImage2D.GetRoundedImage(pbDev);
+            //pbDev.Image = (developer.userPicture == null) ? pbDev.Image = Properties.Resources.unkUser /*false - default pfp*/ : pbDev.Image = ConvertImage2D.ByteArrayToImage(developer.userPicture); /*true - get picture from byte array*/
+            //pbDev.Region = ConvertImage2D.GetRoundedImage(pbDev);
 
             // Show name
-            lblDevName.Text = developer.userName;
+            //lblDevName.Text = developer.userName;
             /////////////
             ///
                         //// MOD DESCRIPTION
 
-            var markdown = File.ReadAllText(AppHandle.appDataPath + @"\modDesc.md");
-            var html = Markdown.ToHtml(markdown);
+            var html = modTemplate.Mod_Desc;
 
-            File.WriteAllText(AppHandle.appDataPath + @"\html.html", html);
-            navigateHTML();
+            /*File.WriteAllText(AppHandle.appDataPath + @"\html.html", html);
+            navigateHTML();*/
 
         }
-        private void sfrmModPage_Load(object sender, EventArgs e)
+        private async void sfrmModPage_Load(object sender, EventArgs e)
         {
             lblModTitle.Text = modTemplate.Mod_Name;
-            lblDevName.Text = modTemplate.Mod_Dev;
+            //lblDevName.Text = modTemplate.Mod_Dev;
             //rtbContent.Text = modTemplate.Mod_Desc;
             DateTime modYear = modTemplate.Mod_ReleaseYear;
             lblModRelease.Text = modYear.Year.ToString();
@@ -87,13 +90,18 @@ namespace Prisma_Launcher
 
             File.WriteAllText(AppPath.appDataPath + @"\html.html", html);
             navigateHTML();*/
+
+            await webView.EnsureCoreWebView2Async(null);
+            webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+            webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
+            webView.NavigateToString(modTemplate.Mod_Desc);
         }
 
         private async Task navigateHTML()
         {
             await webView.EnsureCoreWebView2Async(null);
 
-            webView.CoreWebView2.Navigate(AppHandle.appDataPath + @"\Welcome.html");
+            webView.CoreWebView2.NavigateToString(modTemplate.Mod_Desc);
         }
 
         private void btnBack_Click(object sender, EventArgs e)
@@ -219,7 +227,7 @@ namespace Prisma_Launcher
                 btnDwnld.Text = $"Extrayendo: {p.GetFormattedProgress()}";
             });
 
-            // ... tu código de limpieza del nombre ...
+            // Limpia el nombre para quitar caracteres invalidos para Windows
             Char[] symbols = { ':', '\'', '/', '*', '?', '<', '>', '|', ' ' };
             string modName = modTemplate.Mod_Name;
             for (int i = 0; i < symbols.Length; i++)
@@ -251,10 +259,37 @@ namespace Prisma_Launcher
                     cancellationToken: _cts.Token
                 );
 
-                // PLAY
+                // Updates the button to PLAY
                 btnDwnld.Text = "PLAY";
                 btnDwnld.BackColor = Color.Green;
                 btnDwnld.Image = Properties.Resources.play_ico;
+                btnCancel.Visible = false;
+
+                // Registers the mod in the Library
+
+                try
+                {
+                    if(modTemplate != null)
+                    {
+                        Random idGenerator = new Random();
+                        Mod Mod = new Mod
+                        {
+                            Mod_Name = modTemplate.Mod_Name,
+                            Mod_Desc = modTemplate.Mod_Desc,
+                            Mod_Picture = modTemplate.Mod_Picture,
+                            Mod_Dev = modTemplate.Mod_Dev,
+                            Mod_Route = path + @"\gta_sa.exe",
+                            Mod_Size = modTemplate.Mod_Size,
+                            Mod_ID = idGenerator.Next(10000, 99999),
+                            Mod_Logo = modTemplate.Mod_Logo
+                        };
+                        LibraryJsonHandler.registerNewMod(Mod);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // modTemplate is null or not valid 
+                }
             }
             catch (TaskCanceledException)
             {
@@ -274,6 +309,7 @@ namespace Prisma_Launcher
             finally
             {
                 isModDownloading = false;
+                btnCancel.Visible = false;
                 _downloader?.Dispose();
                 _cts?.Dispose();
                 _downloader = null;

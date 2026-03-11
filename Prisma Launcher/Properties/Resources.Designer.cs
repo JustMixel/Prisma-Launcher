@@ -83,6 +83,16 @@ namespace Prisma_Launcher.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap bkg {
+            get {
+                object obj = ResourceManager.GetObject("bkg", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap cancel_ico {
             get {
                 object obj = ResourceManager.GetObject("cancel_ico", resourceCulture);
@@ -176,6 +186,16 @@ namespace Prisma_Launcher.Properties {
         internal static System.Drawing.Bitmap resum_ico {
             get {
                 object obj = ResourceManager.GetObject("resum_ico", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap STEL3 {
+            get {
+                object obj = ResourceManager.GetObject("STEL3", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

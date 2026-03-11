@@ -116,6 +116,7 @@
     <Compile Include="Classes\ConvertImage2D.cs" />
     <Compile Include="Classes\EncryptionService.cs" />
     <Compile Include="Classes\FileDownloader.cs" />
+    <Compile Include="Classes\LibraryJsonHandler.cs" />
     <Compile Include="Forms\Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -134,11 +135,23 @@
     <Compile Include="Forms\InitForm.Designer.cs">
       <DependentUpon>InitForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\Sub-Forms\ModLibraryInterfaces\sfrmModPlayPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Sub-Forms\ModLibraryInterfaces\sfrmModPlayPage.Designer.cs">
+      <DependentUpon>sfrmModPlayPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\Sub-Forms\sfrmModPage.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\Sub-Forms\sfrmModPage.Designer.cs">
       <DependentUpon>sfrmModPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Sub-Forms\ModLibraryInterfaces\sfrmModLibrary.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Sub-Forms\ModLibraryInterfaces\sfrmModLibrary.Designer.cs">
+      <DependentUpon>sfrmModLibrary.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\Sub-Forms\sfrmStore.cs">
       <SubType>Form</SubType>
@@ -163,8 +176,14 @@
     <EmbeddedResource Include="Forms\InitForm.resx">
       <DependentUpon>InitForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Sub-Forms\ModLibraryInterfaces\sfrmModPlayPage.resx">
+      <DependentUpon>sfrmModPlayPage.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\Sub-Forms\sfrmModPage.resx">
       <DependentUpon>sfrmModPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Sub-Forms\ModLibraryInterfaces\sfrmModLibrary.resx">
+      <DependentUpon>sfrmModLibrary.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\Sub-Forms\sfrmStore.resx">
       <DependentUpon>sfrmStore.cs</DependentUpon>
@@ -241,6 +260,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="logon.ico" />
+    <None Include="Resources\STEL3.png" />
+    <None Include="Resources\SC1.png" />
     <None Include="Resources\cancel_ico.png" />
     <None Include="Resources\resum_ico.png" />
     <None Include="Resources\play_ico.png" />

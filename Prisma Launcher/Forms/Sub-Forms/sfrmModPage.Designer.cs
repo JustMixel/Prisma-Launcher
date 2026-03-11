@@ -37,11 +37,11 @@
             this.midSquare2 = new System.Windows.Forms.Panel();
             this.webView = new Microsoft.Web.WebView2.WinForms.WebView2();
             this.rightPanel = new System.Windows.Forms.Panel();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.btnDwnld = new System.Windows.Forms.Button();
             this.lblModSize = new System.Windows.Forms.Label();
             this.lblDevName = new System.Windows.Forms.Label();
             this.pbDev = new System.Windows.Forms.PictureBox();
-            this.btnCancel = new System.Windows.Forms.Button();
             this.pnlScreen.SuspendLayout();
             this.Banner.SuspendLayout();
             this.midSquare1.SuspendLayout();
@@ -78,6 +78,7 @@
             // btnBack
             // 
             this.btnBack.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
+            this.btnBack.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnBack.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnBack.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnBack.ForeColor = System.Drawing.Color.Gainsboro;
@@ -162,10 +163,27 @@
             this.rightPanel.Size = new System.Drawing.Size(258, 604);
             this.rightPanel.TabIndex = 11;
             // 
+            // btnCancel
+            // 
+            this.btnCancel.BackColor = System.Drawing.Color.Maroon;
+            this.btnCancel.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnCancel.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCancel.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnCancel.Location = new System.Drawing.Point(199, 505);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(35, 32);
+            this.btnCancel.TabIndex = 12;
+            this.btnCancel.Text = "x";
+            this.btnCancel.UseVisualStyleBackColor = false;
+            this.btnCancel.Visible = false;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            // 
             // btnDwnld
             // 
             this.btnDwnld.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.btnDwnld.BackColor = System.Drawing.Color.Green;
+            this.btnDwnld.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnDwnld.FlatAppearance.BorderColor = System.Drawing.Color.Gainsboro;
             this.btnDwnld.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnDwnld.Font = new System.Drawing.Font("Bahnschrift", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -209,26 +227,13 @@
             // pbDev
             // 
             this.pbDev.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(140)))), ((int)(((byte)(0)))), ((int)(((byte)(35)))));
+            this.pbDev.Cursor = System.Windows.Forms.Cursors.Hand;
             this.pbDev.Location = new System.Drawing.Point(67, 25);
             this.pbDev.Name = "pbDev";
             this.pbDev.Size = new System.Drawing.Size(128, 128);
+            this.pbDev.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbDev.TabIndex = 6;
             this.pbDev.TabStop = false;
-            // 
-            // btnCancel
-            // 
-            this.btnCancel.BackColor = System.Drawing.Color.Maroon;
-            this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnCancel.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnCancel.ForeColor = System.Drawing.Color.Gainsboro;
-            this.btnCancel.Location = new System.Drawing.Point(199, 505);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(35, 32);
-            this.btnCancel.TabIndex = 12;
-            this.btnCancel.Text = "x";
-            this.btnCancel.UseVisualStyleBackColor = false;
-            this.btnCancel.Visible = false;
-            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // sfrmModPage
             // 
