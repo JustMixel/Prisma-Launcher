@@ -47,22 +47,22 @@ namespace Prisma_Launcher
                For the dev name maybe we can implement a way to show 2 names. One is the singular dev name, and the other one is the development group,
                the creator can choose wether to display one of those
             */
-            /*lblDevName.BackColor = Color.Transparent;
+            lblDevName.BackColor = Color.Transparent;
             lblDevName.TextAlign = ContentAlignment.MiddleCenter;
-            lblDevName.AutoSize = false;*/
+            lblDevName.AutoSize = false;
 
             lblModSize.BackColor = Color.Transparent;
 
 
             //// MOD CREATOR DATA
-            //UserDevGroup developer = objNegocio.getDev(modTemplate.Mod_ID);
+            UserDevGroup developer = objNegocio.getDev(modTemplate.Mod_ID);
 
             // Profile Picture Management
-            //pbDev.Image = (developer.userPicture == null) ? pbDev.Image = Properties.Resources.unkUser /*false - default pfp*/ : pbDev.Image = ConvertImage2D.ByteArrayToImage(developer.userPicture); /*true - get picture from byte array*/
-            //pbDev.Region = ConvertImage2D.GetRoundedImage(pbDev);
+            pbDev.Image = (developer.userPicture == null) ? pbDev.Image = Properties.Resources.unkUser /*false - default pfp*/ : pbDev.Image = ConvertImage2D.ByteArrayToImage(developer.userPicture); /*true - get picture from byte array*/
+            pbDev.Region = ConvertImage2D.GetRoundedImage(pbDev);
 
             // Show name
-            //lblDevName.Text = developer.userName;
+            lblDevName.Text = developer.userName;
             /////////////
             ///
                         //// MOD DESCRIPTION
@@ -76,16 +76,16 @@ namespace Prisma_Launcher
         private async void sfrmModPage_Load(object sender, EventArgs e)
         {
             lblModTitle.Text = modTemplate.Mod_Name;
-            //lblDevName.Text = modTemplate.Mod_Dev;
+            lblDevName.Text = modTemplate.Mod_Dev;
             //rtbContent.Text = modTemplate.Mod_Desc;
             DateTime modYear = modTemplate.Mod_ReleaseYear;
             lblModRelease.Text = modYear.Year.ToString();
             byte[] bannerImage = modTemplate.Mod_Banner;
             Banner.BackgroundImage = ConvertImage2D.ByteArrayToImage(bannerImage);
 
-            /*//// MOD DESCRIPTION
+            //// MOD DESCRIPTION
 
-            var markdown = File.ReadAllText(AppPath.appDataPath + @"\modDesc.md");
+            /*var markdown = File.ReadAllText(AppPath.appDataPath + @"\modDesc.md");
             var html = Markdown.ToHtml(markdown);
 
             File.WriteAllText(AppPath.appDataPath + @"\html.html", html);

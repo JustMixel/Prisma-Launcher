@@ -29,9 +29,9 @@
         private void InitializeComponent()
         {
             this.pnlScreen = new System.Windows.Forms.Panel();
-            this.lblDevData = new System.Windows.Forms.Label();
-            this.btnBack = new System.Windows.Forms.Button();
             this.pbModLogo = new System.Windows.Forms.PictureBox();
+            this.btnBack = new System.Windows.Forms.Button();
+            this.lblDevData = new System.Windows.Forms.Label();
             this.btnPlay = new System.Windows.Forms.Button();
             this.Portrait = new System.Windows.Forms.PictureBox();
             this.pnlScreen.SuspendLayout();
@@ -53,16 +53,15 @@
             this.pnlScreen.Size = new System.Drawing.Size(1043, 604);
             this.pnlScreen.TabIndex = 12;
             // 
-            // lblDevData
+            // pbModLogo
             // 
-            this.lblDevData.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.lblDevData.AutoSize = true;
-            this.lblDevData.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.lblDevData.Location = new System.Drawing.Point(515, 553);
-            this.lblDevData.Name = "lblDevData";
-            this.lblDevData.Size = new System.Drawing.Size(35, 13);
-            this.lblDevData.TabIndex = 11;
-            this.lblDevData.Text = "TEXT";
+            this.pbModLogo.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.pbModLogo.Location = new System.Drawing.Point(119, 139);
+            this.pbModLogo.Name = "pbModLogo";
+            this.pbModLogo.Size = new System.Drawing.Size(823, 343);
+            this.pbModLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pbModLogo.TabIndex = 14;
+            this.pbModLogo.TabStop = false;
             // 
             // btnBack
             // 
@@ -79,15 +78,18 @@
             this.btnBack.UseVisualStyleBackColor = false;
             this.btnBack.Click += new System.EventHandler(this.btnBack_Click);
             // 
-            // pbModLogo
+            // lblDevData
             // 
-            this.pbModLogo.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.pbModLogo.Location = new System.Drawing.Point(186, 146);
-            this.pbModLogo.Name = "pbModLogo";
-            this.pbModLogo.Size = new System.Drawing.Size(705, 317);
-            this.pbModLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pbModLogo.TabIndex = 14;
-            this.pbModLogo.TabStop = false;
+            this.lblDevData.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.lblDevData.AutoSize = true;
+            this.lblDevData.Font = new System.Drawing.Font("Bahnschrift", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblDevData.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.lblDevData.Location = new System.Drawing.Point(505, 553);
+            this.lblDevData.Name = "lblDevData";
+            this.lblDevData.Size = new System.Drawing.Size(35, 16);
+            this.lblDevData.TabIndex = 11;
+            this.lblDevData.Text = "TEXT";
+            this.lblDevData.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // btnPlay
             // 
@@ -99,14 +101,15 @@
             this.btnPlay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnPlay.Font = new System.Drawing.Font("Bahnschrift", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnPlay.ForeColor = System.Drawing.Color.Gainsboro;
-            this.btnPlay.Image = global::Prisma_Launcher.Properties.Resources.play_ico;
+            this.btnPlay.Image = global::Prisma_Launcher.Properties.Resources.resum_ico;
             this.btnPlay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnPlay.Location = new System.Drawing.Point(430, 507);
+            this.btnPlay.Location = new System.Drawing.Point(422, 507);
             this.btnPlay.Name = "btnPlay";
             this.btnPlay.Size = new System.Drawing.Size(206, 43);
             this.btnPlay.TabIndex = 10;
-            this.btnPlay.Text = "Play";
+            this.btnPlay.Text = "Start";
             this.btnPlay.UseVisualStyleBackColor = false;
+            this.btnPlay.Click += new System.EventHandler(this.btnPlay_Click);
             // 
             // Portrait
             // 
