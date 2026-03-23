@@ -50,7 +50,13 @@ namespace CapaDatos
                             Mod_Picture = (byte[])dr["Mod_Picture"],
                             Mod_Banner = (byte[])dr["Mod_Banner"],
                             Mod_ReleaseYear = dr.GetDateTime(9),
-                            Mod_Size = (float)dr.GetDecimal(10)
+                            Mod_Size = (float)dr.GetDecimal(10),
+                            Mod_Portrait1 = (byte[])dr["Mod_Portrait1"],
+                            Mod_Portrait2 = (byte[])dr["Mod_Portrait2"],
+                            Mod_Portrait3 = (byte[])dr["Mod_Portrait3"],
+                            Mod_Executable = dr["Mod_Executable"].ToString(),
+                            Mod_Status = dr.GetInt32(12),
+                            Mod_DOR = dr.GetDateTime(13),
                         });
                     }
                     dr.Close();

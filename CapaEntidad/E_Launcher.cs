@@ -26,10 +26,15 @@ namespace CapaEntidad
         public string Mod_Link { get; set; }
         public byte[] Mod_Picture { get; set; }
         public byte[] Mod_Banner { get; set; }
+        public byte[] Mod_Portrait1 { get; set; }
+        public byte[] Mod_Portrait2 { get; set; }
+        public byte[] Mod_Portrait3 { get; set; }
         public DateTime Mod_ReleaseYear { get; set; }
         public float Mod_Size { get; set; }
-        public string Mod_Route { get; set; }
-
+        public string Mod_Route { get; set; }   // THIS ONE IS USED LOCALLY TO REGISTER THE PATH TO THE MOD EXECUTABLE
+        public string Mod_Executable { get; set; }
+        public int Mod_Status { get; set; }
+        public DateTime Mod_DOR { get; set; }
     }
 
     public class UserDevGroup 

@@ -42,7 +42,6 @@ namespace Prisma_Launcher
         {
             // Read the JSON BOY!!!
             string json = File.ReadAllText(AppHandle.appDataPath + @"\gameLibrary.json");
-
             Dictionary<string, Mod> mods = JsonConvert.DeserializeObject<Dictionary<string, Mod>>(json);
 
             foreach (var mod in mods) 
@@ -79,12 +78,16 @@ namespace Prisma_Launcher
         {
             uc_mod_store_item item = (uc_mod_store_item)sender;
             item.BackColor = SystemColors.ControlDark; // Efecto hover
+            item.Width += 25;
+            item.Height += 25;
         }
 
         private void StoreItem_MouseLeave(object sender, EventArgs e)
         {
             uc_mod_store_item item = (uc_mod_store_item)sender;
             item.BackColor = Color.Transparent;
+            item.Width -= 25;
+            item.Height -= 25;
         }
 
         // Refresh the mod list after changes in the text box

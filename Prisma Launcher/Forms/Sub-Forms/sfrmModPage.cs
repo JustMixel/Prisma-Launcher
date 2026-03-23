@@ -97,13 +97,6 @@ namespace Prisma_Launcher
             webView.NavigateToString(modTemplate.Mod_Desc);
         }
 
-        private async Task navigateHTML()
-        {
-            await webView.EnsureCoreWebView2Async(null);
-
-            webView.CoreWebView2.NavigateToString(modTemplate.Mod_Desc);
-        }
-
         private void btnBack_Click(object sender, EventArgs e)
         {
             newForm(new sfrmStore());
@@ -271,17 +264,19 @@ namespace Prisma_Launcher
                 {
                     if(modTemplate != null)
                     {
-                        Random idGenerator = new Random();
                         Mod Mod = new Mod
                         {
                             Mod_Name = modTemplate.Mod_Name,
                             Mod_Desc = modTemplate.Mod_Desc,
                             Mod_Picture = modTemplate.Mod_Picture,
                             Mod_Dev = modTemplate.Mod_Dev,
-                            Mod_Route = path + @"\gta_sa.exe",
+                            Mod_Route = path + @"\" + modTemplate.Mod_Executable,
                             Mod_Size = modTemplate.Mod_Size,
-                            Mod_ID = idGenerator.Next(10000, 99999),
-                            Mod_Logo = modTemplate.Mod_Logo
+                            Mod_ID = modTemplate.Mod_ID,
+                            Mod_Logo = modTemplate.Mod_Logo,
+                            Mod_Portrait1 = modTemplate.Mod_Portrait1,
+                            Mod_Portrait2 = modTemplate.Mod_Portrait2,
+                            Mod_Portrait3 = modTemplate.Mod_Portrait3,
                         };
                         LibraryJsonHandler.registerNewMod(Mod);
                     }

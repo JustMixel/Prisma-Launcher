@@ -80,6 +80,7 @@ namespace Prisma_Launcher
             form.Dock = DockStyle.Fill;
             this.pnlScreen.Controls.Add(form);
             this.pnlScreen.Tag = form;
+            form.BringToFront();
             form.Show();
         }
         private void updateCredentials()

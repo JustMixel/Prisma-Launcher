@@ -66,11 +66,8 @@ namespace Prisma_Launcher
             uc_mod_store_item clickedItem = (uc_mod_store_item)sender;
             Mod mod = (Mod)clickedItem.Tag; // Recuperar el mod
 
-            /*N_Launcher objNegocio = new N_Launcher();
-            Mod devve = objNegocio.getMods(search); // Traeme al desarrollador*/
-
             // O abrir detalles, instalar, etc.
-            newForm(new sfrmModPage(mod/*, devve*/));
+            newForm(new sfrmModPage(mod));
         }
  
         private void StoreItem_MouseEnter(object sender, EventArgs e)

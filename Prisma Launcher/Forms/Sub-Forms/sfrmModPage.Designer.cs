@@ -42,6 +42,8 @@
             this.lblModSize = new System.Windows.Forms.Label();
             this.lblDevName = new System.Windows.Forms.Label();
             this.pbDev = new System.Windows.Forms.PictureBox();
+            this.starsRating = new Bunifu.Framework.UI.BunifuRating();
+            this.lblDownloads = new System.Windows.Forms.Label();
             this.pnlScreen.SuspendLayout();
             this.Banner.SuspendLayout();
             this.midSquare1.SuspendLayout();
@@ -152,6 +154,8 @@
             // rightPanel
             // 
             this.rightPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(12)))), ((int)(((byte)(12)))), ((int)(((byte)(12)))));
+            this.rightPanel.Controls.Add(this.lblDownloads);
+            this.rightPanel.Controls.Add(this.starsRating);
             this.rightPanel.Controls.Add(this.btnCancel);
             this.rightPanel.Controls.Add(this.btnDwnld);
             this.rightPanel.Controls.Add(this.lblModSize);
@@ -235,6 +239,27 @@
             this.pbDev.TabIndex = 6;
             this.pbDev.TabStop = false;
             // 
+            // starsRating
+            // 
+            this.starsRating.BackColor = System.Drawing.Color.Transparent;
+            this.starsRating.ForeColor = System.Drawing.Color.DarkGoldenrod;
+            this.starsRating.Location = new System.Drawing.Point(28, 423);
+            this.starsRating.Name = "starsRating";
+            this.starsRating.Size = new System.Drawing.Size(212, 40);
+            this.starsRating.TabIndex = 13;
+            this.starsRating.Value = 0;
+            // 
+            // lblDownloads
+            // 
+            this.lblDownloads.AutoSize = true;
+            this.lblDownloads.Font = new System.Drawing.Font("Bahnschrift", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblDownloads.ForeColor = System.Drawing.Color.Gainsboro;
+            this.lblDownloads.Location = new System.Drawing.Point(80, 265);
+            this.lblDownloads.Name = "lblDownloads";
+            this.lblDownloads.Size = new System.Drawing.Size(105, 19);
+            this.lblDownloads.TabIndex = 14;
+            this.lblDownloads.Text = "DOWNLOADS";
+            // 
             // sfrmModPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -274,5 +299,7 @@
         private System.Windows.Forms.Button btnDwnld;
         private Microsoft.Web.WebView2.WinForms.WebView2 webView;
         private System.Windows.Forms.Button btnCancel;
+        private Bunifu.Framework.UI.BunifuRating starsRating;
+        private System.Windows.Forms.Label lblDownloads;
     }
 }

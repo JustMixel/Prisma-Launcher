@@ -42,7 +42,8 @@ namespace Prisma_Launcher
             lblDevData.Dock = DockStyle.Bottom;         
             lblDevData.Height = 90;
 
-            Portrait.Image = Properties.Resources.bkg;
+
+            Portrait.Image = ConvertImage2D.ByteArrayToImage(overflow.Mod_Portrait1);
             pbModLogo.Image = Properties.Resources.STEL3;
             pbModLogo.Parent = Portrait;
             pbModLogo.BackColor = Color.Transparent;
@@ -60,11 +61,6 @@ namespace Prisma_Launcher
             this.pnlScreen.Controls.Add(form);
             this.pnlScreen.Tag = form;
             form.Show();
-        }
-
-        private async void sfrmModPage_Load(object sender, EventArgs e)
-        {
-
         }
 
         private void btnBack_Click(object sender, EventArgs e)
@@ -125,6 +121,28 @@ namespace Prisma_Launcher
                     btnPlay.Text = "Stop";
                     break;
             }
+        }
+
+        ////////////////////////////////////////////////////////////////
+        ///                         BUTTONS
+        ////////////////////////////////////////////////////////////////
+        private void btnMain_Click(object sender, EventArgs e)
+        {
+            Portrait.Image = ConvertImage2D.ByteArrayToImage(overflow.Mod_Portrait1);
+            btnMain.Enabled = false;
+            //newForm(new );
+        }
+
+        private void btnStats_Click(object sender, EventArgs e)
+        {
+            Portrait.Image = ConvertImage2D.ByteArrayToImage(overflow.Mod_Portrait2);
+            //newForm(new );
+        }
+
+        private void btnTrophy_Click(object sender, EventArgs e)
+        {
+            Portrait.Image = ConvertImage2D.ByteArrayToImage(overflow.Mod_Portrait3);
+            //newForm(new );
         }
     }
 }

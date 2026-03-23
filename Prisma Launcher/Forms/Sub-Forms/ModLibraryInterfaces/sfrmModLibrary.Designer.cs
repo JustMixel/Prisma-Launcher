@@ -32,11 +32,13 @@
             this.tbSearch = new Bunifu.Framework.UI.BunifuMaterialTextbox();
             this.fopContent = new System.Windows.Forms.FlowLayoutPanel();
             this.lblLibrary = new System.Windows.Forms.Label();
+            this.btnAddMod = new System.Windows.Forms.Button();
             this.pnlRScreen.SuspendLayout();
             this.SuspendLayout();
             // 
             // pnlRScreen
             // 
+            this.pnlRScreen.Controls.Add(this.btnAddMod);
             this.pnlRScreen.Controls.Add(this.tbSearch);
             this.pnlRScreen.Controls.Add(this.fopContent);
             this.pnlRScreen.Controls.Add(this.lblLibrary);
@@ -92,6 +94,24 @@
             this.lblLibrary.Text = "LIBRARY";
             this.lblLibrary.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // btnAddMod
+            // 
+            this.btnAddMod.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnAddMod.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(25)))), ((int)(((byte)(25)))));
+            this.btnAddMod.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnAddMod.FlatAppearance.BorderColor = System.Drawing.Color.Black;
+            this.btnAddMod.FlatAppearance.BorderSize = 0;
+            this.btnAddMod.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnAddMod.Font = new System.Drawing.Font("Bahnschrift", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnAddMod.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnAddMod.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnAddMod.Location = new System.Drawing.Point(871, 15);
+            this.btnAddMod.Name = "btnAddMod";
+            this.btnAddMod.Size = new System.Drawing.Size(144, 36);
+            this.btnAddMod.TabIndex = 11;
+            this.btnAddMod.Text = "Add Mod";
+            this.btnAddMod.UseVisualStyleBackColor = false;
+            // 
             // sfrmLibrary
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -114,5 +134,6 @@
         private Bunifu.Framework.UI.BunifuMaterialTextbox tbSearch;
         private System.Windows.Forms.FlowLayoutPanel fopContent;
         private System.Windows.Forms.Label lblLibrary;
+        private System.Windows.Forms.Button btnAddMod;
     }
 }

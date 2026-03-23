@@ -161,6 +161,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserControls\uc_mod_store_item_COPY.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\uc_mod_store_item_COPY.Designer.cs">
+      <DependentUpon>uc_mod_store_item_COPY.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\uc_mod_store_item.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -192,6 +198,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UserControls\uc_mod_store_item_COPY.resx">
+      <DependentUpon>uc_mod_store_item_COPY.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UserControls\uc_mod_store_item.resx">
       <DependentUpon>uc_mod_store_item.cs</DependentUpon>
@@ -260,6 +269,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="logon.ico" />
+    <None Include="Resources\settings1_ico.png" />
     <None Include="Resources\STEL3.png" />
     <None Include="Resources\SC1.png" />
     <None Include="Resources\cancel_ico.png" />
