@@ -1,0 +1,126 @@
+/* Fondo general y reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Bahnschrift", sans-serif;
+}
+
+/* Contenedor raíz: barra lateral a la izquierda + contenido a la derecha */
+.container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Barra lateral ---- */
+.sidebar {
+  width: 240px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /*align-items: center;*/
+  padding: 20px 0;
+  background-color: rgb(8, 8, 7);   /* gris oscuro */
+}
+
+/* ---- Recuadro de usuario ---- */
+.user-box {
+  width: 100%;
+  display: flex;
+  flex-direction: row;         /* horizontal: imagen + texto */
+  align-items: center;         /* centra la imagen en el recuadro */
+  padding: 15px 12px;
+  background-color: rgb(36, 34, 30);   /* gris claro (sin borde visible) */
+  margin-bottom: 40px;
+}
+
+/* Foto de perfil circular, centrada */
+.profile-pic {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;              /* no se comprime */
+}
+
+/* Bloque de texto a la derecha de la imagen */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+  text-align: left;
+}
+
+/* Nombre de usuario */
+.user-box h3 {
+  font-weight: 700;            /* Bold */
+  font-size: 14px;
+  color: antiquewhite;
+}
+
+/* Rol activo */
+.user-box p {
+  font-weight: 100;            /* Thin */
+  font-size: 11px;
+  color: #d9d9d9;
+  margin-top: 4px;
+}
+
+/* ---- Navegación / botones ---- */
+.nav {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-btn {
+  width: 100%;
+  height: 35px;
+  margin-bottom: 16px;         /* separación entre botones */
+  font-weight: 400;            /* Regular */
+  font-size: 15px;
+  color: #ffffff;
+  background-color: rgb(8, 8, 7);
+  border: none;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  background-color: rgb(8, 8, 7);
+  border-color: antiquewhite;
+  border: 2px solid;
+}
+
+.nav-btn.active {
+  border-color: rgb(219, 205, 0);     /* color cuando está seleccionado */
+  background-color: rgb(15, 15, 14);
+  /* u otras propiedades */
+}
+
+/* ---- Área principal (fondo con imagen, se agrega luego) ---- */
+.main-content {
+  flex: 1;
+  height: 100vh;
+  background-color: #1e1e1e;   /* placeholder hasta definir la imagen */
+  background-size: cover;
+  background-position: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  z-index: 0;
+}
+
+/*------ TESTING ------*/
+.tab-title {
+  color: #ffffff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
+
+/*------ Búsqueda: coincidencias resaltadas ------*/
+mark {
+  background-color: rgba(219, 205, 0, 0.35);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
