@@ -31,6 +31,28 @@ function DownloadsProvider({ children })
         };
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+
+        invoke("get_installed_mods")
+            .then((mods) => {
+                if (cancelled || !Array.isArray(mods) || mods.length === 0) {
+                    return;
+                }
+                setLibrary((current) => {
+                    const byId = new Map();
+                    mods.forEach((item) => byId.set(String(item.id), item));
+                    current.forEach((item) => byId.set(String(item.id), { ...(byId.get(String(item.id)) || {}), ...item }));
+                    return Array.from(byId.values());
+                });
+            })
+            .catch(() => {
+                // sin manifest de mods instalados
+            });
+
+        return () => { cancelled = true; };
+    }, []);
+
     const stopTimer = useCallback((id) => {
         if (timersRef.current[id]) {
             clearInterval(timersRef.current[id]);

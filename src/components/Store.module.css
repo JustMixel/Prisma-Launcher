@@ -250,12 +250,6 @@
     border-radius: 50%;
 }
 
-.filter-disabled
-{
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 .filter-row
 {
     display: flex;

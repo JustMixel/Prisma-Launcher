@@ -20,6 +20,7 @@ const SEARCH_OPTIONS = [
 ];
 
 const RECENT_KEY = "prisma-recent-searches";
+const STORE_PREFS_KEY = "prisma-store-prefs";
 const EMPTY_FILTERS = { minDownloads: "", minRating: "", dateFrom: "", tags: [], onlyInstalled: false };
 
 function loadRecentSearches() {
@@ -31,22 +32,55 @@ function loadRecentSearches() {
     }
 }
 
+function loadStorePrefs() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(STORE_PREFS_KEY));
+        if (!parsed || typeof parsed !== "object") {
+            return null;
+        }
+        const rawFilters = parsed.filters && typeof parsed.filters === "object" ? parsed.filters : {};
+        return {
+            filters: {
+                ...EMPTY_FILTERS,
+                minDownloads: typeof rawFilters.minDownloads === "string" ? rawFilters.minDownloads : "",
+                minRating: typeof rawFilters.minRating === "string" ? rawFilters.minRating : "",
+                dateFrom: typeof rawFilters.dateFrom === "string" ? rawFilters.dateFrom : "",
+                tags: Array.isArray(rawFilters.tags) ? rawFilters.tags.filter((tag) => typeof tag === "string") : [],
+                onlyInstalled: rawFilters.onlyInstalled === true
+            },
+            groupSort: SORT_OPTIONS.some((option) => option.value === parsed.groupSort) ? parsed.groupSort : "alpha",
+            searchMode: SEARCH_OPTIONS.some((option) => option.value === parsed.searchMode) ? parsed.searchMode : "name"
+        };
+    } catch {
+        return null;
+    }
+}
+
 function Store()
 {
     const { library } = useDownloads();
     const [mods, setMods] = useState([]);
     const [status, setStatus] = useState("loading");
     const [searchTerm, setSearchTerm] = useState("");
-    const [searchMode, setSearchMode] = useState("name");
-    const [groupSort, setGroupSort] = useState("alpha");
+    const [storePrefs] = useState(loadStorePrefs);
+    const [searchMode, setSearchMode] = useState(() => storePrefs?.searchMode ?? "name");
+    const [groupSort, setGroupSort] = useState(() => storePrefs?.groupSort ?? "alpha");
     const [isSearchMenuOpen, setSearchMenuOpen] = useState(false);
     const [selectedMod, setSelectedMod] = useState(null);
     const [viewingEntity, setViewingEntity] = useState(null);
-    const [filters, setFilters] = useState(EMPTY_FILTERS);
+    const [filters, setFilters] = useState(() => storePrefs?.filters ?? EMPTY_FILTERS);
     const [recentSearches, setRecentSearches] = useState(loadRecentSearches);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const [suggestionIndex, setSuggestionIndex] = useState(-1);
     const inputRef = useRef(null);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(STORE_PREFS_KEY, JSON.stringify({ filters, groupSort, searchMode }));
+        } catch {
+            // almacenamiento no disponible
+        }
+    }, [filters, groupSort, searchMode]);
 
     function getVisibleUpdate(mod)
     {
@@ -93,9 +127,13 @@ function Store()
         filters.minDownloads !== "" ||
         filters.minRating !== "" ||
         filters.dateFrom !== "" ||
-        filters.tags.length > 0;
+        filters.tags.length > 0 ||
+        filters.onlyInstalled;
 
     const passesFilters = (mod) => {
+        if (filters.onlyInstalled && !library.some((item) => String(item.id) === String(mod.ID))) {
+            return false;
+        }
         const downloads = mod.m_downloads ?? 0;
         if (filters.minDownloads !== "" && downloads < Number(filters.minDownloads)) {
             return false;
@@ -143,6 +181,19 @@ function Store()
 
     const filteredMods = sortMods(mods.filter((mod) => matchesSearch(mod) && passesFilters(mod)));
 
+    const eligibleProfileIds = new Set();
+    mods.forEach((mod) => {
+        if (!passesFilters(mod)) {
+            return;
+        }
+        if (mod.m_devgroupid !== null && mod.m_devgroupid !== undefined) {
+            eligibleProfileIds.add(`studio:${mod.m_devgroupid}`);
+        }
+        if (mod.m_producerid !== null && mod.m_producerid !== undefined) {
+            eligibleProfileIds.add(`producer:${mod.m_producerid}`);
+        }
+    });
+
     const studiosById = mods.reduce((accumulator, mod) => {
         if (mod.m_devgroupid === null || mod.m_devgroupid === undefined) {
             return accumulator;
@@ -173,6 +224,7 @@ function Store()
     }, {});
 
     const visibleStudios = Object.values(studiosById)
+        .filter((studio) => eligibleProfileIds.has(`studio:${studio.id}`))
         .filter((studio) => !tokens.length || matchesTokens(studio.name, tokens))
         .sort((a, b) => {
             if (groupSort === "downloads") {
@@ -214,6 +266,7 @@ function Store()
     }, {});
 
     const visibleProducers = Object.values(producersById)
+        .filter((producer) => eligibleProfileIds.has(`producer:${producer.id}`))
         .filter((producer) => !tokens.length || matchesTokens(producer.name, tokens))
         .sort((a, b) => {
             if (groupSort === "downloads") {
@@ -410,6 +463,8 @@ function Store()
                             className={`${styles["filter-button"]} ${isSearchMenuOpen ? styles["filter-button-open"] : ""} ${filtersActive ? styles["filter-button-active"] : ""}`}
                             onClick={() => setSearchMenuOpen(prev => !prev)}
                             aria-label="Filtros de búsqueda"
+                            aria-haspopup="dialog"
+                            aria-expanded={isSearchMenuOpen}
                         >
                             <img src={funnel} alt="Filter" />
                             {filtersActive && <span className={styles["filter-dot"]}></span>}
@@ -423,6 +478,7 @@ function Store()
                                         <input
                                             type="radio"
                                             name="search-mode"
+                                            aria-label={`Buscar por ${option.label}`}
                                             checked={searchMode === option.value}
                                             onChange={() => {
                                                 setSearchMode(option.value);
@@ -439,6 +495,7 @@ function Store()
                                         <input
                                             type="radio"
                                             name="group-sort"
+                                            aria-label={`Ordenar por ${option.label}`}
                                             checked={groupSort === option.value}
                                             onChange={() => setGroupSort(option.value)}
                                         />
@@ -453,6 +510,7 @@ function Store()
                                         <input
                                             type="number"
                                             min="0"
+                                            aria-label="Descargas mínimas"
                                             className={styles["filter-number"]}
                                             value={filters.minDownloads}
                                             onChange={(event) => updateFilter("minDownloads", event.target.value)}
@@ -465,6 +523,7 @@ function Store()
                                             min="0"
                                             max="10"
                                             step="0.1"
+                                            aria-label="Rating mínimo"
                                             className={styles["filter-number"]}
                                             value={filters.minRating}
                                             onChange={(event) => updateFilter("minRating", event.target.value)}
@@ -475,6 +534,7 @@ function Store()
                                     Lanzado desde
                                     <input
                                         type="date"
+                                        aria-label="Lanzado desde"
                                         className={styles["filter-date"]}
                                         value={filters.dateFrom}
                                         onChange={(event) => updateFilter("dateFrom", event.target.value)}
@@ -488,6 +548,7 @@ function Store()
                                                 key={tag}
                                                 type="button"
                                                 className={`${styles["tag-chip"]} ${filters.tags.includes(tag) ? styles["tag-chip-active"] : ""}`}
+                                                aria-pressed={filters.tags.includes(tag)}
                                                 onClick={() => toggleTag(tag)}
                                             >
                                                 {tag}
@@ -496,9 +557,14 @@ function Store()
                                     </div>
                                 )}
 
-                                <label className={`${styles["filter-option"]} ${styles["filter-disabled"]}`}>
-                                    <input type="checkbox" checked={false} disabled />
-                                    Solo instalados (próximamente)
+                                <label className={styles["filter-option"]}>
+                                    <input
+                                        type="checkbox"
+                                        aria-label="Solo mods instalados"
+                                        checked={filters.onlyInstalled}
+                                        onChange={(event) => updateFilter("onlyInstalled", event.target.checked)}
+                                    />
+                                    Solo instalados
                                 </label>
 
                                 <button type="button" className={styles["filter-clear"]} onClick={clearFilters}>

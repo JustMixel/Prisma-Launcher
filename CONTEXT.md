@@ -95,6 +95,9 @@ Store, Library, Downloads, Configuration.
 - [x] La foto de perfil se trata dentro de Configuration (no en Store).
 - [x] **ModPlayView** implementada: clic en `LibraryCard` abre la vista del mod instalado.
 - [x] Descargas/local mods se registran en `<.prisma>/assets/(Mod name)/mod.json`; Library lee esos manifests desde Rust.
+- [x] ModPlayView refinada: logo STEL3 centrado a escala (max 3528×1197 px, limitado por el natural 1280×720), **retrato removido** (mostraba el placeholder "700 x 1024" de placehold.co), fondo SC1 temporal, footer flex centrado.
+- [x] **Pendientes Store resueltos**: filtros en cartas de perfil, prefs persistidas (`prisma-store-prefs`), ARIA en filtros, "Solo instalados" operativo, CSS huérfano limpio.
+- [x] `DownloadsProvider` precarga `get_installed_mods` al arrancar → `library` disponible en Store (update badges + solo instalados) sin abrir Library.
 
 ## Store — estado funcional (detallado)
 
@@ -146,7 +149,7 @@ Store, Library, Downloads, Configuration.
 - La foto de perfil elegida en Configuration se guarda en `localStorage` (`prisma-profile-picture`) y se refleja en la sidebar.
 - Preferencias locales en `localStorage` (`src/utils/settings.js`): fondo, color de acento, ruta de mods, recordar pestaña y pestaña inicial.
 - Los mods instalados se registran como `<.prisma>/assets/(Mod name)/mod.json`; la Library los lee desde Rust (`get_installed_mods`).
-- `ModPlayView` se abre al clickear un mod instalado en Library; rediseñada desde el mock `ModPlay_Screen.png`: pantalla clara, título centrado, retrato, gear (abrir carpeta) + botón **JUGAR** verde, footer "dev, año" y riel derecho de 3 iconos (home → biblioteca, gráfico → estadísticas, trofeo → logros). `Jugar` usa `executablePath` o `m_link`.
+- `ModPlayView` se abre al clickear un mod instalado en Library; rediseñada desde el mock `ModPlay_Screen.png`: logo STEL3 centrado (triple del tamaño inicial), gear (abrir carpeta) + botón **JUGAR** verde, footer "dev, año" y riel derecho de 3 iconos (home → biblioteca, gráfico → estadísticas, trofeo → logros). **Retrato removido** por decisión del usuario (solo mostraba el placeholder de placehold.co). `Jugar` usa `executablePath` o `m_link`.
 - Botones de navegación con **borde solo al pasar el mouse (hover)**.
 - Tipografía del sistema **Bahnschrift** con distintos pesos según el label.
 - El área principal usará **`src/assets/app-base.png`** como imagen de fondo por defecto (configurable desde Configuration).
@@ -155,16 +158,17 @@ Store, Library, Downloads, Configuration.
 - Flujo de búsqueda por desarrollador: **texto → cartas de perfil → clic → mods del perfil** (no muestra mods directamente al escribir).
 - **Publisher**: el uploader elige studio o su nombre propio; un solo campo (`m_producername`).
 - Fechas de test en **ISO 8601 completo** (`...T12:00:00.000Z`).
+- **Estadísticas en ModPlayView**: NO son stats de la store. El creador, al subir el mod, **habilitará la opción de lectura de estadísticas** y **especificará un archivo `.ini`** que llevará el conteo (misiones totales realizadas, etc.); la vista leerá ese archivo. Pendiente de adaptar (flujo de subida + lectura).
 - Preferencia del usuario: explicar qué hacer y por dónde empezar; dar código solo si pide explícitamente que se implemente.
 
 ## Pendientes / Próximos Pasos (Store)
-1. Aplicar **filtros** (descargas/rating/fecha/tags) también a las cartas de perfil al navegar.
-2. **Persistir** filtros/orden/modo en `localStorage` (solo recientes se guardan hoy).
-3. ARIA/labels en los inputs del panel de filtros.
-4. "Solo instalados" → requiere Library + Rust (`get_library`).
+1. [x] Aplicar **filtros** (descargas/rating/fecha/tags/solo instalados) también a las cartas de perfil al navegar.
+2. [x] **Persistir** filtros/orden/modo en `localStorage` (`prisma-store-prefs`, con validación al cargar).
+3. [x] ARIA/labels en los inputs del panel de filtros (aria-label, aria-expanded, aria-pressed).
+4. [x] "Solo instalados" activo: valida contra la `library` del contexto (el provider precarga `get_installed_mods`).
 5. Búsqueda **server-side con debounce** (`/api/catalog?q=`) cuando haya datos reales.
 6. Videos/Reviews en ModView → requiere **modelado de datos** previo (ver Decisiones Registradas).
-7. Limpiar CSS huérfano en `Card.module.css` (`.studio`, `.releasedate`, `.stats`, `.stat`) o usarlo.
+7. [x] Limpiar CSS huérfano: eliminados `.releasedate` (Card) y `.filter-disabled` (Store); `.studio`, `.stats`, `.stat` sí están en uso.
 
 ## Pendientes globales (fuera del Store)
 1. Resolver solapamiento texto/imagen de fondo en `.main-content`.
@@ -172,6 +176,14 @@ Store, Library, Downloads, Configuration.
 3. Modelado de datos para Videos/Reviews antes de implementar su UI.
 4. Migración de endpoints mock a SQL Server real.
 5. Assets de ModPlayView: `Mock/Main Screens/SC1.png` (1920×1080) como fondo temporal y `STEL3.png` (1280×720, fondo blanco) como logo de prueba; faltan PNG con alfa del logo del proyecto y del logo real del mod.
+6. Estadísticas ModPlayView → flujo del `.ini` del creador (opción "leer estadísticas" + campo archivo `.ini` al subir; la vista lo lee). Ver Decisiones Registradas.
+
+## Repositorio (git)
+- Remoto: `https://github.com/JustMixel/Prisma-Launcher.git`.
+- **`origin/main`** contiene un proyecto **distinto** (solución C# WinForms: `Prisma Launcher.sln`, `CapaDatos/`, `Forms/...`) subido por *force push* — historias sin relación con el Tauri.
+- **`origin/dev`** es la rama del proyecto **Tauri + React** (historia: `c8f6fca` → `68e6386` → `45b958a`).
+- **Decisión del usuario**: los commits del proyecto Tauri van a **`dev`**; `main` queda con el proyecto C# (sin tocar).
+- Último push: `45b958a` "Add first-run setup, Configuration tabs, Library downloads and ModPlayView with local mod registry" → `origin/dev`.
 
 ## Comandos
 - Frontend: `npm run build` (raíz del proyecto).
