@@ -239,6 +239,11 @@ function findMod(id) {
     return mods.find(mod => mod.m_id === Number(id));
 }
 
+// Solo los mods publicados son visibles en la Store; draft/hidden se ocultan.
+function storeVisible(modsList) {
+    return modsList.filter(mod => mod.m_status === 'published');
+}
+
 function buildIncludes(modsList) {
     const producerIds = new Set();
     const devgroupIds = new Set();
@@ -297,9 +302,11 @@ function buildLegacyMod(mod) {
 }
 
 router.get('/catalog', (req, res) => {
+    const visibleMods = storeVisible(mods);
+
     res.json({
-        items: mods,
-        includes: buildIncludes(mods),
+        items: visibleMods,
+        includes: buildIncludes(visibleMods),
         meta: {
             nextCursor: null,
             etag: 'W/"mods-page-1"',
@@ -309,7 +316,7 @@ router.get('/catalog', (req, res) => {
 });
 
 router.get('/mods', (req, res) => {
-    res.json(mods.map(buildLegacyMod));
+    res.json(storeVisible(mods).map(buildLegacyMod));
 });
 
 router.get('/mods/:id/versions', (req, res) => {

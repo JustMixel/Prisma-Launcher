@@ -92,7 +92,10 @@ function AppContent({ userName, onNameChange })
     <main
       className="main-content"
       style={settings.backgroundMode === "image"
-        ? { backgroundImage: `url(${appBase})`, backgroundColor: "#1e1e1e" }
+        ? {
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url(${appBase})`,
+            backgroundColor: "#1e1e1e"
+          }
         : { backgroundImage: "none", backgroundColor: "#121212" }}
     >
       {activeTab === "store" && <Store />}

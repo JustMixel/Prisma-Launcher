@@ -3,10 +3,18 @@ import { invoke } from "@tauri-apps/api/core";
 import pfpTest from "../assets/pfp-test.png";
 import CustomFileDialog, { IMAGE_FILTERS } from "./CustomFileDialog.jsx";
 import { isValidName } from "../utils/name.js";
+import { clearSession, getSession, saveSession } from "../utils/session.js";
 import { SETTINGS_KEYS, TABS } from "../utils/settings.js";
 import styles from "./Configuration.module.css";
 
 const PICTURE_KEY = "prisma-profile-picture";
+
+const ROLE_LABELS = {
+    member: "Miembro",
+    activated: "Miembro activado",
+    tester: "Tester",
+    developer: "Desarrollador"
+};
 
 const ACCENTS = [
     { label: "Amarillo", value: "#d9cd00" },
@@ -40,6 +48,10 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
     const [dialogOpen, setDialogOpen] = useState(false);
     const [folderDialogOpen, setFolderDialogOpen] = useState(false);
     const [modsPath, setModsPath] = useState(settings.modsPath || "");
+    const [session, setSession] = useState(getSession);
+    const [accountUser, setAccountUser] = useState("");
+    const [accountPass, setAccountPass] = useState("");
+    const [accountBusy, setAccountBusy] = useState(false);
 
     const valid = isValidName(name);
     const changed = name.trim() !== (userName || "");
@@ -112,6 +124,49 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
         setNotice("Carpeta de mods guardada.");
     }
 
+    async function handleLogin(event)
+    {
+        event.preventDefault();
+        if (accountBusy || !accountUser.trim() || !accountPass) {
+            return;
+        }
+
+        setAccountBusy(true);
+        setError("");
+        setNotice("");
+        try {
+            const response = await fetch("http://localhost:3000/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: accountUser.trim(), password: accountPass })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error === "invalid"
+                    ? "Usuario o contraseña incorrectos."
+                    : "No se pudo conectar con el servidor.");
+            }
+            const saved = saveSession(data.user);
+            setSession(saved);
+            setAccountPass("");
+            setNotice(`Sesión iniciada como ${saved.displayName} (${ROLE_LABELS[saved.role] || saved.role}).`);
+        } catch (loginError) {
+            setError(String(loginError.message || loginError));
+        } finally {
+            setAccountBusy(false);
+        }
+    }
+
+    function handleLogout()
+    {
+        clearSession();
+        setSession(null);
+        setAccountUser("");
+        setAccountPass("");
+        setError("");
+        setNotice("Sesión cerrada.");
+    }
+
     return (
         <div className={styles["config"]}>
             <header className={styles["header"]}>
@@ -175,6 +230,61 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                     <span>Rol activo</span>
                     <strong>Miembro</strong>
                 </div>
+            </section>
+
+            <section className={styles["card"]}>
+                <h2>Cuenta Prisma</h2>
+
+                {session ? (
+                    <div className={styles["setting-block"]}>
+                        <span className={styles["label"]}>Conectado como</span>
+                        <div className={styles["name-row"]}>
+                            <div className={styles["account-info"]}>
+                                <strong>{session.displayName}</strong>
+                                <span>
+                                    {ROLE_LABELS[session.role] || session.role}
+                                    {session.activated ? "" : " · sin activar"}
+                                </span>
+                            </div>
+                            <button type="button" className={styles["btn secondary"]} onClick={handleLogout}>
+                                Cerrar sesión
+                            </button>
+                        </div>
+                        <p className={styles["hint"]}>Los testers pueden activar proyectos ocultos desde su biblioteca.</p>
+                    </div>
+                ) : (
+                    <form className={styles["name-form"]} onSubmit={handleLogin}>
+                        <label className={styles["label"]} htmlFor="account-user">Usuario</label>
+                        <div className={styles["name-row"]}>
+                            <input
+                                id="account-user"
+                                className={styles["input"]}
+                                type="text"
+                                value={accountUser}
+                                onChange={(event) => setAccountUser(event.target.value)}
+                                autoComplete="username"
+                                placeholder="Usuario"
+                            />
+                            <input
+                                className={styles["input"]}
+                                type="password"
+                                value={accountPass}
+                                onChange={(event) => setAccountPass(event.target.value)}
+                                autoComplete="current-password"
+                                placeholder="Contraseña"
+                                aria-label="Contraseña"
+                            />
+                            <button
+                                className={styles["btn"]}
+                                type="submit"
+                                disabled={accountBusy || !accountUser.trim() || !accountPass}
+                            >
+                                {accountBusy ? "Conectando…" : "Iniciar sesión"}
+                            </button>
+                        </div>
+                        <p className={styles["hint"]}>Cuentas de prueba: tester/tester123 · dev/dev123 · user/user123</p>
+                    </form>
+                )}
             </section>
 
             <section className={styles["card"]}>

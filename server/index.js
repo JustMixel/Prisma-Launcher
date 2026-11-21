@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { connectDB } from "./db/dbConnect.js";
 import router from "./Routes/launcherRoutes.js";
+import creatorRouter from "./Routes/creatorRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use((req, res, next) => {
 
 // ROUTERS
 app.use("/api", router);
+app.use("/api", creatorRouter);
 
 app.get("/", (req, res) => {
     res.send("Hello World!");

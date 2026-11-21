@@ -32,6 +32,32 @@
     background-color: #f0e033;
 }
 
+.actions-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.activate-btn {
+    background-color: transparent;
+    color: #d9cd00;
+    border: 1px solid #d9cd00;
+    padding: 7px 16px;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.activate-btn:hover {
+    background-color: #d9cd00;
+    color: #1a1a1a;
+}
+
 .cards {
     display: flex;
     flex-wrap: wrap;

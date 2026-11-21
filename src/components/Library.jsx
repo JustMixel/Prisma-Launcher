@@ -3,9 +3,11 @@ import { invoke } from "@tauri-apps/api/core";
 import LibraryCard from "./LibraryCard.jsx";
 import ModSearchBar from "./ModSearchBar.jsx";
 import AddLocalMod from "./AddLocalMod.jsx";
+import RedeemProject from "./RedeemProject.jsx";
 import ModPlayView from "./ModPlayView.jsx";
 import { useDownloads } from "../context/DownloadsContext.jsx";
 import { useModSearch } from "../hooks/useModSearch.js";
+import { getSession } from "../utils/session.js";
 import { getAvailableUpdate } from "../utils/update.js";
 import styles from "./Library.module.css";
 
@@ -13,9 +15,11 @@ function Library()
 {
     const { library, addToLibrary } = useDownloads();
     const [showAddForm, setShowAddForm] = useState(false);
+    const [showRedeem, setShowRedeem] = useState(false);
     const [serverUpdates, setServerUpdates] = useState({});
     const [installedMods, setInstalledMods] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
+    const session = getSession();
 
     useEffect(() => {
         let cancelled = false;
@@ -99,6 +103,18 @@ function Library()
         );
     }
 
+    if (showRedeem) {
+        return (
+            <RedeemProject
+                onBack={() => setShowRedeem(false)}
+                onRedeemed={(item) => {
+                    addToLibrary({ libraryItem: item });
+                    setShowRedeem(false);
+                }}
+            />
+        );
+    }
+
     const { filteredItems, tokens, trimmedSearch } = search;
     const suggestions = [...new Set(mergedLibrary.flatMap((item) => [item.name, item.publisher, item.producer]).filter(Boolean))];
     const selectedMod = mergedLibrary.find((item) => String(item.id) === String(selectedId)) || null;
@@ -115,9 +131,16 @@ function Library()
                     suggestionsSource={suggestions}
                     onClearSearch={() => {}}
                 />
-                <button className={styles["add-btn"]} onClick={() => setShowAddForm(true)}>
-                    + Agregar mod
-                </button>
+                <div className={styles["actions-row"]}>
+                    {session?.role === "tester" && (
+                        <button className={styles["activate-btn"]} onClick={() => setShowRedeem(true)}>
+                            Activar Proyecto
+                        </button>
+                    )}
+                    <button className={styles["add-btn"]} onClick={() => setShowAddForm(true)}>
+                        + Agregar mod
+                    </button>
+                </div>
             </div>
 
             {filteredItems.length > 0 ? (

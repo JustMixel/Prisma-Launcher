@@ -98,6 +98,9 @@ Store, Library, Downloads, Configuration.
 - [x] ModPlayView refinada: logo STEL3 centrado a escala (max 3528×1197 px, limitado por el natural 1280×720), **retrato removido** (mostraba el placeholder "700 x 1024" de placehold.co), fondo SC1 temporal, footer flex centrado.
 - [x] **Pendientes Store resueltos**: filtros en cartas de perfil, prefs persistidas (`prisma-store-prefs`), ARIA en filtros, "Solo instalados" operativo, CSS huérfano limpio.
 - [x] `DownloadsProvider` precarga `get_installed_mods` al arrancar → `library` disponible en Store (update badges + solo instalados) sin abrir Library.
+- [x] **Fix settings**: `handleSettingChange` ahora mapea clave de storage → clave de estado (`SETTINGS_STATE_KEYS`); antes acento/fondo/pestañas no reaccionaban en la UI.
+- [x] **Velo oscuro en `.main-content`**: gradiente `rgba(0,0,0,0.62)` sobre `app-base.png` para que el texto no compita con la imagen (pendiente de solapamiento resuelto).
+- [x] **PCN F0+F1** (ver sección dedicada): login mock, canje de códigos y botón "Activar Proyecto" en Library.
 
 ## Store — estado funcional (detallado)
 
@@ -184,6 +187,29 @@ Store, Library, Downloads, Configuration.
 - **`origin/dev`** es la rama del proyecto **Tauri + React** (historia: `c8f6fca` → `68e6386` → `45b958a` → `820c952`).
 - **Decisión del usuario**: los commits del proyecto Tauri van a **`dev`**; `main` queda con el proyecto C# (sin tocar).
 - Último push: commit "Store: profile filters, persisted search prefs, ARIA labels and installed-only filter" → `origin/dev`.
+
+## Prisma Creator Network (PCN)
+Módulo del launcher para crear, testear y gestionar mods + activación de proyectos ocultos por código.
+
+### Decisiones
+- UI: botón PCN en el **sidebar, abajo de todo**, con margen pequeño a los bordes (pendiente F2).
+- Creación: **metadatos + archivos** (base del form AddLocalMod).
+- Testeo: módulo propio (validar/lanzar/logs) + rol **Tester** otorgado por el desarrollador; los testers ven el botón **"Activar Proyecto"** en Library; los miembros normales no.
+- Códigos: **multi-uso con límite** (opcional expiración); activan proyectos ocultos que no salen en la Store.
+- Archivos: combinación **local + alojados en servidor** (F4).
+- Identidad: **cuentas con login** (mock ahora, SQL después).
+- Dueño/desarrollador: ve sus proyectos ocultos en su PCN **sin código** (F2).
+
+### Estado
+- [x] **F0 — modelo + endpoints mock**: `server/Routes/creatorRoutes.js` montado en `/api`:
+  `POST /api/auth/login`, `POST /api/codes/redeem`, `GET /api/creator/projects`, `GET /api/users`.
+  Seed: `dev/dev123` (developer), `tester/tester123` (tester), `user/user123` (member); proyecto oculto `prj-1` con código `PRISMA-TEST` (100 usos, sin expiración).
+- [x] **F1 — canje en Library**: `src/utils/session.js` (sesión en `localStorage` `prisma-session`), sección **"Cuenta Prisma"** en Configuration (login/logout), botón **"Activar Proyecto"** en Library visible solo con rol `tester`, `RedeemProject.jsx` (buscar código → preview con usos restantes → activar → `addToLibrary` con `source: "code"`).
+- [x] Store: `/api/mods` y `/api/catalog` filtran `m_status === 'published'` (ocultos no aparecen).
+- [ ] **F2**: botón en sidebar + módulo PCN (lista de proyectos, crear/editar, gestión de códigos/testers/publicación).
+- [ ] **F3**: módulo de testeo (validar estructura/ini, lanzar, logs).
+- [ ] **F4**: subida/descarga real de archivos (Tauri + servidor).
+- [ ] **F5**: integración Store completa + cuentas/roles reales (SQL).
 
 ## Comandos
 - Frontend: `npm run build` (raíz del proyecto).
