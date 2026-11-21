@@ -13,6 +13,14 @@ import FirstRunSetup from "./components/FirstRunSetup.jsx";
 import { SETTINGS_KEYS, TABS, readSetting, writeSetting } from "./utils/settings.js";
 import "./App.css";
 
+const SETTINGS_STATE_KEYS = {
+  [SETTINGS_KEYS.backgroundMode]: "backgroundMode",
+  [SETTINGS_KEYS.accentColor]: "accentColor",
+  [SETTINGS_KEYS.modsPath]: "modsPath",
+  [SETTINGS_KEYS.rememberTab]: "rememberTab",
+  [SETTINGS_KEYS.startupTab]: "startupTab"
+};
+
 function AppContent({ userName, onNameChange })
 {
   const [settings, setSettings] = useState(() => ({
@@ -37,7 +45,8 @@ function AppContent({ userName, onNameChange })
   function handleSettingChange(key, value)
   {
     writeSetting(key, typeof value === "boolean" ? String(value) : value);
-    setSettings((current) => ({ ...current, [key]: value }));
+    const stateKey = SETTINGS_STATE_KEYS[key] ?? key;
+    setSettings((current) => ({ ...current, [stateKey]: value }));
 
     if (key === SETTINGS_KEYS.rememberTab) {
       const tab = value ? readSetting(SETTINGS_KEYS.lastTab) : settings.startupTab;
