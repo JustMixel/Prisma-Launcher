@@ -1,0 +1,249 @@
+.add-local {
+    position: relative;
+    padding: 20px 30px;
+    color: #e0e0e0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    z-index: 20;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background-color: rgba(20, 19, 19, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    color: #e0e0e0;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.back-btn:hover {
+    background-color: rgba(45, 44, 43, 0.9);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.back-btn:active {
+    transform: scale(0.94);
+}
+
+.form-panel {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-top: 40px;
+}
+
+.title {
+    margin: 0;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: #dcdcc8;
+}
+
+.subtitle {
+    margin: 6px 0 24px;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    color: #9a9a9a;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: #232322;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 24px;
+}
+
+.preview-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.preview-frame {
+    width: 90px;
+    height: 124px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #1a1a1a;
+}
+
+.preview-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-info {
+    min-width: 0;
+}
+
+.preview-name {
+    margin: 0;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: #e8e8e8;
+}
+
+.preview-creator {
+    margin: 4px 0 0;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 100;
+    font-size: 14px;
+    color: #9a9a9a;
+}
+
+.label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 14px;
+    color: #b8b8b8;
+}
+
+.input,
+.textarea {
+    background-color: #1a1a1a;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    color: #e0e0e0;
+    padding: 9px 11px;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 14px;
+    outline: none;
+}
+
+.input:focus,
+.textarea:focus {
+    border-color: #d9cd00;
+}
+
+.textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.file-row {
+    display: flex;
+    gap: 8px;
+}
+
+.file-row .input {
+    flex: 1;
+}
+
+.browse-btn {
+    background-color: #3a3a3a;
+    border: 1px solid #5a5a5a;
+    border-radius: 4px;
+    color: #e0e0e0;
+    padding: 9px 16px;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.browse-btn:hover {
+    background-color: #4a4a4a;
+    border-color: #8a8a8a;
+}
+
+.cover-row {
+    display: flex;
+    gap: 8px;
+}
+
+.cover-row .input {
+    flex: 1;
+}
+
+.cover-btn {
+    background-color: #3a3a3a;
+    border: 1px solid #5a5a5a;
+    border-radius: 4px;
+    color: #e0e0e0;
+    padding: 9px 16px;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.cover-btn:hover {
+    background-color: #4a4a4a;
+    border-color: #8a8a8a;
+}
+
+.cover-clear {
+    width: 34px;
+    background-color: transparent;
+    border: 1px solid #5a5a5a;
+    border-radius: 4px;
+    color: #d8d8d8;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.cover-clear:hover {
+    background-color: #4a2a2a;
+    border-color: #b36a6a;
+}
+
+.cover-path {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: #8a8a8a;
+    word-break: break-all;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.cancel-btn,
+.submit-btn {
+    padding: 10px 20px;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    background: transparent;
+    border: 1px solid #6a6a6a;
+    color: #ccc;
+}
+
+.submit-btn {
+    background-color: #d9cd00;
+    border: none;
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+.submit-btn:hover {
+    background-color: #f0e033;
+}

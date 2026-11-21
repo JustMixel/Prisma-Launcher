@@ -14,7 +14,8 @@
       {
         "title": "Prisma Launcher",
         "width": 1289,
-        "height": 630
+        "height": 630,
+        "visible": false
       }
     ],
     "security": {

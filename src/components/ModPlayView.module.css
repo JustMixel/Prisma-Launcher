@@ -1,0 +1,207 @@
+.play-view {
+    position: relative;
+    z-index: 1;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #12142a;
+    background-image: url("../../Mock/Main Screens/SC1.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: #f0f0f0;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+}
+
+.center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+    margin: 0;
+    max-width: 80%;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-align: center;
+    color: #fff;
+}
+
+.logo-img {
+    display: block;
+    max-width: 3528px;
+    max-height: 1197px;
+    object-fit: contain;
+    margin: 0 auto;
+}
+
+.actions-wrap {
+    position: absolute;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.actions {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.gear-btn {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #2b2b3a;
+    border: 3px solid #9a9a9a;
+    border-radius: 0;
+    color: #fff;
+    cursor: pointer;
+}
+
+.gear-btn:hover {
+    border-color: #d0d0d0;
+}
+
+.play-btn {
+    min-width: 210px;
+    height: 50px;
+    padding: 0 28px;
+    background-color: #16a316;
+    border: 3px solid #111;
+    border-radius: 0;
+    color: #111;
+    font-family: inherit;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+.play-btn:hover:not(:disabled) {
+    background-color: #1dbd1d;
+}
+
+.play-btn:disabled {
+    background-color: #8fc98f;
+    color: #333;
+    cursor: wait;
+}
+
+.error,
+.notice {
+    margin: 14px 0 0;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.error {
+    color: #ff9090;
+}
+
+.notice {
+    color: #9fe09f;
+}
+
+.footer {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    margin: 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f0f0f0;
+}
+
+.rail {
+    position: absolute;
+    top: 50%;
+    right: 13px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rail-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #2b2b3a;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 0;
+    color: #cfcfcf;
+    cursor: pointer;
+}
+
+.rail-btn:hover {
+    color: #fff;
+    outline: 1px solid #9a9a9a;
+}
+
+.rail-btn-active {
+    color: #fff;
+    outline: 1px solid #f0f0f0;
+}
+
+.panel {
+    position: absolute;
+    top: 50%;
+    right: 64px;
+    transform: translateY(-50%);
+    width: 230px;
+    padding: 16px 18px;
+    background-color: #1e1e1e;
+    border: 1px solid #555;
+    color: #e8e8e8;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.panel h2 {
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #444;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.panel div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 13px;
+}
+
+.panel span {
+    color: #9a9a9a;
+}
+
+.panel strong {
+    font-weight: 700;
+}
+
+.panel-text {
+    margin: 0;
+    font-size: 13px;
+    color: #9a9a9a;
+}

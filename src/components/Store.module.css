@@ -6,6 +6,22 @@
     padding: 0px 24px;
 }
 
+.upload-btn {
+    background-color: #d9cd00;
+    color: #1a1a1a;
+    border: none;
+    padding: 8px 16px;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.upload-btn:hover {
+    background-color: #f0e033;
+}
+
 .search-bar{
     display: flex;
     align-items: center;
@@ -345,7 +361,6 @@
 {
     width: 20px;
     height: 20px;
-    filter: brightness(0) invert(1);
 }
 
 .section-heading

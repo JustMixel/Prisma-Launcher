@@ -135,6 +135,26 @@
     gap: 4px;
 }
 
+.update-badge
+{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 4;
+    padding: 5px 9px;
+    border: 1px solid rgba(255, 230, 120, 0.85);
+    border-radius: 4px;
+    background: linear-gradient(135deg, #f5d000 0%, #c99600 100%);
+    color: #1a1a1a;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+}
+
 .release-badge
 {
     position: absolute;

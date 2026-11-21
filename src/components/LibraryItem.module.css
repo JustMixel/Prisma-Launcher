@@ -1,0 +1,167 @@
+.item {
+    display: flex;
+    gap: 16px;
+    padding: 14px;
+    margin: 10px 0;
+    background-color: #232322;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+}
+
+.item.compact {
+    padding: 8px;
+    gap: 10px;
+}
+
+.cover-frame {
+    flex-shrink: 0;
+    width: 70px;
+    height: 96px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #1a1a1a;
+}
+
+.compact .cover-frame {
+    width: 44px;
+    height: 60px;
+}
+
+.cover-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.creator-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #8b0015;
+    flex-shrink: 0;
+}
+
+.text {
+    min-width: 0;
+}
+
+.name {
+    margin: 0;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #e8e8e8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.creator {
+    margin: 2px 0 0;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 100;
+    font-size: 12px;
+    color: #9a9a9a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.controls {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.control-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background-color: #2f2f2f;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    color: #d0d0d0;
+    cursor: pointer;
+}
+
+.control-btn:hover {
+    background-color: #404040;
+    border-color: #6a6a6a;
+}
+
+.control-btn.cancel:hover {
+    background-color: #7a2020;
+    border-color: #b04040;
+    color: #fff;
+}
+
+.progress-area {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.progress-track {
+    width: 100%;
+    height: 8px;
+    background-color: #141414;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #d9cd00;
+    border-radius: 4px;
+    transition: width 0.45s linear;
+}
+
+.fill-paused {
+    background-color: #8a8a8a;
+}
+
+.fill-completed {
+    background-color: #3d9a44;
+}
+
+.progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 12px;
+}
+
+.percent {
+    color: #e0e0e0;
+    font-weight: 700;
+}
+
+.eta {
+    color: #9a9a9a;
+}

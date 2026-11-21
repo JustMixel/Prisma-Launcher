@@ -1,0 +1,348 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+}
+
+.dialog {
+    width: 760px;
+    height: 520px;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+    color: #e8e8e8;
+    font-family: "Segoe UI", Bahnschrift, sans-serif;
+    overflow: hidden;
+}
+
+.title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 44px;
+    padding: 0 12px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    cursor: move;
+}
+
+.title-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.app-logo {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-logo img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.close-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #aaa;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.nav-btn {
+    width: 32px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #d0d0d0;
+    cursor: pointer;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.address-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    margin-left: 6px;
+    padding: 0 10px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.address-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.address-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.address-text {
+    font-size: 13px;
+    color: #d8d8d8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.sidebar {
+    width: 190px;
+    flex-shrink: 0;
+    padding: 10px 6px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    overflow-y: auto;
+}
+
+.sidebar-group {
+    margin-bottom: 14px;
+}
+
+.sidebar-heading {
+    margin: 0 0 6px;
+    padding: 0 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7a7a7a;
+}
+
+.sidebar-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #c8c8c8;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebar-item:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+    color: #fff;
+}
+
+.sidebar-active {
+    background-color: rgba(217, 205, 0, 0.14);
+    color: #f0e680;
+}
+
+.file-list {
+    flex: 1;
+    padding: 6px;
+    overflow-y: auto;
+    outline: none;
+}
+
+.file-list::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.file-list::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.file-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #dcdcdc;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.file-row:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.file-selected {
+    background-color: rgba(217, 205, 0, 0.16);
+    border-color: rgba(217, 205, 0, 0.5);
+}
+
+.file-disabled {
+    opacity: 0.4;
+}
+
+.file-icon {
+    display: flex;
+    flex-shrink: 0;
+}
+
+.file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-state,
+.list-error {
+    padding: 30px;
+    text-align: center;
+    font-size: 14px;
+    color: #7a7a7a;
+}
+
+.list-error {
+    color: #e07a7a;
+}
+
+.bottom {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    padding: 14px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(10, 10, 12, 0.5);
+    flex-shrink: 0;
+}
+
+.bottom-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 12px;
+    color: #a8a8a8;
+}
+
+.bottom-field:first-child {
+    flex: 1;
+}
+
+.bottom-field input,
+.bottom-field select {
+    height: 32px;
+    padding: 0 10px;
+    background-color: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    color: #e8e8e8;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+}
+
+.bottom-field input:focus,
+.bottom-field select:focus {
+    border-color: #d9cd00;
+}
+
+.bottom-field select {
+    min-width: 200px;
+}
+
+.bottom-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.open-btn,
+.cancel-btn {
+    height: 32px;
+    padding: 0 20px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.open-btn {
+    background-color: #d9cd00;
+    border: none;
+    color: #141414;
+    font-weight: 700;
+}
+
+.open-btn:hover {
+    background-color: #f0e033;
+}
+
+.cancel-btn {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    color: #d8d8d8;
+}
+
+.cancel-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}

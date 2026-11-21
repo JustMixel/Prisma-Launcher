@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import testCrop from "../assets/modRender.png"
 import Highlight from "./Highlight.jsx";
+import { getUpdateLabel } from "../utils/update.js";
 import styles from "./Card.module.css";
 
 function formatCountdown(releasedate) {
@@ -24,12 +25,13 @@ function formatCountdown(releasedate) {
     return `${days}d ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`;
 }
 
-function Card({title, cover, publisher, producer, releasedate, accentcolor, onClick, tokens = []})
+function Card({title, cover, publisher, producer, downloads, rating, releasedate, update, accentcolor, onClick, tokens = []})
 {
     const [badgeGlow, setBadgeGlow] = useState(false);
     const [countdown, setCountdown] = useState(() => formatCountdown(releasedate));
     const previousCountdown = useRef(countdown);
     const coverSource = cover || testCrop;
+    const updateLabel = getUpdateLabel(update);
 
     useEffect(() => {
         const update = () => setCountdown(formatCountdown(releasedate));
@@ -69,6 +71,9 @@ function Card({title, cover, publisher, producer, releasedate, accentcolor, onCl
             <div className={styles["s-layer"]}>
 
             </div>
+            {updateLabel && (
+                <div className={styles["update-badge"]}>{updateLabel}</div>
+            )}
             {countdown && (
                 <div className={`${styles["release-badge"]} ${badgeGlow ? styles["release-badge-glow"] : ""}`}>
                     <span className={styles["release-badge-time"]}>{countdown}</span>
@@ -76,7 +81,12 @@ function Card({title, cover, publisher, producer, releasedate, accentcolor, onCl
             )}
             <div className={styles["t-layer"]}>
                 <h2 className={styles["mname"]}><Highlight text={title} tokens={tokens} /></h2>
+                {publisher && <p className={styles["studio"]}><Highlight text={publisher} tokens={tokens} /></p>}
                 <p><Highlight text={producer} tokens={tokens} /></p>
+                <div className={styles["stats"]}>
+                    <span className={styles["stat"]}>↓ {downloads ?? 0}</span>
+                    <span className={styles["stat"]}>★ {rating ?? 0}</span>
+                </div>
             </div>
         </div>
     </>

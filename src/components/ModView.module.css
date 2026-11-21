@@ -108,6 +108,106 @@
     margin-top: 24px;
 }
 
+.rate-section
+{
+    margin-top: 24px;
+}
+
+.rate-section p
+{
+    margin: 0 0 8px;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    color: #9a9a9a;
+}
+
+.download-btn-active {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: #b32d2d;
+    border: 1px solid #e05a5a;
+    border-radius: 24px;
+    color: #ffffff;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.download-btn-active:hover {
+    background-color: #c73737;
+}
+
+.download-cancel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    background-color: #2f2f2f;
+    border: 1px solid #4a4a4a;
+    border-radius: 50%;
+    color: #d0d0d0;
+    cursor: pointer;
+}
+
+.download-cancel-btn:hover {
+    background-color: #7a2020;
+    border-color: #b04040;
+    color: #fff;
+}
+
+.download-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.download-btn-installed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: #2d5a2d;
+    border: 1px solid #5a9a5a;
+    border-radius: 24px;
+    color: #d0f0d0;
+    font-family: Bahnschrift, sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    cursor: default;
+}
+
+.title-row
+{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.update-badge
+{
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 9px;
+    border: 1px solid rgba(255, 230, 120, 0.85);
+    border-radius: 4px;
+    background: linear-gradient(135deg, #f5d000 0%, #c99600 100%);
+    color: #1a1a1a;
+    font-family: Bahnschrift, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
 .mod-title
 {
     margin: 0;
@@ -279,6 +379,32 @@
     font-weight: 400;
     font-size: 13px;
     color: #8a8a8a;
+}
+
+.version-head-left
+{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.version-head .version-name
+{
+    font-weight: 600;
+    font-size: 14px;
+    color: #cfcfcf;
+}
+
+.version-head .version-new
+{
+    padding: 3px 7px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, #f5d000 0%, #c99600 100%);
+    color: #1a1a1a;
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 1;
 }
 
 .version-item p

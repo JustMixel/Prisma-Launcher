@@ -89,10 +89,12 @@ Store, Library, Downloads, Configuration.
 - [x] **Secciones Studios/Productores** en modo Desarrollador.
 - [x] **Flujo perfil → mods** en modo Desarrollador (`viewingEntity`).
 - [x] **Countdown real** en badge de `Card` desde `m_releasedate`.
-- [ ] Contenido de cada pantalla dentro del `<main>` (Library/Downloads/Configuration con placeholders).
+- [x] **Configuration** completa: Perfil, Apariencia, Launcher y Acerca de.
 - [ ] Resolver solapamiento texto/imagen de fondo en `.main-content`.
-- [ ] Definir anchura definitiva de la barra lateral.
-- [ ] Pendiente decidir si la pfp se selecciona en memoria o se persiste vía Rust.
+- [x] Ancho definitivo de la barra lateral: 240px.
+- [x] La foto de perfil se trata dentro de Configuration (no en Store).
+- [x] **ModPlayView** implementada: clic en `LibraryCard` abre la vista del mod instalado.
+- [x] Descargas/local mods se registran en `<.prisma>/assets/(Mod name)/mod.json`; Library lee esos manifests desde Rust.
 
 ## Store — estado funcional (detallado)
 
@@ -137,10 +139,17 @@ Store, Library, Downloads, Configuration.
 - Producers: 7 Mixel, 12 Marcelo (`avatar_url: null` → logo por defecto). Devgroup: 3 Prisma Interactive (logo placehold.co).
 
 ## Decisiones Registradas
-- La **foto de perfil** deberá permitir al usuario cargar una imagen desde su computadora y asignarla en el launcher (integración futura con backend Rust para persistencia).
+- La **foto de perfil** deberá permitir al usuario cargar una imagen desde su computadora; se implementará **dentro de Configuration**.
+- **Título "STORE" descartado**: no se implementará, aunque aparezca en el mock `Store_Screen.png`.
+- **Ancho definitivo de la sidebar: 240px** (confirmado por el usuario).
+- **Videos/Reviews** requieren **modelado de datos** antes de trabajar su UI; por ahora se mantienen como placeholders vacíos en `ModView`.
+- La foto de perfil elegida en Configuration se guarda en `localStorage` (`prisma-profile-picture`) y se refleja en la sidebar.
+- Preferencias locales en `localStorage` (`src/utils/settings.js`): fondo, color de acento, ruta de mods, recordar pestaña y pestaña inicial.
+- Los mods instalados se registran como `<.prisma>/assets/(Mod name)/mod.json`; la Library los lee desde Rust (`get_installed_mods`).
+- `ModPlayView` se abre al clickear un mod instalado en Library; rediseñada desde el mock `ModPlay_Screen.png`: pantalla clara, título centrado, retrato, gear (abrir carpeta) + botón **JUGAR** verde, footer "dev, año" y riel derecho de 3 iconos (home → biblioteca, gráfico → estadísticas, trofeo → logros). `Jugar` usa `executablePath` o `m_link`.
 - Botones de navegación con **borde solo al pasar el mouse (hover)**.
 - Tipografía del sistema **Bahnschrift** con distintos pesos según el label.
-- El área principal usará **`src/assets/app-base.png`** como imagen de fondo.
+- El área principal usará **`src/assets/app-base.png`** como imagen de fondo por defecto (configurable desde Configuration).
 - Navegación por pestañas gestionada mediante **estado de React** (`useState`) en `App.jsx`.
 - **Secciones separadas** en modo Desarrollador: Studios arriba, Productores abajo, cada uno con su título.
 - Flujo de búsqueda por desarrollador: **texto → cartas de perfil → clic → mods del perfil** (no muestra mods directamente al escribir).
@@ -149,22 +158,20 @@ Store, Library, Downloads, Configuration.
 - Preferencia del usuario: explicar qué hacer y por dónde empezar; dar código solo si pide explícitamente que se implemente.
 
 ## Pendientes / Próximos Pasos (Store)
-1. **Título "STORE"** centrado arriba (existe en mock `Store_Screen.png`, no en el JSX).
-2. Aplicar **filtros** (descargas/rating/fecha/tags) también a las cartas de perfil al navegar.
-3. **Persistir** filtros/orden/modo en `localStorage` (solo recientes se guardan hoy).
-4. ARIA/labels en los inputs del panel de filtros.
-5. "Solo instalados" → requiere Library + Rust (`get_library`).
-6. Búsqueda **server-side con debounce** (`/api/catalog?q=`) cuando haya datos reales.
-7. Videos/Reviews en ModView (sin fuente de datos).
-8. Limpiar CSS huérfano en `Card.module.css` (`.studio`, `.releasedate`, `.stats`, `.stat`) o usarlo.
+1. Aplicar **filtros** (descargas/rating/fecha/tags) también a las cartas de perfil al navegar.
+2. **Persistir** filtros/orden/modo en `localStorage` (solo recientes se guardan hoy).
+3. ARIA/labels en los inputs del panel de filtros.
+4. "Solo instalados" → requiere Library + Rust (`get_library`).
+5. Búsqueda **server-side con debounce** (`/api/catalog?q=`) cuando haya datos reales.
+6. Videos/Reviews en ModView → requiere **modelado de datos** previo (ver Decisiones Registradas).
+7. Limpiar CSS huérfano en `Card.module.css` (`.studio`, `.releasedate`, `.stats`, `.stat`) o usarlo.
 
 ## Pendientes globales (fuera del Store)
-1. Contenido real de Library/Downloads/Configuration (placeholders actuales).
-2. Resolver solapamiento texto/imagen de fondo en `.main-content`.
-3. Anchura definitiva de la barra lateral.
-4. Carga de pfp del usuario (memoria vs persistencia Rust).
-5. Comandos Tauri en Rust (`src-tauri/src/lib.rs` solo tiene `greet`): Library, instalación, shortcut.
-6. Migración de endpoints mock a SQL Server real.
+1. Resolver solapamiento texto/imagen de fondo en `.main-content`.
+2. Comandos Tauri restantes: descarga real de archivos y shortcut (registro/lectura/ejecución ya implementados).
+3. Modelado de datos para Videos/Reviews antes de implementar su UI.
+4. Migración de endpoints mock a SQL Server real.
+5. Assets de ModPlayView: `Mock/Main Screens/SC1.png` (1920×1080) como fondo temporal y `STEL3.png` (1280×720, fondo blanco) como logo de prueba; faltan PNG con alfa del logo del proyecto y del logo real del mod.
 
 ## Comandos
 - Frontend: `npm run build` (raíz del proyecto).
@@ -179,4 +186,5 @@ Store, Library, Downloads, Configuration.
 - **Fecha de test** en ISO 8601 completo; reiniciar servidor Node tras tocar mocks.
 - API mock en `server/Routes/launcherRoutes.js`: `/api/catalog`, `/api/mods`, `/api/mods/:id`, `/api/mods/:id/versions`.
 - Arquitectura acordada: catálogo en Node; Library, instalación y shortcut en Rust/Tauri.
+- Decisiones nuevas: **STORE descartado**, sidebar **240px**, pfp en **Configuration**, Videos/Reviews requieren **modelado de datos**.
 - Comandos: `npm run build`; servidor desde `server/` con `node index.js`.

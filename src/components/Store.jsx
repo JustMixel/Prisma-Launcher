@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import Card from "./Card.jsx";
 import StudioCard from "./StudioCard.jsx";
 import ModView from "./ModView.jsx";
+import { useDownloads } from "../context/DownloadsContext.jsx";
 import { matchesTokens, normalizeText, tokenize } from "../utils/search.js";
+import { getAvailableUpdate } from "../utils/update.js";
 import styles from "./Store.module.css";
 import funnel from "../assets/funnel.png";
 
@@ -31,6 +33,7 @@ function loadRecentSearches() {
 
 function Store()
 {
+    const { library } = useDownloads();
     const [mods, setMods] = useState([]);
     const [status, setStatus] = useState("loading");
     const [searchTerm, setSearchTerm] = useState("");
@@ -44,6 +47,12 @@ function Store()
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const [suggestionIndex, setSuggestionIndex] = useState(-1);
     const inputRef = useRef(null);
+
+    function getVisibleUpdate(mod)
+    {
+        const installed = library.find((item) => String(item.id) === String(mod.ID));
+        return getAvailableUpdate(mod.m_update, installed?.version);
+    }
 
     useEffect(() =>
         {
@@ -589,7 +598,10 @@ function Store()
                                     title={mod.m_name}
                                     publisher={mod.m_devgroupname}
                                     producer={mod.m_producername}
+                                    downloads={mod.m_downloads}
+                                    rating={mod.m_ratingAverage}
                                     releasedate={mod.m_releasedate}
+                                    update={getVisibleUpdate(mod)}
                                     accentcolor={mod.m_accentcolor}
                                     tokens={tokens}
                                     onClick={() => setSelectedMod(mod)}
@@ -616,7 +628,10 @@ function Store()
                                 title={mod.m_name}
                                 publisher={mod.m_devgroupname}
                                 producer={mod.m_producername}
+                                downloads={mod.m_downloads}
+                                rating={mod.m_ratingAverage}
                                 releasedate={mod.m_releasedate}
+                                update={getVisibleUpdate(mod)}
                                 accentcolor={mod.m_accentcolor}
                                 tokens={tokens}
                                 onClick={() => setSelectedMod(mod)}

@@ -143,8 +143,8 @@ En `server/Routes/launcherRoutes.js` ya existe una plantilla mock con:
 - Botón `←` en `ModView` ejecuta `onBack` → `setSelectedMod(null)`.
 
 ### Pendiente
-- Videos: subir/almacenar material promocional (definir fuente de datos).
-- Reviews: sistema de valoraciones de usuarios.
-- Acciones instalar/ejecutar (depende de Rust/Tauri + `LibraryItem`).
+- Videos: subir/almacenar material promocional (requiere modelado de datos previo).
+- Reviews: sistema de valoraciones de usuarios (requiere modelado de datos previo).
+- Descarga real de archivos (el registro en `assets` y la ejecución ya están implementados).
 - Consumir `/api/mods/:id` (detalle completo) en vez del objeto legacy de la grilla.
 - Ajustes finos de espaciado/colores contra el mock una vez visto en pantalla.

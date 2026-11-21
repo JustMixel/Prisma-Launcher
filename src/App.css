@@ -94,7 +94,7 @@
 }
 
 .nav-btn.active {
-  border-color: rgb(219, 205, 0);     /* color cuando está seleccionado */
+  border-color: var(--accent, rgb(219, 205, 0));     /* color cuando está seleccionado */
   background-color: rgb(15, 15, 14);
   /* u otras propiedades */
 }
@@ -111,6 +111,20 @@
   z-index: 0;
 }
 
+.download-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 8px;
+    background-color: #b32d2d;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+}
+
 /*------ TESTING ------*/
 .tab-title {
   color: #ffffff;
@@ -123,4 +137,36 @@ mark {
   color: inherit;
   border-radius: 2px;
   padding: 0 1px;
+}
+
+/*------ Arranque ------*/
+.boot-screen {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: rgb(8, 8, 7);
+  color: #d8d8d8;
+  font-size: 16px;
+}
+
+.boot-error {
+  max-width: 520px;
+  color: #e07878;
+  font-size: 13px;
+  text-align: center;
+}
+
+.boot-screen button {
+  padding: 9px 20px;
+  background-color: #d9cd00;
+  border: none;
+  border-radius: 4px;
+  color: #141414;
+  font-family: "Bahnschrift", sans-serif;
+  font-weight: 700;
+  cursor: pointer;
 }

@@ -120,6 +120,26 @@ const versions = {
             workingDir: '.'
         }
     },
+    52: {
+        id: 52,
+        mod_id: 1,
+        version: '1.4.0',
+        name: 'The November Update',
+        changelog: 'Nueva campaña, mejoras de IA y balance general.',
+        released_at: '2026-11-19T18:00:00.000Z',
+        download_url: null,
+        checksum: 'sha256:zip520',
+        file_size: 576716800,
+        dependencies: [],
+        is_current: false,
+        is_update: true,
+        launch_config: {
+            type: 'exe',
+            relativePath: 'bin/Syndicate.exe',
+            args: ['-windowed'],
+            workingDir: '.'
+        }
+    },
     88: {
         id: 88,
         mod_id: 2,
@@ -131,6 +151,26 @@ const versions = {
         file_size: 268435456,
         dependencies: [],
         is_current: true,
+        launch_config: {
+            type: 'exe',
+            relativePath: 'game/NeonDrift.exe',
+            args: [],
+            workingDir: 'game'
+        }
+    },
+    89: {
+        id: 89,
+        mod_id: 2,
+        version: '2.1.0',
+        name: 'Neon Nights Update',
+        changelog: 'Nuevos circuitos nocturnos, autos y sistema de clima.',
+        released_at: '2026-11-19T20:00:00.000Z',
+        download_url: null,
+        checksum: 'sha256:zip890',
+        file_size: 314572800,
+        dependencies: [],
+        is_current: false,
+        is_update: true,
         launch_config: {
             type: 'exe',
             relativePath: 'game/NeonDrift.exe',
@@ -160,7 +200,12 @@ const mods = [
         m_ratingAverage: 7.5,
         m_ratingCount: 8,
         m_accentcolor: '#3a2b25',
-        m_tags: ['estrategia', 'espacial', 'misiones']
+        m_tags: ['estrategia', 'espacial', 'misiones'],
+        m_update: {
+            version: '1.4.0',
+            name: 'The November Update',
+            display: 'version'
+        }
     },
     {
         m_id: 2,
@@ -181,7 +226,12 @@ const mods = [
         m_ratingAverage: 6.2,
         m_ratingCount: 4,
         m_accentcolor: '#2b3a3a',
-        m_tags: ['carreras', 'arcade', 'nocturno']
+        m_tags: ['carreras', 'arcade', 'nocturno'],
+        m_update: {
+            version: '2.1.0',
+            name: 'Neon Nights Update',
+            display: 'name'
+        }
     }
 ];
 
@@ -240,6 +290,8 @@ function buildLegacyMod(mod) {
         m_devgrouplogo: devgroups[mod.m_devgroupid]?.logo_url || null,
         m_producername: producers[mod.m_producerid]?.name || null,
         m_producerlogo: producers[mod.m_producerid]?.avatar_url || null,
+        m_version: version?.version || null,
+        m_update: mod.m_update || null,
         m_link: version?.download_url || null
     };
 }

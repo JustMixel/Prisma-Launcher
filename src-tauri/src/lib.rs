@@ -1,14 +1,485 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use aes_gcm::aead::Aead;
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
+use base64::Engine;
+use rand_core::{OsRng, RngCore};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
+use std::path::PathBuf;
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+
+#[derive(Serialize)]
+pub struct FileEntry {
+    pub name: String,
+    pub path: String,
+    pub is_dir: bool,
+    pub extension: String,
+}
+
+#[derive(Serialize)]
+pub struct DriveEntry {
+    pub name: String,
+    pub path: String,
+}
+
+#[derive(Serialize)]
+pub struct SpecialFolder {
+    pub label: String,
+    pub path: String,
+    pub icon: String,
+}
+
+#[derive(Serialize)]
+pub struct LauncherState {
+    pub data_dir: String,
+    pub assets_dir: String,
+    pub needs_setup: bool,
+    pub user_name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct UserData {
+    name: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct UserDataFile {
+    version: u32,
+    nonce: String,
+    data: String,
+}
+
+fn prisma_dir() -> Result<PathBuf, String> {
+    let base = std::env::var("APPDATA")
+        .or_else(|_| std::env::var("LOCALAPPDATA"))
+        .unwrap_or_else(|_| {
+            std::env::var("USERPROFILE").unwrap_or_else(|_| String::from("C:\\Users\\User"))
+        });
+
+    let root = PathBuf::from(base).join(".prisma");
+    std::fs::create_dir_all(root.join("assets"))
+        .map_err(|error| format!("No se pudo crear .prisma: {}", error))?;
+
+    Ok(root)
+}
+
+fn user_data_path() -> Result<PathBuf, String> {
+    Ok(prisma_dir()?.join("userData.json"))
+}
+
+fn encryption_key() -> [u8; 32] {
+    let username = std::env::var("USERNAME")
+        .or_else(|_| std::env::var("USER"))
+        .unwrap_or_default();
+    let computer = std::env::var("COMPUTERNAME")
+        .or_else(|_| std::env::var("HOSTNAME"))
+        .unwrap_or_default();
+
+    let material = format!("prisma-launcher::{}::{}::v1", username, computer);
+    let digest = Sha256::digest(material.as_bytes());
+    let mut key = [0u8; 32];
+    key.copy_from_slice(&digest);
+    key
+}
+
+fn is_valid_name(name: &str) -> bool {
+    let trimmed = name.trim();
+    trimmed.chars().count() > 2 && trimmed.chars().any(|value| value.is_alphabetic())
+}
+
+fn read_user_name() -> Option<String> {
+    let bytes = std::fs::read(user_data_path().ok()?).ok()?;
+    let file: UserDataFile = serde_json::from_slice(&bytes).ok()?;
+
+    if file.version != 1 {
+        return None;
+    }
+
+    let nonce_bytes = base64::engine::general_purpose::STANDARD.decode(file.nonce).ok()?;
+    if nonce_bytes.len() != 12 {
+        return None;
+    }
+
+    let ciphertext = base64::engine::general_purpose::STANDARD.decode(file.data).ok()?;
+    let cipher = Aes256Gcm::new_from_slice(&encryption_key()).ok()?;
+    let plaintext = cipher
+        .decrypt(Nonce::from_slice(&nonce_bytes), ciphertext.as_slice())
+        .ok()?;
+    let user_data: UserData = serde_json::from_slice(&plaintext).ok()?;
+
+    if !is_valid_name(&user_data.name) {
+        return None;
+    }
+
+    Some(user_data.name.trim().to_string())
+}
+
+fn build_state() -> Result<LauncherState, String> {
+    let root = prisma_dir()?;
+    let name = read_user_name();
+
+    Ok(LauncherState {
+        data_dir: root.to_string_lossy().into_owned(),
+        assets_dir: root.join("assets").to_string_lossy().into_owned(),
+        needs_setup: name.is_none(),
+        user_name: name,
+    })
+}
+
+#[tauri::command]
+fn initialize_launcher() -> Result<LauncherState, String> {
+    build_state()
+}
+
+#[tauri::command]
+fn save_user_name(name: &str) -> Result<LauncherState, String> {
+    let trimmed = name.trim();
+    if !is_valid_name(trimmed) {
+        return Err(String::from("El nombre debe tener más de 2 caracteres y al menos una letra."));
+    }
+
+    let plaintext = serde_json::to_vec(&UserData { name: trimmed.to_string() })
+        .map_err(|error| format!("No se pudo preparar userData: {}", error))?;
+
+    let cipher = Aes256Gcm::new_from_slice(&encryption_key())
+        .map_err(|error| format!("No se pudo crear el cifrado: {}", error))?;
+
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext.as_slice())
+        .map_err(|error| format!("No se pudo cifrar userData: {}", error))?;
+
+    let file = UserDataFile {
+        version: 1,
+        nonce: base64::engine::general_purpose::STANDARD.encode(nonce_bytes),
+        data: base64::engine::general_purpose::STANDARD.encode(ciphertext),
+    };
+
+    let json = serde_json::to_vec_pretty(&file)
+        .map_err(|error| format!("No se pudo serializar userData: {}", error))?;
+
+    std::fs::write(user_data_path()?, json)
+        .map_err(|error| format!("No se pudo guardar userData: {}", error))?;
+
+    build_state()
+}
+
+#[tauri::command]
+fn get_window_label(window: tauri::Window) -> String {
+    window.label().to_string()
+}
+
+#[tauri::command]
+fn start_window_drag(window: tauri::Window) {
+    let _ = window.start_dragging();
+}
+
+#[tauri::command]
+fn complete_setup(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(setup) = app.get_webview_window("setup") {
+        setup.close().map_err(|error| format!("No se pudo cerrar setup: {}", error))?;
+    }
+
+    if let Some(main) = app.get_webview_window("main") {
+        main.show().map_err(|error| format!("No se pudo mostrar el launcher: {}", error))?;
+        main.set_focus().map_err(|error| format!("No se pudo enfocar el launcher: {}", error))?;
+    }
+
+    app.emit("prisma-setup-complete", ())
+        .map_err(|error| format!("No se pudo notificar el setup: {}", error))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+fn exit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
+#[tauri::command]
+fn list_directory(path: &str) -> Result<Vec<FileEntry>, String> {
+    let entries = std::fs::read_dir(path)
+        .map_err(|error| format!("No se pudo leer el directorio: {}", error))?;
+
+    let mut result: Vec<FileEntry> = Vec::new();
+
+    for entry in entries.flatten() {
+        let file_type = match entry.file_type() {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name.starts_with('.') {
+            continue;
+        }
+
+        let is_dir = file_type.is_dir();
+        let extension = if is_dir {
+            String::new()
+        } else {
+            entry.path()
+                .extension()
+                .map(|value| value.to_string_lossy().to_lowercase())
+                .unwrap_or_default()
+        };
+
+        result.push(FileEntry {
+            name,
+            path: entry.path().to_string_lossy().into_owned(),
+            is_dir,
+            extension,
+        });
+    }
+
+    result.sort_by(|a, b| {
+        if a.is_dir != b.is_dir {
+            return b.is_dir.cmp(&a.is_dir);
+        }
+        a.name.to_lowercase().cmp(&b.name.to_lowercase())
+    });
+
+    Ok(result)
+}
+
+#[tauri::command]
+fn get_drives() -> Vec<DriveEntry> {
+    let mut drives = Vec::new();
+
+    for letter in b'A'..=b'Z' {
+        let path = format!("{}:\\", letter as char);
+        if std::path::Path::new(&path).exists() {
+            drives.push(DriveEntry {
+                name: format!("{}:", letter as char),
+                path,
+            });
+        }
+    }
+
+    drives
+}
+
+#[tauri::command]
+fn get_special_folders() -> Vec<SpecialFolder> {
+    let home = std::env::var("USERPROFILE").unwrap_or_else(|_| String::from("C:\\Users\\User"));
+
+    let mut folders = vec![
+        SpecialFolder { label: String::from("Escritorio"), path: format!("{}\\Desktop", home), icon: String::from("desktop") },
+        SpecialFolder { label: String::from("Documentos"), path: format!("{}\\Documents", home), icon: String::from("documents") },
+        SpecialFolder { label: String::from("Descargas"), path: format!("{}\\Downloads", home), icon: String::from("downloads") },
+        SpecialFolder { label: String::from("Imágenes"), path: format!("{}\\Pictures", home), icon: String::from("pictures") },
+        SpecialFolder { label: String::from("Música"), path: format!("{}\\Music", home), icon: String::from("music") },
+        SpecialFolder { label: String::from("Videos"), path: format!("{}\\Videos", home), icon: String::from("videos") },
+    ];
+
+    folders.retain(|folder| std::path::Path::new(&folder.path).exists());
+    folders
+}
+
+#[tauri::command]
+fn path_exists(path: &str) -> bool {
+    std::path::Path::new(path).exists()
+}
+
+#[tauri::command]
+fn read_file_as_data_url(path: &str) -> Result<String, String> {
+    use base64::Engine;
+
+    let bytes = std::fs::read(path)
+        .map_err(|error| format!("No se pudo leer la imagen: {}", error))?;
+
+    let extension = std::path::Path::new(path)
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    let mime = match extension.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        _ => "application/octet-stream",
+    };
+
+    let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
+    Ok(format!("data:{};base64,{}", mime, encoded))
+}
+
+fn safe_mod_folder_name(name: &str) -> String {
+    let cleaned: String = name
+        .chars()
+        .map(|character| {
+            if matches!(character, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
+                || character.is_control()
+            {
+                '_'
+            } else {
+                character
+            }
+        })
+        .collect();
+
+    let trimmed = cleaned.trim().trim_matches('.');
+    if trimmed.is_empty() {
+        String::from("mod")
+    } else {
+        trimmed.to_string()
+    }
+}
+
+#[tauri::command]
+fn save_installed_mod(installed_mod: Value) -> Result<Value, String> {
+    let name = installed_mod
+        .get("name")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| String::from("El mod no tiene nombre"))?;
+
+    let folder_name = safe_mod_folder_name(name);
+    let folder = prisma_dir()?.join("assets").join(folder_name);
+    std::fs::create_dir_all(&folder)
+        .map_err(|error| format!("No se pudo crear la carpeta del mod: {}", error))?;
+
+    let folder_path = folder.to_string_lossy().to_string();
+    let mut stored = installed_mod;
+    if let Some(map) = stored.as_object_mut() {
+        map.insert(String::from("folder"), json!(folder_path));
+    }
+
+    let manifest = serde_json::to_string_pretty(&stored)
+        .map_err(|error| format!("No se pudo serializar el mod: {}", error))?;
+    std::fs::write(folder.join("mod.json"), manifest)
+        .map_err(|error| format!("No se pudo guardar el mod: {}", error))?;
+
+    Ok(stored)
+}
+
+#[tauri::command]
+fn get_installed_mods() -> Result<Vec<Value>, String> {
+    let assets_dir = prisma_dir()?.join("assets");
+    let entries = std::fs::read_dir(&assets_dir)
+        .map_err(|error| format!("No se pudo leer la carpeta de assets: {}", error))?;
+    let mut mods = Vec::new();
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        let manifest_path = path.join("mod.json");
+        if !manifest_path.exists() {
+            continue;
+        }
+
+        let content = match std::fs::read_to_string(&manifest_path) {
+            Ok(content) => content,
+            Err(_) => continue,
+        };
+
+        let mut value: Value = match serde_json::from_str(&content) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+
+        if let Some(map) = value.as_object_mut() {
+            if !map.contains_key("folder") {
+                map.insert(
+                    String::from("folder"),
+                    json!(path.to_string_lossy().to_string()),
+                );
+            }
+        }
+
+        mods.push(value);
+    }
+
+    mods.sort_by(|left, right| {
+        right
+            .get("installedAt")
+            .and_then(Value::as_str)
+            .cmp(&left.get("installedAt").and_then(Value::as_str))
+    });
+
+    Ok(mods)
+}
+
+#[tauri::command]
+fn launch_executable(path: &str) -> Result<(), String> {
+    let executable = PathBuf::from(path);
+    if !executable.exists() {
+        return Err(String::from("El ejecutable no existe"));
+    }
+
+    let working_directory = executable
+        .parent()
+        .map(|parent| parent.to_path_buf())
+        .unwrap_or_else(|| PathBuf::from("C:\\"));
+
+    std::process::Command::new(&executable)
+        .current_dir(working_directory)
+        .spawn()
+        .map_err(|error| format!("No se pudo ejecutar el mod: {}", error))?;
+
+    Ok(())
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+#[tauri::command]
+fn install_mod(name: &str) -> String {
+    format!("Mod instalado: {} (simulación - sin archivos reales)", name)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            let state = build_state()
+                .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
+
+            if state.needs_setup {
+                WebviewWindowBuilder::new(app, "setup", WebviewUrl::App("index.html".into()))
+                    .title("Prisma Launcher")
+                    .inner_size(620.0, 210.0)
+                    .resizable(false)
+                    .decorations(false)
+                    .center()
+                    .build()?;
+            } else if let Some(main) = app.get_webview_window("main") {
+                main.show()?;
+                main.set_focus()?;
+            }
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            install_mod,
+            list_directory,
+            get_drives,
+            get_special_folders,
+            path_exists,
+            read_file_as_data_url,
+            save_installed_mod,
+            get_installed_mods,
+            launch_executable,
+            initialize_launcher,
+            save_user_name,
+            get_window_label,
+            start_window_drag,
+            complete_setup,
+            exit_app
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

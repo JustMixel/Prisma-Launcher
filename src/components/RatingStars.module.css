@@ -1,0 +1,26 @@
+.stars {
+    display: flex;
+    gap: 4px;
+}
+
+.star {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.filled {
+    color: #ffc107;
+}
+
+.empty {
+    color: #6a6a6a;
+}
+
+.clickable {
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.clickable:hover {
+    transform: scale(1.2);
+}
