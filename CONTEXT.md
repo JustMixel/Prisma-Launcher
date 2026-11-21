@@ -181,9 +181,9 @@ Store, Library, Downloads, Configuration.
 ## Repositorio (git)
 - Remoto: `https://github.com/JustMixel/Prisma-Launcher.git`.
 - **`origin/main`** contiene un proyecto **distinto** (solución C# WinForms: `Prisma Launcher.sln`, `CapaDatos/`, `Forms/...`) subido por *force push* — historias sin relación con el Tauri.
-- **`origin/dev`** es la rama del proyecto **Tauri + React** (historia: `c8f6fca` → `68e6386` → `45b958a`).
+- **`origin/dev`** es la rama del proyecto **Tauri + React** (historia: `c8f6fca` → `68e6386` → `45b958a` → `820c952`).
 - **Decisión del usuario**: los commits del proyecto Tauri van a **`dev`**; `main` queda con el proyecto C# (sin tocar).
-- Último push: `45b958a` "Add first-run setup, Configuration tabs, Library downloads and ModPlayView with local mod registry" → `origin/dev`.
+- Último push: commit "Store: profile filters, persisted search prefs, ARIA labels and installed-only filter" → `origin/dev`.
 
 ## Comandos
 - Frontend: `npm run build` (raíz del proyecto).
