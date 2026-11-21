@@ -16,7 +16,7 @@ const DEFAULTS = {
     [SETTINGS_KEYS.lastTab]: "store"
 };
 
-export const TABS = ["store", "library", "downloads", "configuration"];
+export const TABS = ["store", "library", "downloads", "configuration", "creator"];
 
 export function readSetting(key)
 {

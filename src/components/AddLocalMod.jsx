@@ -6,6 +6,8 @@ import styles from "./AddLocalMod.module.css";
 
 const CATEGORIES = ["Total Conversion", "Vehículos", "Mapas", "Armas", "Scripts", "Texturas", "Sonidos", "Otro"];
 
+export { CATEGORIES };
+
 function AddLocalMod({ onBack, onSave })
 {
     const [dialogOpen, setDialogOpen] = useState(false);

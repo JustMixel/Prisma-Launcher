@@ -27,7 +27,8 @@ const TAB_LABELS = {
     store: "Tienda",
     library: "Biblioteca",
     downloads: "Descargas",
-    configuration: "Configuración"
+    configuration: "Configuración",
+    creator: "Creator"
 };
 
 function readStoredPicture()

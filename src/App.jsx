@@ -9,6 +9,7 @@ import Store from "./components/Store.jsx";
 import Downloads from "./components/Downloads.jsx";
 import Library from "./components/Library.jsx";
 import Configuration, { readStoredPicture } from "./components/Configuration.jsx";
+import Creator from "./components/Creator.jsx";
 import FirstRunSetup from "./components/FirstRunSetup.jsx";
 import { SETTINGS_KEYS, TABS, readSetting, writeSetting } from "./utils/settings.js";
 import "./App.css";
@@ -87,6 +88,15 @@ function AppContent({ userName, onNameChange })
       </button>
 
     </nav>
+
+    <div className="sidebar-footer">
+      <button
+        className={activeTab === "creator" ? "creator-btn active" : "creator-btn"}
+        onClick={() => setActiveTab("creator")}
+      >
+        Creator
+      </button>
+    </div>
     </aside>
 
     <main
@@ -101,6 +111,7 @@ function AppContent({ userName, onNameChange })
       {activeTab === "store" && <Store />}
       {activeTab === "library" && <Library />}
       {activeTab === "downloads" && <Downloads />}
+      {activeTab === "creator" && <Creator />}
       {activeTab === "configuration" && (
         <Configuration
           userName={userName}

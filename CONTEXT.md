@@ -100,7 +100,7 @@ Store, Library, Downloads, Configuration.
 - [x] `DownloadsProvider` precarga `get_installed_mods` al arrancar → `library` disponible en Store (update badges + solo instalados) sin abrir Library.
 - [x] **Fix settings**: `handleSettingChange` ahora mapea clave de storage → clave de estado (`SETTINGS_STATE_KEYS`); antes acento/fondo/pestañas no reaccionaban en la UI.
 - [x] **Velo oscuro en `.main-content`**: gradiente `rgba(0,0,0,0.62)` sobre `app-base.png` para que el texto no compita con la imagen (pendiente de solapamiento resuelto).
-- [x] **PCN F0+F1** (ver sección dedicada): login mock, canje de códigos y botón "Activar Proyecto" en Library.
+- [x] **PCN F0+F2** (ver sección dedicada): login mock, canje de códigos, botón "Activar Proyecto" en Library y módulo Creator (sidebar + lista/crear/editar/gestión de códigos, testers y visibilidad).
 
 ## Store — estado funcional (detallado)
 
@@ -192,21 +192,27 @@ Store, Library, Downloads, Configuration.
 Módulo del launcher para crear, testear y gestionar mods + activación de proyectos ocultos por código.
 
 ### Decisiones
-- UI: botón PCN en el **sidebar, abajo de todo**, con margen pequeño a los bordes (pendiente F2).
+- UI: botón PCN en el **sidebar, abajo de todo** (`.sidebar-footer` con `margin-top:auto` y padding 12px), clase `.creator-btn`.
 - Creación: **metadatos + archivos** (base del form AddLocalMod).
 - Testeo: módulo propio (validar/lanzar/logs) + rol **Tester** otorgado por el desarrollador; los testers ven el botón **"Activar Proyecto"** en Library; los miembros normales no.
 - Códigos: **multi-uso con límite** (opcional expiración); activan proyectos ocultos que no salen en la Store.
 - Archivos: combinación **local + alojados en servidor** (F4).
 - Identidad: **cuentas con login** (mock ahora, SQL después).
-- Dueño/desarrollador: ve sus proyectos ocultos en su PCN **sin código** (F2).
+- Dueño/desarrollador: ve sus proyectos ocultos en su PCN **sin código** (hecho en F2).
 
 ### Estado
 - [x] **F0 — modelo + endpoints mock**: `server/Routes/creatorRoutes.js` montado en `/api`:
   `POST /api/auth/login`, `POST /api/codes/redeem`, `GET /api/creator/projects`, `GET /api/users`.
-  Seed: `dev/dev123` (developer), `tester/tester123` (tester), `user/user123` (member); proyecto oculto `prj-1` con código `PRISMA-TEST` (100 usos, sin expiración).
+  Seed: `dev/dev123` (developer), `tester/tester123` (tester), `user/user123` (member, `activated: false`), `tester2/tester123` (member activado, id 4); proyecto oculto `prj-1` con código `PRISMA-TEST` (100 usos, sin expiración, usado 1).
 - [x] **F1 — canje en Library**: `src/utils/session.js` (sesión en `localStorage` `prisma-session`), sección **"Cuenta Prisma"** en Configuration (login/logout), botón **"Activar Proyecto"** en Library visible solo con rol `tester`, `RedeemProject.jsx` (buscar código → preview con usos restantes → activar → `addToLibrary` con `source: "code"`).
 - [x] Store: `/api/mods` y `/api/catalog` filtran `m_status === 'published'` (ocultos no aparecen).
-- [ ] **F2**: botón en sidebar + módulo PCN (lista de proyectos, crear/editar, gestión de códigos/testers/publicación).
+- [x] **F2 — sidebar + módulo PCN**: botón **Creator** en el sidebar (abajo, `App.jsx` + `.sidebar-footer`/`.creator-btn` en `App.css`), pestaña `"creator"` en `TABS`/`TAB_LABELS`, `src/components/Creator.jsx` + `Creator.module.css`:
+  - **Gate de rol**: solo `session.role === "developer"` (si no, mensaje de acceso); sin sesión → indica login en Configuration.
+  - **Lista**: proyectos con cover, categoría, versión, conteo de códigos/testers y badge de visibilidad (borrador/oculto/publicado).
+  - **Crear/Editar** (form estilo AddLocalMod): nombre, descripción, categoría (reutiliza `CATEGORIES` exportado de `AddLocalMod.jsx`), portada (URL o archivo local vía `read_file_as_data_url` + `CustomFileDialog`), ruta del ejecutable (explorador), versión, archivo `.ini` de stats, tags (CSV), visibilidad inicial. Crear genera código inicial (`generateCodeMaxUses: 100`).
+  - **Detalle**: editar / botón "Testear" **deshabilitado "Próximamente (F3)"**, secciones de **Visibilidad** (POST `/visibility`), **Códigos** (lista con usos restantes + copiar + generar con usos máximos) y **Testers** (chips quitar + select de miembros activados para asignar).
+  - Endpoints gestión en `creatorRoutes.js`: `POST /creator/projects`, `PATCH /:id`, `POST /:id/visibility`, `POST /:id/codes` (genera `PCN-XXXXXXXX`), `POST /:id/testers` (add/remove, valida `activated`); respuestas `{project}` o `{code}`; errores como códigos (`missing_fields`, `not_activated`, `invalid_max_uses`, etc.) mapeados a español en `API_ERRORS` de `Creator.jsx`.
+  - Smoke test OK (login, list, create, patch, visibility, codes, testers add/remove, validaciones 400/404).
 - [ ] **F3**: módulo de testeo (validar estructura/ini, lanzar, logs).
 - [ ] **F4**: subida/descarga real de archivos (Tauri + servidor).
 - [ ] **F5**: integración Store completa + cuentas/roles reales (SQL).
@@ -214,7 +220,7 @@ Módulo del launcher para crear, testear y gestionar mods + activación de proye
 ## Comandos
 - Frontend: `npm run build` (raíz del proyecto).
 - Servidor: `node index.js` **desde `server/`** (dotenv falla desde la raíz). Reiniciar tras editar mocks (los datos se cargan al arrancar).
-- Sintaxis rutas: `node --check Routes/launcherRoutes.js` (desde `server/`).
+- Sintaxis rutas: `node --check Routes/launcherRoutes.js` y `node --check Routes/creatorRoutes.js` (desde `server/`).
 
 ## Relevo para siguiente modelo — Store y búsqueda
 - **Estado**: Store funcional con búsqueda (nombre/desarrollador), filtros, secciones de perfiles, flujo perfil→mods, ModView y countdown.

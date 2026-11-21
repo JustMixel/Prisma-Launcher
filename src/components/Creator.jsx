@@ -1,0 +1,714 @@
+import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import testCrop from "../assets/modRender.png";
+import CustomFileDialog, { IMAGE_FILTERS } from "./CustomFileDialog.jsx";
+import { CATEGORIES } from "./AddLocalMod.jsx";
+import { getSession } from "../utils/session.js";
+import styles from "./Creator.module.css";
+
+const API = "http://localhost:3000/api";
+
+const VISIBILITY_OPTIONS = [
+    { value: "draft", label: "Borrador" },
+    { value: "hidden", label: "Oculto" },
+    { value: "published", label: "Publicado" }
+];
+
+const API_ERRORS = {
+    missing_fields: "Faltan campos obligatorios.",
+    unknown_creator: "Creador desconocido.",
+    not_found: "Proyecto no encontrado.",
+    invalid_visibility: "Visibilidad inválida.",
+    invalid_max_uses: "Cantidad de usos inválida.",
+    user_not_found: "Usuario no encontrado.",
+    not_activated: "Ese usuario no está activado.",
+    invalid_action: "Acción inválida."
+};
+
+const EMPTY_FORM = {
+    name: "",
+    description: "",
+    category: "Total Conversion",
+    cover: "",
+    executablePath: "",
+    tags: "",
+    version: "0.1.0",
+    statsIni: "",
+    visibility: "hidden"
+};
+
+function mapError(error) {
+    const message = String(error?.message || error);
+    if (message.includes("fetch") || message.includes("Failed")) {
+        return "No se pudo conectar con el servidor.";
+    }
+    return API_ERRORS[message] || message;
+}
+
+async function fetchJson(url, options) {
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(data.error || `Error HTTP ${response.status}`);
+    }
+    return data;
+}
+
+function jsonOptions(method, body) {
+    return {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    };
+}
+
+function Creator()
+{
+    const session = getSession();
+    const isDeveloper = session?.role === "developer";
+
+    const [view, setView] = useState("list");
+    const [status, setStatus] = useState("loading");
+    const [reloadKey, setReloadKey] = useState(0);
+    const [projects, setProjects] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [error, setError] = useState("");
+    const [selectedId, setSelectedId] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [form, setForm] = useState(EMPTY_FORM);
+    const [coverDataUrl, setCoverDataUrl] = useState("");
+    const [coverPath, setCoverPath] = useState("");
+    const [executableDialog, setExecutableDialog] = useState(false);
+    const [coverDialog, setCoverDialog] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [actionBusy, setActionBusy] = useState(false);
+    const [codeMaxUses, setCodeMaxUses] = useState("100");
+    const [testerUserId, setTesterUserId] = useState("");
+
+    useEffect(() => {
+        if (!isDeveloper) {
+            setStatus("ready");
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const [projectData, userData] = await Promise.all([
+                    fetchJson(`${API}/creator/projects?creator=${encodeURIComponent(session.username)}`),
+                    fetchJson(`${API}/users`)
+                ]);
+                if (cancelled) {
+                    return;
+                }
+                setProjects(Array.isArray(projectData) ? projectData : []);
+                setUsers(Array.isArray(userData) ? userData : []);
+                setStatus("ready");
+            } catch (loadError) {
+                if (!cancelled) {
+                    setError(mapError(loadError));
+                    setStatus("error");
+                }
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [isDeveloper, session?.username, reloadKey]);
+
+    function reload() {
+        setReloadKey((key) => key + 1);
+    }
+
+    function handleFormChange(event) {
+        const { name, value } = event.target;
+        setForm((previous) => ({ ...previous, [name]: value }));
+    }
+
+    function openCreate() {
+        setEditingId(null);
+        setForm({ ...EMPTY_FORM });
+        setCoverDataUrl("");
+        setCoverPath("");
+        setError("");
+        setView("form");
+    }
+
+    function openEdit(project) {
+        setEditingId(project.id);
+        setForm({
+            name: project.name,
+            description: project.description || "",
+            category: project.category || "Otro",
+            cover: typeof project.cover === "string" && project.cover.startsWith("http") ? project.cover : "",
+            executablePath: project.executablePath || "",
+            tags: (project.tags || []).join(", "),
+            version: project.version || "0.1.0",
+            statsIni: project.statsIni || "",
+            visibility: project.visibility || "hidden"
+        });
+        setCoverDataUrl(typeof project.cover === "string" && project.cover.startsWith("data:") ? project.cover : "");
+        setCoverPath("");
+        setError("");
+        setView("form");
+    }
+
+    function openDetail(id) {
+        setSelectedId(id);
+        setError("");
+        setView("detail");
+    }
+
+    function goBackFromForm() {
+        setError("");
+        if (editingId) {
+            setView("detail");
+        } else {
+            setView("list");
+        }
+    }
+
+    async function handleSelectCover(path) {
+        try {
+            const dataUrl = await invoke("read_file_as_data_url", { path });
+            setCoverDataUrl(dataUrl);
+            setCoverPath(path);
+        } catch (coverError) {
+            setError(String(coverError));
+        } finally {
+            setCoverDialog(false);
+        }
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        if (saving || !form.name.trim()) {
+            return;
+        }
+
+        setSaving(true);
+        setError("");
+        const payload = {
+            name: form.name,
+            description: form.description,
+            category: form.category,
+            cover: coverDataUrl || form.cover.trim() || null,
+            tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+            version: form.version,
+            executablePath: form.executablePath || null,
+            statsIni: form.statsIni.trim() || null,
+            visibility: form.visibility
+        };
+
+        try {
+            if (editingId) {
+                await fetchJson(`${API}/creator/projects/${editingId}`, jsonOptions("PATCH", payload));
+                setSelectedId(editingId);
+            } else {
+                const data = await fetchJson(`${API}/creator/projects`, jsonOptions("POST", {
+                    ...payload,
+                    creator: session.username,
+                    generateCodeMaxUses: 100
+                }));
+                setSelectedId(data.project.id);
+            }
+            reload();
+            setView("detail");
+        } catch (submitError) {
+            setError(mapError(submitError));
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function changeVisibility(visibility) {
+        if (actionBusy || !selectedId) {
+            return;
+        }
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/projects/${selectedId}/visibility`, jsonOptions("POST", { visibility }));
+            reload();
+        } catch (visibilityError) {
+            setError(mapError(visibilityError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleGenerateCode() {
+        if (actionBusy || !selectedId) {
+            return;
+        }
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/projects/${selectedId}/codes`, jsonOptions("POST", { maxUses: Number(codeMaxUses) }));
+            reload();
+        } catch (codeError) {
+            setError(mapError(codeError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleAddTester() {
+        if (actionBusy || !selectedId || !testerUserId) {
+            return;
+        }
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/projects/${selectedId}/testers`, jsonOptions("POST", {
+                userId: Number(testerUserId),
+                action: "add"
+            }));
+            setTesterUserId("");
+            reload();
+        } catch (testerError) {
+            setError(mapError(testerError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleRemoveTester(userId) {
+        if (actionBusy || !selectedId) {
+            return;
+        }
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/projects/${selectedId}/testers`, jsonOptions("POST", {
+                userId,
+                action: "remove"
+            }));
+            reload();
+        } catch (testerError) {
+            setError(mapError(testerError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleCopyCode(code) {
+        try {
+            await navigator.clipboard.writeText(code);
+        } catch {
+            // portapapeles no disponible
+        }
+    }
+
+    if (!session || !isDeveloper) {
+        return (
+            <div className={styles["creator"]}>
+                <div className={styles["state-block"]}>
+                    <p className={styles["state-text"]}>
+                        {session
+                            ? "Esta sección es solo para desarrolladores."
+                            : "Iniciá sesión como desarrollador (dev/dev123) en Configuration → Cuenta Prisma."}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === "loading") {
+        return (
+            <div className={styles["creator"]}>
+                <div className={styles["state-block"]}>
+                    <p className={styles["state-text"]}>Cargando proyectos…</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === "error") {
+        return (
+            <div className={styles["creator"]}>
+                <div className={styles["state-block"]}>
+                    <p className={styles["state-text"]}>{error || "No se pudo conectar con el servidor."}</p>
+                    <button
+                        type="button"
+                        className={styles["retry-btn"]}
+                        onClick={() => {
+                            setError("");
+                            setStatus("loading");
+                            reload();
+                        }}
+                    >
+                        Reintentar
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (view === "form") {
+        return (
+            <div className={styles["creator"]}>
+                <button className={styles["back-btn"]} onClick={goBackFromForm} aria-label="Volver">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5" />
+                        <path d="M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <div className={styles["form-panel"]}>
+                    <h1 className={styles["title"]}>{editingId ? "EDITAR PROYECTO" : "NUEVO PROYECTO"}</h1>
+                    <p className={styles["subtitle"]}>
+                        {editingId
+                            ? "Actualizá los metadatos del proyecto."
+                            : "Creá un proyecto de la Creator Network. Se genera un código de activación inicial."}
+                    </p>
+
+                    <form onSubmit={handleSubmit} className={styles["form"]}>
+                        <div className={styles["preview-row"]}>
+                            <div className={styles["preview-frame"]}>
+                                <img
+                                    src={coverDataUrl || form.cover.trim() || testCrop}
+                                    alt="Vista previa"
+                                    onError={(event) => { event.currentTarget.src = testCrop; }}
+                                />
+                            </div>
+                            <div className={styles["preview-info"]}>
+                                <p className={styles["preview-name"]}>{form.name || "Nombre del proyecto"}</p>
+                                <p className={styles["preview-creator"]}>{session.displayName}</p>
+                            </div>
+                        </div>
+
+                        <label className={styles["label"]}>
+                            Nombre del proyecto
+                            <input className={styles["input"]} type="text" name="name" value={form.name} onChange={handleFormChange} required />
+                        </label>
+
+                        <label className={styles["label"]}>
+                            Descripción
+                            <textarea className={styles["textarea"]} name="description" value={form.description} onChange={handleFormChange} required />
+                        </label>
+
+                        <label className={styles["label"]}>
+                            Categoría
+                            <select className={styles["input"]} name="category" value={form.category} onChange={handleFormChange}>
+                                {CATEGORIES.map((category) => (
+                                    <option key={category} value={category}>{category}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <div className={styles["label"]}>
+                            Portada (URL o archivo local)
+                            <div className={styles["row-inline"]}>
+                                <input
+                                    className={styles["input"]}
+                                    type="url"
+                                    name="cover"
+                                    value={form.cover}
+                                    onChange={handleFormChange}
+                                    placeholder="https://..."
+                                />
+                                <button type="button" className={styles["browse-btn"]} onClick={() => setCoverDialog(true)}>
+                                    Examinar
+                                </button>
+                                {coverPath && (
+                                    <button
+                                        type="button"
+                                        className={styles["clear-btn"]}
+                                        title="Quitar portada local"
+                                        onClick={() => { setCoverDataUrl(""); setCoverPath(""); }}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                            {coverPath && <p className={styles["field-hint"]}>{coverPath}</p>}
+                        </div>
+
+                        <div className={styles["label"]}>
+                            Ruta del ejecutable
+                            <div className={styles["row-inline"]}>
+                                <input
+                                    className={styles["input"]}
+                                    type="text"
+                                    value={form.executablePath}
+                                    onChange={(event) => setForm((previous) => ({ ...previous, executablePath: event.target.value }))}
+                                    placeholder="Selecciona el archivo..."
+                                    readOnly
+                                />
+                                <button type="button" className={styles["browse-btn"]} onClick={() => setExecutableDialog(true)}>
+                                    Explorar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className={styles["form-grid"]}>
+                            <label className={styles["label"]}>
+                                Versión
+                                <input className={styles["input"]} type="text" name="version" value={form.version} onChange={handleFormChange} placeholder="0.1.0" />
+                            </label>
+
+                            <label className={styles["label"]}>
+                                Archivo .ini de estadísticas
+                                <input className={styles["input"]} type="text" name="statsIni" value={form.statsIni} onChange={handleFormChange} placeholder="stats.ini" />
+                            </label>
+                        </div>
+
+                        <label className={styles["label"]}>
+                            Tags (separados por coma)
+                            <input className={styles["input"]} type="text" name="tags" value={form.tags} onChange={handleFormChange} placeholder="GTA SA, Total Conversion" />
+                        </label>
+
+                        <label className={styles["label"]}>
+                            Visibilidad
+                            <select className={styles["input"]} name="visibility" value={form.visibility} onChange={handleFormChange}>
+                                {VISIBILITY_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        {error && <p className={styles["error"]}>{error}</p>}
+
+                        <div className={styles["actions"]}>
+                            <button type="button" className={styles["cancel-btn"]} onClick={goBackFromForm}>Cancelar</button>
+                            <button type="submit" className={styles["submit-btn"]} disabled={saving || !form.name.trim()}>
+                                {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Crear proyecto"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                {executableDialog && (
+                    <CustomFileDialog
+                        title="Selecciona el ejecutable del proyecto"
+                        onSelect={(path) => {
+                            setForm((previous) => ({ ...previous, executablePath: path }));
+                            setExecutableDialog(false);
+                        }}
+                        onCancel={() => setExecutableDialog(false)}
+                    />
+                )}
+
+                {coverDialog && (
+                    <CustomFileDialog
+                        title="Selecciona la portada del proyecto"
+                        filters={IMAGE_FILTERS}
+                        onSelect={handleSelectCover}
+                        onCancel={() => setCoverDialog(false)}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    if (view === "detail") {
+        const project = projects.find((entry) => entry.id === selectedId);
+
+        if (!project) {
+            return (
+                <div className={styles["creator"]}>
+                    <button className={styles["back-btn"]} onClick={() => setView("list")} aria-label="Volver">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 12H5" />
+                            <path d="M12 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <div className={styles["state-block"]}>
+                        <p className={styles["state-text"]}>Proyecto no encontrado.</p>
+                    </div>
+                </div>
+            );
+        }
+
+        const testerCandidates = users.filter(
+            (user) => user.activated && !project.testers.some((tester) => tester.id === user.id)
+        );
+
+        return (
+            <div className={styles["creator"]}>
+                <button className={styles["back-btn"]} onClick={() => { setView("list"); setError(""); }} aria-label="Volver">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5" />
+                        <path d="M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <div className={styles["detail-panel"]}>
+                    <div className={styles["detail-header"]}>
+                        <div className={styles["detail-cover"]}>
+                            <img src={project.cover || testCrop} alt={project.name} onError={(event) => { event.currentTarget.src = testCrop; }} />
+                        </div>
+                        <div className={styles["detail-info"]}>
+                            <div className={styles["detail-title-row"]}>
+                                <h1 className={styles["detail-name"]}>{project.name}</h1>
+                                <span className={`${styles["badge"]} ${styles[`badge-${project.visibility}`]}`}>
+                                    {VISIBILITY_OPTIONS.find((option) => option.value === project.visibility)?.label || project.visibility}
+                                </span>
+                            </div>
+                            <p className={styles["detail-creator"]}>{project.creatorName || session.displayName}</p>
+                            <p className={styles["detail-meta"]}>
+                                {project.category} · v{project.version || "—"} · actualizado {new Date(project.updatedAt).toLocaleDateString()}
+                            </p>
+                        </div>
+                        <div className={styles["detail-actions"]}>
+                            <button type="button" className={styles["edit-btn"]} onClick={() => openEdit(project)}>Editar</button>
+                            <button type="button" className={styles["test-btn"]} disabled title="Próximamente (F3)">Testear</button>
+                        </div>
+                    </div>
+
+                    {project.description && <p className={styles["detail-desc"]}>{project.description}</p>}
+
+                    {error && <p className={styles["error"]}>{error}</p>}
+
+                    <section className={styles["section"]}>
+                        <h2 className={styles["section-title"]}>Visibilidad</h2>
+                        <div className={styles["visibility-row"]}>
+                            {VISIBILITY_OPTIONS.map((option) => (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    className={`${styles["visibility-btn"]} ${project.visibility === option.value ? styles["visibility-active"] : ""}`}
+                                    disabled={actionBusy}
+                                    onClick={() => changeVisibility(option.value)}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                        <p className={styles["hint"]}>
+                            Oculto: solo accesible por código. Publicado: aparecerá en la Store (integración pendiente F5).
+                        </p>
+                    </section>
+
+                    <section className={styles["section"]}>
+                        <h2 className={styles["section-title"]}>Códigos de activación</h2>
+                        {project.codes.length > 0 ? (
+                            <div className={styles["code-list"]}>
+                                {project.codes.map((entryCode) => (
+                                    <div key={entryCode.code} className={styles["code-row"]}>
+                                        <span className={styles["code-value"]}>{entryCode.code}</span>
+                                        <span className={styles["code-meta"]}>
+                                            {entryCode.used}/{entryCode.maxUses} usos
+                                            {entryCode.expiresAt ? ` · expira ${new Date(entryCode.expiresAt).toLocaleDateString()}` : " · sin expiración"}
+                                        </span>
+                                        <button type="button" className={styles["copy-btn"]} onClick={() => handleCopyCode(entryCode.code)}>
+                                            Copiar
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className={styles["hint"]}>Este proyecto aún no tiene códigos.</p>
+                        )}
+                        <div className={styles["generate-row"]}>
+                            <input
+                                className={styles["input"]}
+                                type="number"
+                                min="1"
+                                max="100000"
+                                value={codeMaxUses}
+                                onChange={(event) => setCodeMaxUses(event.target.value)}
+                                aria-label="Usos máximos del nuevo código"
+                            />
+                            <button type="button" className={styles["browse-btn"]} disabled={actionBusy} onClick={handleGenerateCode}>
+                                Generar código
+                            </button>
+                        </div>
+                    </section>
+
+                    <section className={styles["section"]}>
+                        <h2 className={styles["section-title"]}>Testers</h2>
+                        {project.testers.length > 0 ? (
+                            <div className={styles["tester-chips"]}>
+                                {project.testers.map((tester) => (
+                                    <span key={tester.id} className={styles["tester-chip"]}>
+                                        {tester.displayName} ({tester.username})
+                                        <button
+                                            type="button"
+                                            className={styles["chip-remove"]}
+                                            disabled={actionBusy}
+                                            onClick={() => handleRemoveTester(tester.id)}
+                                            aria-label={`Quitar a ${tester.displayName}`}
+                                        >
+                                            ✕
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className={styles["hint"]}>Sin testers asignados.</p>
+                        )}
+                        <div className={styles["generate-row"]}>
+                            <select
+                                className={styles["input"]}
+                                value={testerUserId}
+                                onChange={(event) => setTesterUserId(event.target.value)}
+                                aria-label="Elegir miembro activado"
+                            >
+                                <option value="">Elegir miembro activado…</option>
+                                {testerCandidates.map((user) => (
+                                    <option key={user.id} value={user.id}>
+                                        {user.displayName} ({user.username}) · {user.role}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                className={styles["browse-btn"]}
+                                disabled={actionBusy || !testerUserId}
+                                onClick={handleAddTester}
+                            >
+                                Asignar
+                            </button>
+                        </div>
+                        <p className={styles["hint"]}>Solo miembros activados pueden ser testers.</p>
+                    </section>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className={styles["creator"]}>
+            <header className={styles["header"]}>
+                <div className={styles["header-text"]}>
+                    <h1>CREATOR NETWORK</h1>
+                    <p>Gestioná tus proyectos: metadatos, códigos, testers y visibilidad.</p>
+                </div>
+                <button type="button" className={styles["new-btn"]} onClick={openCreate}>
+                    + Nuevo proyecto
+                </button>
+            </header>
+
+            {error && <p className={styles["error"]}>{error}</p>}
+
+            {projects.length > 0 ? (
+                <div className={styles["project-list"]}>
+                    {projects.map((project) => (
+                        <button key={project.id} type="button" className={styles["project-row"]} onClick={() => openDetail(project.id)}>
+                            <div className={styles["row-cover"]}>
+                                <img src={project.cover || testCrop} alt="" onError={(event) => { event.currentTarget.src = testCrop; }} />
+                            </div>
+                            <div className={styles["row-info"]}>
+                                <p className={styles["row-name"]}>{project.name}</p>
+                                <p className={styles["row-meta"]}>
+                                    {project.category} · v{project.version || "—"} · {project.codes.length} código(s) · {project.testers.length} tester(s)
+                                </p>
+                            </div>
+                            <span className={`${styles["badge"]} ${styles[`badge-${project.visibility}`]}`}>
+                                {VISIBILITY_OPTIONS.find((option) => option.value === project.visibility)?.label || project.visibility}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            ) : (
+                <div className={styles["state-block"]}>
+                    <p className={styles["state-text"]}>Todavía no tenés proyectos. Creá uno con “Nuevo proyecto”.</p>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default Creator;
