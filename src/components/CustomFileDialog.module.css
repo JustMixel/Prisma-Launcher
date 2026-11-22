@@ -134,12 +134,21 @@
     height: 16px;
 }
 
-.address-text {
+.address-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
     font-size: 13px;
     color: #d8d8d8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+.address-input::placeholder {
+    color: rgba(216, 216, 216, 0.4);
 }
 
 .body {

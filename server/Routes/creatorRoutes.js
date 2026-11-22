@@ -86,9 +86,11 @@ function mapProject(project) {
         links: Array.isArray(project.links) ? project.links : [],
         requirements: project.requirements || '',
         changelog: project.changelog || '',
-        languages: project.languages || '',
+        languages: Array.isArray(project.languages)
+            ? project.languages
+            : (typeof project.languages === 'string' && project.languages ? [project.languages] : []),
         assets: project.assets || {},
-        screenshots: Array.isArray(project.screenshots) ? project.screenshots : [],
+        screenshots: normalizeScreenshots(project.screenshots),
         visibility: project.visibility,
         creatorName: creatorName(project),
         testers: project.testers
@@ -122,6 +124,27 @@ function normalizeAssets(assets) {
         hoverMusic: typeof source.hoverMusic === 'string' ? source.hoverMusic : null,
         trailer: typeof source.trailer === 'string' ? source.trailer : null
     };
+}
+
+function normalizeScreenshots(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+    return list
+        .map((entry) => {
+            if (typeof entry === 'string') {
+                return { src: entry, name: '', description: '' };
+            }
+            if (entry && typeof entry.src === 'string') {
+                return {
+                    src: entry.src,
+                    name: typeof entry.name === 'string' ? entry.name : '',
+                    description: typeof entry.description === 'string' ? entry.description : ''
+                };
+            }
+            return null;
+        })
+        .filter(Boolean);
 }
 
 // POST /api/auth/login — mock: usuario + contraseña en claro en memoria
@@ -249,9 +272,11 @@ router.post('/creator/projects', (req, res) => {
         links: Array.isArray(body.links) ? body.links.filter((entry) => typeof entry === 'string') : [],
         requirements: typeof body.requirements === 'string' ? body.requirements : '',
         changelog: typeof body.changelog === 'string' ? body.changelog : '',
-        languages: typeof body.languages === 'string' ? body.languages : '',
+        languages: Array.isArray(body.languages)
+            ? body.languages.filter((entry) => typeof entry === 'string' && entry.trim())
+            : [],
         assets: normalizeAssets(body.assets),
-        screenshots: Array.isArray(body.screenshots) ? body.screenshots.filter((entry) => typeof entry === 'string') : [],
+        screenshots: normalizeScreenshots(body.screenshots),
         visibility: 'hidden', // los proyectos siempre nacen ocultos
         testers: [],
         codes: [],
@@ -296,8 +321,11 @@ router.patch('/creator/projects/:id', (req, res) => {
     if (Array.isArray(body.links)) {
         project.links = body.links.filter((entry) => typeof entry === 'string');
     }
-    if (Array.isArray(body.screenshots)) {
-        project.screenshots = body.screenshots.filter((entry) => typeof entry === 'string');
+    if (Array.isArray(body.languages)) {
+        project.languages = body.languages.filter((entry) => typeof entry === 'string' && entry.trim());
+    }
+    if (body.screenshots !== undefined) {
+        project.screenshots = normalizeScreenshots(body.screenshots);
     }
     if (body.assets !== undefined) {
         project.assets = normalizeAssets(body.assets);

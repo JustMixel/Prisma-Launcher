@@ -71,6 +71,7 @@ function SideIcon({ type })
 function CustomFileDialog({ title, onSelect, onCancel, filters = DEFAULT_FILTERS, selectFolders = false })
 {
     const [currentPath, setCurrentPath] = useState("");
+    const [addressDraft, setAddressDraft] = useState("");
     const [entries, setEntries] = useState([]);
     const [specialFolders, setSpecialFolders] = useState([]);
     const [drives, setDrives] = useState([]);
@@ -86,6 +87,10 @@ function CustomFileDialog({ title, onSelect, onCancel, filters = DEFAULT_FILTERS
     const listRef = useRef(null);
 
     const activeFilter = filters[filterIndex];
+
+    useEffect(() => {
+        setAddressDraft(currentPath);
+    }, [currentPath]);
 
     useEffect(() => {
         function handleMouseMove(event) {
@@ -161,12 +166,56 @@ function CustomFileDialog({ title, onSelect, onCancel, filters = DEFAULT_FILTERS
                 setHistory([path]);
                 setHistoryIndex(0);
             }
+            return true;
         } catch (loadError) {
             setError(String(loadError));
             setEntries([]);
+            return false;
         } finally {
             setLoading(false);
         }
+    }
+
+    function normalizePathInput(value)
+    {
+        const typed = value.trim();
+        if (!typed) {
+            return null;
+        }
+        if (/^[A-Za-z]:$/.test(typed)) {
+            return `${typed}\\`;
+        }
+        return typed;
+    }
+
+    async function handleAddressKeyDown(event)
+    {
+        if (event.key !== "Enter") {
+            return;
+        }
+        const target = normalizePathInput(addressDraft);
+        if (!target) {
+            return;
+        }
+        await navigateTo(target);
+    }
+
+    async function handleNameKeyDown(event)
+    {
+        if (event.key !== "Enter") {
+            return;
+        }
+        const typed = fileName.trim();
+        const looksLikePath = typed.includes("\\") || typed.includes("/") || /^[A-Za-z]:/.test(typed);
+        if (looksLikePath) {
+            const target = normalizePathInput(typed);
+            const navigated = await navigateTo(target);
+            if (!navigated && /\.[A-Za-z0-9]+$/.test(typed)) {
+                confirm(typed);
+            }
+            return;
+        }
+        handleOpenClick();
     }
 
     function goBack()
@@ -275,7 +324,16 @@ function CustomFileDialog({ title, onSelect, onCancel, filters = DEFAULT_FILTERS
                     </button>
                     <div className={styles["address-bar"]}>
                         <span className={styles["address-icon"]}><FolderIcon /></span>
-                        <span className={styles["address-text"]}>{currentPath || "Cargando..."}</span>
+                        <input
+                            className={styles["address-input"]}
+                            type="text"
+                            value={addressDraft}
+                            onChange={(event) => setAddressDraft(event.target.value)}
+                            onKeyDown={handleAddressKeyDown}
+                            onBlur={() => setAddressDraft(currentPath)}
+                            placeholder="Escribe una ruta y presiona Enter..."
+                            aria-label="Ruta de la carpeta"
+                        />
                     </div>
                 </div>
 
@@ -340,8 +398,8 @@ function CustomFileDialog({ title, onSelect, onCancel, filters = DEFAULT_FILTERS
                             type="text"
                             value={fileName}
                             onChange={(event) => setFileName(event.target.value)}
-                            onKeyDown={(event) => { if (event.key === "Enter") handleOpenClick(); }}
-                            placeholder={selectFolders ? "Selecciona una carpeta" : "Selecciona un archivo"}
+                            onKeyDown={handleNameKeyDown}
+                            placeholder={selectFolders ? "Selecciona una carpeta" : "Archivo o ruta (Enter para navegar)"}
                         />
                     </label>
                     {!selectFolders && (

@@ -65,7 +65,7 @@ const EMPTY_FORM = {
     links: "",
     requirements: "",
     changelog: "",
-    languages: ""
+    languages: []
 };
 
 const EMPTY_ASSETS = {
@@ -79,12 +79,12 @@ const EMPTY_ASSETS = {
 };
 
 const ASSET_FIELDS = [
-    { key: "banner", label: "Banner de Store" },
-    { key: "icon", label: "Icono / ejecutable del launcher" },
-    { key: "logo", label: "Logo (ModPlayView)" },
-    { key: "libraryImage", label: "Imagen de Library" },
-    { key: "hoverImage", label: "Hover image" },
-    { key: "hoverMusic", label: "Hover music (audio)" }
+    { key: "banner", label: "Banner de Store", hint: "Recomendado: 1920 × 480 px (banner ancho 4:1)" },
+    { key: "icon", label: "Icono / ejecutable del launcher", hint: "Recomendado: 512 × 512 px, PNG con alfa" },
+    { key: "logo", label: "Logo (ModPlayView)", hint: "Recomendado: PNG con alfa, ancho mínimo 1920 px (escala hasta 3528 × 1197)" },
+    { key: "libraryImage", label: "Imagen de Library", hint: "Recomendado: 440 × 640 px (card 220 × 320 @2x, ratio 11:16)" },
+    { key: "hoverImage", label: "Hover image", hint: "Recomendado: 440 × 640 px (misma proporción que la card)" },
+    { key: "hoverMusic", label: "Hover music (audio)", hint: "Recomendado: MP3/OGG, 30–60 s, máx. ~3 MB" }
 ];
 
 function renderMarkdown(text) {
@@ -153,6 +153,9 @@ function Creator({ onNavigate })
     const [assetDialog, setAssetDialog] = useState(null);
     const [shotsDialog, setShotsDialog] = useState(false);
     const [showDescPreview, setShowDescPreview] = useState(false);
+    const [langDraft, setLangDraft] = useState("");
+    const [shotEditIndex, setShotEditIndex] = useState(null);
+    const [shotDragIndex, setShotDragIndex] = useState(null);
     const [executableDialog, setExecutableDialog] = useState(false);
     const [coverDialog, setCoverDialog] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -249,8 +252,83 @@ function Creator({ onNavigate })
         setAssets({ ...EMPTY_ASSETS });
         setScreenshots([]);
         setShowDescPreview(false);
+        setLangDraft("");
+        setShotEditIndex(null);
         setError("");
         setView("form");
+    }
+
+    function addLanguage() {
+        const value = langDraft.trim();
+        if (!value) {
+            return;
+        }
+        setForm((previous) => (
+            previous.languages.some((lang) => lang.toLowerCase() === value.toLowerCase())
+                ? previous
+                : { ...previous, languages: [...previous.languages, value] }
+        ));
+        setLangDraft("");
+    }
+
+    function removeLanguage(lang) {
+        setForm((previous) => ({ ...previous, languages: previous.languages.filter((entry) => entry !== lang) }));
+    }
+
+    function updateShotField(index, field, value) {
+        setScreenshots((previous) => previous.map((shot, shotIndex) => (
+            shotIndex === index ? { ...shot, [field]: value } : shot
+        )));
+    }
+
+    function removeShot(index) {
+        setScreenshots((previous) => previous.filter((_, shotIndex) => shotIndex !== index));
+        setShotEditIndex((previous) => {
+            if (previous === null || previous < index) {
+                return previous;
+            }
+            if (previous === index) {
+                return null;
+            }
+            return previous - 1;
+        });
+    }
+
+    function handleShotDragStart(index) {
+        setShotDragIndex(index);
+    }
+
+    function handleShotDragOver(event, index) {
+        event.preventDefault();
+        if (shotDragIndex === null || shotDragIndex === index) {
+            return;
+        }
+        setScreenshots((previous) => {
+            const next = [...previous];
+            const [moved] = next.splice(shotDragIndex, 1);
+            next.splice(index, 0, moved);
+            return next;
+        });
+        setShotEditIndex((previous) => {
+            if (previous === null) {
+                return previous;
+            }
+            if (previous === shotDragIndex) {
+                return index;
+            }
+            if (shotDragIndex < previous && previous <= index) {
+                return previous - 1;
+            }
+            if (index <= previous && previous < shotDragIndex) {
+                return previous + 1;
+            }
+            return previous;
+        });
+        setShotDragIndex(index);
+    }
+
+    function handleShotDragEnd() {
+        setShotDragIndex(null);
     }
 
     function openEdit(project) {
@@ -271,13 +349,25 @@ function Creator({ onNavigate })
             links: (project.links || []).join("\n"),
             requirements: project.requirements || "",
             changelog: project.changelog || "",
-            languages: project.languages || ""
+            languages: Array.isArray(project.languages)
+                ? project.languages
+                : (typeof project.languages === "string" && project.languages
+                    ? project.languages.split(",").map((lang) => lang.trim()).filter(Boolean)
+                    : [])
         });
         setCoverDataUrl(typeof project.cover === "string" && project.cover.startsWith("data:") ? project.cover : "");
         setCoverPath("");
         setAssets({ ...EMPTY_ASSETS, ...(project.assets || {}) });
-        setScreenshots(Array.isArray(project.screenshots) ? project.screenshots : []);
+        setScreenshots(
+            Array.isArray(project.screenshots)
+                ? project.screenshots.map((shot) => (typeof shot === "string"
+                    ? { src: shot, name: "", description: "" }
+                    : { src: shot.src || "", name: shot.name || "", description: shot.description || "" }))
+                : []
+        );
         setShowDescPreview(false);
+        setLangDraft("");
+        setShotEditIndex(null);
         setError("");
         setView("form");
     }
@@ -323,7 +413,8 @@ function Creator({ onNavigate })
     async function handleAddScreenshot(path) {
         try {
             const dataUrl = await invoke("read_file_as_data_url", { path });
-            setScreenshots((previous) => [...previous, dataUrl]);
+            setScreenshots((previous) => [...previous, { src: dataUrl, name: "", description: "" }]);
+            setShotEditIndex((previous) => previous); // mantiene el editor abierto si ya lo estaba
         } catch (shotError) {
             setError(String(shotError));
         } finally {
@@ -725,6 +816,7 @@ function Creator({ onNavigate })
                                 )}
                             </div>
                             {coverPath && <p className={styles["field-hint"]}>{coverPath}</p>}
+                            <p className={styles["field-hint"]}>Recomendado: 440 × 640 px (card 220 × 320 @2x, ratio 11:16)</p>
                         </div>
 
                         <div className={styles["label"]}>
@@ -867,50 +959,80 @@ function Creator({ onNavigate })
                             </label>
                         </div>
 
-                        <label className={styles["label"]}>
+                        <div className={styles["label"]}>
                             Idioma(s)
-                            <input
-                                className={styles["input"]}
-                                type="text"
-                                name="languages"
-                                value={form.languages}
-                                onChange={handleFormChange}
-                                placeholder="Español, Inglés"
-                            />
-                        </label>
+                            <div
+                                className={styles["lang-box"]}
+                                onClick={() => document.getElementById("lang-input")?.focus()}
+                            >
+                                <div className={styles["lang-chips"]}>
+                                    {form.languages.map((lang) => (
+                                        <span className={styles["lang-chip"]} key={lang}>
+                                            {lang}
+                                            <button
+                                                type="button"
+                                                className={styles["lang-chip-remove"]}
+                                                title={`Quitar ${lang}`}
+                                                onClick={(event) => { event.stopPropagation(); removeLanguage(lang); }}
+                                            >
+                                                ✕
+                                            </button>
+                                        </span>
+                                    ))}
+                                    <input
+                                        id="lang-input"
+                                        className={styles["lang-input"]}
+                                        type="text"
+                                        value={langDraft}
+                                        onChange={(event) => setLangDraft(event.target.value)}
+                                        onKeyDown={(event) => {
+                                            if (event.key === "Enter") {
+                                                event.preventDefault();
+                                                addLanguage();
+                                            }
+                                        }}
+                                        placeholder={form.languages.length === 0 ? "Escribe un idioma y presiona Enter" : "Agregar otro..."}
+                                    />
+                                </div>
+                            </div>
+                            <p className={styles["field-hint"]}>Escribí el idioma y presioná Enter para agregarlo.</p>
+                        </div>
 
                         <span className={styles["group-title"]}>Assets</span>
 
                         {ASSET_FIELDS.map((asset) => (
-                            <div className={styles["asset-row"]} key={asset.key}>
-                                <span className={styles["asset-label"]}>{asset.label}</span>
-                                <div className={styles["asset-controls"]}>
-                                    {asset.key !== "hoverMusic" && assets[asset.key] && (
-                                        <div className={styles["asset-thumb"]}>
-                                            <img src={assets[asset.key]} alt="" />
-                                        </div>
-                                    )}
-                                    <input
-                                        className={styles["input"]}
-                                        type="text"
-                                        value={assets[asset.key] || ""}
-                                        onChange={(event) => setAssets((previous) => ({ ...previous, [asset.key]: event.target.value }))}
-                                        placeholder={asset.key === "hoverMusic" ? "Archivo de audio..." : "https://..."}
-                                    />
-                                    <button type="button" className={styles["browse-btn"]} onClick={() => setAssetDialog(asset.key)}>
-                                        Examinar
-                                    </button>
-                                    {assets[asset.key] && (
-                                        <button
-                                            type="button"
-                                            className={styles["clear-btn"]}
-                                            title="Quitar asset"
-                                            onClick={() => setAssets((previous) => ({ ...previous, [asset.key]: "" }))}
-                                        >
-                                            ✕
+                            <div className={styles["asset-block"]} key={asset.key}>
+                                <div className={styles["asset-row"]}>
+                                    <span className={styles["asset-label"]}>{asset.label}</span>
+                                    <div className={styles["asset-controls"]}>
+                                        {asset.key !== "hoverMusic" && assets[asset.key] && (
+                                            <div className={styles["asset-thumb"]}>
+                                                <img src={assets[asset.key]} alt="" />
+                                            </div>
+                                        )}
+                                        <input
+                                            className={styles["input"]}
+                                            type="text"
+                                            value={assets[asset.key] || ""}
+                                            onChange={(event) => setAssets((previous) => ({ ...previous, [asset.key]: event.target.value }))}
+                                            placeholder={asset.key === "hoverMusic" ? "Archivo de audio..." : "https://..."}
+                                        />
+                                        <button type="button" className={styles["browse-btn"]} onClick={() => setAssetDialog(asset.key)}>
+                                            Examinar
                                         </button>
-                                    )}
+                                        {assets[asset.key] && (
+                                            <button
+                                                type="button"
+                                                className={styles["clear-btn"]}
+                                                title="Quitar asset"
+                                                onClick={() => setAssets((previous) => ({ ...previous, [asset.key]: "" }))}
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
+                                <p className={styles["asset-hint"]}>{asset.hint}</p>
                             </div>
                         ))}
 
@@ -932,21 +1054,58 @@ function Creator({ onNavigate })
                                     + Agregar imagen
                                 </button>
                             </div>
+                            <p className={styles["field-hint"]}>
+                                Arrastrá las imágenes para reordenarlas. Recomendado: 1920 × 1080 px (16:9). Clic en una imagen para ponerle nombre y descripción.
+                            </p>
                             {screenshots.length > 0 && (
                                 <div className={styles["shots-grid"]}>
                                     {screenshots.map((shot, index) => (
-                                        <div className={styles["shot-item"]} key={`${shot.slice(-24)}-${index}`}>
-                                            <img src={shot} alt={`Screenshot ${index + 1}`} />
+                                        <div
+                                            className={`${styles["shot-item"]} ${shotEditIndex === index ? styles["shot-active"] : ""} ${shotDragIndex === index ? styles["shot-dragging"] : ""}`}
+                                            key={`${shot.src.slice(-24)}-${index}`}
+                                            draggable
+                                            onDragStart={() => handleShotDragStart(index)}
+                                            onDragOver={(event) => handleShotDragOver(event, index)}
+                                            onDragEnd={handleShotDragEnd}
+                                            onClick={() => setShotEditIndex((previous) => (previous === index ? null : index))}
+                                            title="Clic para editar · arrastrar para reordenar"
+                                        >
+                                            <img src={shot.src} alt={shot.name || `Screenshot ${index + 1}`} />
+                                            <span className={styles["shot-index"]}>{index + 1}</span>
                                             <button
                                                 type="button"
                                                 className={styles["shot-remove"]}
                                                 title="Quitar screenshot"
-                                                onClick={() => setScreenshots((previous) => previous.filter((_, shotIndex) => shotIndex !== index))}
+                                                onClick={(event) => { event.stopPropagation(); removeShot(index); }}
                                             >
                                                 ✕
                                             </button>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+                            {shotEditIndex !== null && screenshots[shotEditIndex] && (
+                                <div className={styles["shot-editor"]}>
+                                    <p className={styles["shot-editor-title"]}>Screenshot {shotEditIndex + 1}</p>
+                                    <label className={styles["label"]}>
+                                        Nombre (opcional)
+                                        <input
+                                            className={styles["input"]}
+                                            type="text"
+                                            value={screenshots[shotEditIndex].name}
+                                            onChange={(event) => updateShotField(shotEditIndex, "name", event.target.value)}
+                                            placeholder="Ej: Gameplay en el centro"
+                                        />
+                                    </label>
+                                    <label className={styles["label"]}>
+                                        Descripción (opcional)
+                                        <textarea
+                                            className={styles["textarea"]}
+                                            value={screenshots[shotEditIndex].description}
+                                            onChange={(event) => updateShotField(shotEditIndex, "description", event.target.value)}
+                                            placeholder="Ej: Vista del mapa durante la misión 3"
+                                        />
+                                    </label>
                                 </div>
                             )}
                         </div>
