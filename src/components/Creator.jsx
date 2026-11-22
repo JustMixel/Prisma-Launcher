@@ -463,15 +463,17 @@ function Creator({ onNavigate })
     if (view === "form") {
         return (
             <div className={styles["creator"]}>
-                <button className={styles["back-btn"]} onClick={goBackFromForm} aria-label="Volver">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5" />
-                        <path d="M12 19l-7-7 7-7" />
-                    </svg>
-                </button>
-
                 <div className={styles["form-panel"]}>
-                    <h1 className={styles["title"]}>{editingId ? "EDITAR PROYECTO" : "NUEVO PROYECTO"}</h1>
+                    <div className={styles["panel-head"]}>
+                        <button className={styles["back-btn"]} onClick={goBackFromForm} aria-label="Volver">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M19 12H5" />
+                                <path d="M12 19l-7-7 7-7" />
+                            </svg>
+                            Volver
+                        </button>
+                        <h1 className={styles["title"]}>{editingId ? "EDITAR PROYECTO" : "NUEVO PROYECTO"}</h1>
+                    </div>
                     <p className={styles["subtitle"]}>
                         {editingId
                             ? "Actualizá los metadatos del proyecto."
@@ -623,13 +625,14 @@ function Creator({ onNavigate })
         if (!project) {
             return (
                 <div className={styles["creator"]}>
-                    <button className={styles["back-btn"]} onClick={() => setView("list")} aria-label="Volver">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 12H5" />
-                            <path d="M12 19l-7-7 7-7" />
-                        </svg>
-                    </button>
                     <div className={styles["state-block"]}>
+                        <button className={styles["back-btn"]} onClick={() => setView("list")} aria-label="Volver">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M19 12H5" />
+                                <path d="M12 19l-7-7 7-7" />
+                            </svg>
+                            Volver
+                        </button>
                         <p className={styles["state-text"]}>Proyecto no encontrado.</p>
                     </div>
                 </div>
@@ -642,14 +645,17 @@ function Creator({ onNavigate })
 
         return (
             <div className={styles["creator"]}>
-                <button className={styles["back-btn"]} onClick={() => { setView("list"); setError(""); }} aria-label="Volver">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5" />
-                        <path d="M12 19l-7-7 7-7" />
-                    </svg>
-                </button>
-
                 <div className={styles["detail-panel"]}>
+                    <div className={styles["panel-head"]}>
+                        <button className={styles["back-btn"]} onClick={() => { setView("list"); setError(""); }} aria-label="Volver">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M19 12H5" />
+                                <path d="M12 19l-7-7 7-7" />
+                            </svg>
+                            Volver
+                        </button>
+                    </div>
+
                     <div className={styles["detail-header"]}>
                         <div className={styles["detail-cover"]}>
                             <img src={project.cover || testCrop} alt={project.name} onError={(event) => { event.currentTarget.src = testCrop; }} />
