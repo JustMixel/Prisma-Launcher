@@ -80,6 +80,15 @@ function mapProject(project) {
         executablePath: project.executablePath,
         link: project.link,
         statsIni: project.statsIni,
+        releasedate: project.releasedate || null,
+        countdownBadge: Boolean(project.countdownBadge),
+        credits: project.credits || '',
+        links: Array.isArray(project.links) ? project.links : [],
+        requirements: project.requirements || '',
+        changelog: project.changelog || '',
+        languages: project.languages || '',
+        assets: project.assets || {},
+        screenshots: Array.isArray(project.screenshots) ? project.screenshots : [],
         visibility: project.visibility,
         creatorName: creatorName(project),
         testers: project.testers
@@ -100,6 +109,19 @@ function mapProject(project) {
 
 function touch(project) {
     project.updatedAt = new Date().toISOString();
+}
+
+function normalizeAssets(assets) {
+    const source = assets && typeof assets === 'object' ? assets : {};
+    return {
+        banner: typeof source.banner === 'string' ? source.banner : null,
+        icon: typeof source.icon === 'string' ? source.icon : null,
+        logo: typeof source.logo === 'string' ? source.logo : null,
+        libraryImage: typeof source.libraryImage === 'string' ? source.libraryImage : null,
+        hoverImage: typeof source.hoverImage === 'string' ? source.hoverImage : null,
+        hoverMusic: typeof source.hoverMusic === 'string' ? source.hoverMusic : null,
+        trailer: typeof source.trailer === 'string' ? source.trailer : null
+    };
 }
 
 // POST /api/auth/login — mock: usuario + contraseña en claro en memoria
@@ -221,7 +243,16 @@ router.post('/creator/projects', (req, res) => {
         executablePath: body.executablePath || null,
         link: null,
         statsIni: body.statsIni || null,
-        visibility: VISIBILITIES.includes(body.visibility) ? body.visibility : 'draft',
+        releasedate: typeof body.releasedate === 'string' ? body.releasedate : null,
+        countdownBadge: Boolean(body.countdownBadge),
+        credits: typeof body.credits === 'string' ? body.credits : '',
+        links: Array.isArray(body.links) ? body.links.filter((entry) => typeof entry === 'string') : [],
+        requirements: typeof body.requirements === 'string' ? body.requirements : '',
+        changelog: typeof body.changelog === 'string' ? body.changelog : '',
+        languages: typeof body.languages === 'string' ? body.languages : '',
+        assets: normalizeAssets(body.assets),
+        screenshots: Array.isArray(body.screenshots) ? body.screenshots.filter((entry) => typeof entry === 'string') : [],
+        visibility: 'hidden', // los proyectos siempre nacen ocultos
         testers: [],
         codes: [],
         createdAt: now,
@@ -250,14 +281,26 @@ router.patch('/creator/projects/:id', (req, res) => {
         return res.status(400).json({ error: 'missing_fields' });
     }
 
-    ['name', 'description', 'category', 'cover', 'version', 'executablePath', 'statsIni'].forEach((field) => {
+    ['name', 'description', 'category', 'cover', 'version', 'executablePath', 'statsIni', 'releasedate', 'credits', 'requirements', 'changelog', 'languages'].forEach((field) => {
         if (body[field] !== undefined) {
             project[field] = body[field];
         }
     });
 
+    if (body.countdownBadge !== undefined) {
+        project.countdownBadge = Boolean(body.countdownBadge);
+    }
     if (Array.isArray(body.tags)) {
         project.tags = body.tags;
+    }
+    if (Array.isArray(body.links)) {
+        project.links = body.links.filter((entry) => typeof entry === 'string');
+    }
+    if (Array.isArray(body.screenshots)) {
+        project.screenshots = body.screenshots.filter((entry) => typeof entry === 'string');
+    }
+    if (body.assets !== undefined) {
+        project.assets = normalizeAssets(body.assets);
     }
     if (typeof project.name === 'string') {
         project.name = project.name.trim();

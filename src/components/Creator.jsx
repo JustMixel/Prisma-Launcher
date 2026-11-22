@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import testCrop from "../assets/modRender.png";
 import CustomFileDialog, { IMAGE_FILTERS } from "./CustomFileDialog.jsx";
 import { CATEGORIES } from "./AddLocalMod.jsx";
@@ -7,6 +9,11 @@ import { clearSession, getSession, saveSession } from "../utils/session.js";
 import styles from "./Creator.module.css";
 
 const API = "http://localhost:3000/api";
+
+const AUDIO_FILTERS = [
+    { label: "Audio (*.mp3, *.ogg, *.wav)", extensions: ["mp3", "ogg", "wav"] },
+    { label: "Todos los archivos (*.*)", extensions: [] }
+];
 
 const VISIBILITY_OPTIONS = [
     { value: "draft", label: "Borrador" },
@@ -51,8 +58,54 @@ const EMPTY_FORM = {
     tags: "",
     version: "0.1.0",
     statsIni: "",
-    visibility: "hidden"
+    releaseMode: "today",
+    releaseDate: "",
+    countdownBadge: true,
+    credits: "",
+    links: "",
+    requirements: "",
+    changelog: "",
+    languages: ""
 };
+
+const EMPTY_ASSETS = {
+    banner: "",
+    icon: "",
+    logo: "",
+    libraryImage: "",
+    hoverImage: "",
+    hoverMusic: "",
+    trailer: ""
+};
+
+const ASSET_FIELDS = [
+    { key: "banner", label: "Banner de Store" },
+    { key: "icon", label: "Icono / ejecutable del launcher" },
+    { key: "logo", label: "Logo (ModPlayView)" },
+    { key: "libraryImage", label: "Imagen de Library" },
+    { key: "hoverImage", label: "Hover image" },
+    { key: "hoverMusic", label: "Hover music (audio)" }
+];
+
+function renderMarkdown(text) {
+    try {
+        return DOMPurify.sanitize(marked.parse(text || ""));
+    } catch {
+        return "";
+    }
+}
+
+function isoToLocalInput(iso) {
+    if (!iso) {
+        return "";
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 function mapError(error) {
     const message = String(error?.message || error);
@@ -95,6 +148,11 @@ function Creator({ onNavigate })
     const [form, setForm] = useState(EMPTY_FORM);
     const [coverDataUrl, setCoverDataUrl] = useState("");
     const [coverPath, setCoverPath] = useState("");
+    const [assets, setAssets] = useState({ ...EMPTY_ASSETS });
+    const [screenshots, setScreenshots] = useState([]);
+    const [assetDialog, setAssetDialog] = useState(null);
+    const [shotsDialog, setShotsDialog] = useState(false);
+    const [showDescPreview, setShowDescPreview] = useState(false);
     const [executableDialog, setExecutableDialog] = useState(false);
     const [coverDialog, setCoverDialog] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -188,6 +246,9 @@ function Creator({ onNavigate })
         setForm({ ...EMPTY_FORM });
         setCoverDataUrl("");
         setCoverPath("");
+        setAssets({ ...EMPTY_ASSETS });
+        setScreenshots([]);
+        setShowDescPreview(false);
         setError("");
         setView("form");
     }
@@ -203,10 +264,20 @@ function Creator({ onNavigate })
             tags: (project.tags || []).join(", "),
             version: project.version || "0.1.0",
             statsIni: project.statsIni || "",
-            visibility: project.visibility || "hidden"
+            releaseMode: project.releasedate ? "scheduled" : "today",
+            releaseDate: isoToLocalInput(project.releasedate),
+            countdownBadge: Boolean(project.countdownBadge),
+            credits: project.credits || "",
+            links: (project.links || []).join("\n"),
+            requirements: project.requirements || "",
+            changelog: project.changelog || "",
+            languages: project.languages || ""
         });
         setCoverDataUrl(typeof project.cover === "string" && project.cover.startsWith("data:") ? project.cover : "");
         setCoverPath("");
+        setAssets({ ...EMPTY_ASSETS, ...(project.assets || {}) });
+        setScreenshots(Array.isArray(project.screenshots) ? project.screenshots : []);
+        setShowDescPreview(false);
         setError("");
         setView("form");
     }
@@ -238,6 +309,28 @@ function Creator({ onNavigate })
         }
     }
 
+    async function handleSelectAsset(path) {
+        try {
+            const dataUrl = await invoke("read_file_as_data_url", { path });
+            setAssets((previous) => ({ ...previous, [assetDialog]: dataUrl }));
+        } catch (assetError) {
+            setError(String(assetError));
+        } finally {
+            setAssetDialog(null);
+        }
+    }
+
+    async function handleAddScreenshot(path) {
+        try {
+            const dataUrl = await invoke("read_file_as_data_url", { path });
+            setScreenshots((previous) => [...previous, dataUrl]);
+        } catch (shotError) {
+            setError(String(shotError));
+        } finally {
+            setShotsDialog(false);
+        }
+    }
+
     async function handleSubmit(event) {
         event.preventDefault();
         if (saving || !form.name.trim()) {
@@ -246,6 +339,7 @@ function Creator({ onNavigate })
 
         setSaving(true);
         setError("");
+        const scheduled = form.releaseMode === "scheduled";
         const payload = {
             name: form.name,
             description: form.description,
@@ -255,7 +349,25 @@ function Creator({ onNavigate })
             version: form.version,
             executablePath: form.executablePath || null,
             statsIni: form.statsIni.trim() || null,
-            visibility: form.visibility
+            releasedate: scheduled
+                ? (form.releaseDate ? new Date(form.releaseDate).toISOString() : null)
+                : new Date().toISOString(),
+            countdownBadge: scheduled && form.countdownBadge,
+            credits: form.credits,
+            links: form.links.split("\n").map((link) => link.trim()).filter(Boolean),
+            requirements: form.requirements,
+            changelog: form.changelog,
+            languages: form.languages,
+            assets: {
+                banner: assets.banner || null,
+                icon: assets.icon || null,
+                logo: assets.logo || null,
+                libraryImage: assets.libraryImage || null,
+                hoverImage: assets.hoverImage || null,
+                hoverMusic: assets.hoverMusic || null,
+                trailer: assets.trailer || null
+            },
+            screenshots
         };
 
         try {
@@ -550,15 +662,33 @@ function Creator({ onNavigate })
                     </div>
 
                     <form onSubmit={handleSubmit} className={styles["meta-panel"]}>
+                        <span className={styles["group-title"]}>Información</span>
+
                         <label className={styles["label"]}>
                             Nombre del proyecto
                             <input className={styles["input"]} type="text" name="name" value={form.name} onChange={handleFormChange} required />
                         </label>
 
-                        <label className={styles["label"]}>
-                            Descripción
-                            <textarea className={styles["textarea"]} name="description" value={form.description} onChange={handleFormChange} required />
-                        </label>
+                        <div className={styles["label"]}>
+                            <div className={styles["label-head"]}>
+                                Descripción (Markdown + HTML)
+                                <button
+                                    type="button"
+                                    className={styles["preview-toggle"]}
+                                    onClick={() => setShowDescPreview((previous) => !previous)}
+                                >
+                                    {showDescPreview ? "Editar" : "Vista previa"}
+                                </button>
+                            </div>
+                            {showDescPreview ? (
+                                <div
+                                    className={styles["md-preview"]}
+                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(form.description) }}
+                                />
+                            ) : (
+                                <textarea className={styles["textarea"]} name="description" value={form.description} onChange={handleFormChange} required />
+                            )}
+                        </div>
 
                         <label className={styles["label"]}>
                             Categoría
@@ -631,14 +761,195 @@ function Creator({ onNavigate })
                             <input className={styles["input"]} type="text" name="tags" value={form.tags} onChange={handleFormChange} placeholder="GTA SA, Total Conversion" />
                         </label>
 
+                        <span className={styles["group-title"]}>Lanzamiento</span>
+
+                        <div className={styles["radio-row"]}>
+                            <label className={styles["radio-label"]}>
+                                <input
+                                    type="radio"
+                                    name="releaseMode"
+                                    checked={form.releaseMode === "today"}
+                                    onChange={() => setForm((previous) => ({ ...previous, releaseMode: "today" }))}
+                                />
+                                Lanzar hoy
+                            </label>
+                            <label className={styles["radio-label"]}>
+                                <input
+                                    type="radio"
+                                    name="releaseMode"
+                                    checked={form.releaseMode === "scheduled"}
+                                    onChange={() => setForm((previous) => ({ ...previous, releaseMode: "scheduled" }))}
+                                />
+                                Fecha programada
+                            </label>
+                        </div>
+
+                        {form.releaseMode === "scheduled" && (
+                            <>
+                                <label className={styles["label"]}>
+                                    Fecha y hora de lanzamiento
+                                    <input
+                                        className={styles["input"]}
+                                        type="datetime-local"
+                                        name="releaseDate"
+                                        value={form.releaseDate}
+                                        onChange={handleFormChange}
+                                    />
+                                </label>
+                                <div className={styles["radio-row"]}>
+                                    <label className={styles["radio-label"]}>
+                                        <input
+                                            type="radio"
+                                            name="countdownBadge"
+                                            checked={form.countdownBadge}
+                                            onChange={() => setForm((previous) => ({ ...previous, countdownBadge: true }))}
+                                        />
+                                        Mostrar badge de cuenta regresiva
+                                    </label>
+                                    <label className={styles["radio-label"]}>
+                                        <input
+                                            type="radio"
+                                            name="countdownBadge"
+                                            checked={!form.countdownBadge}
+                                            onChange={() => setForm((previous) => ({ ...previous, countdownBadge: false }))}
+                                        />
+                                        Conteo silencioso
+                                    </label>
+                                </div>
+                            </>
+                        )}
+
+                        <span className={styles["group-title"]}>Detalles</span>
+
                         <label className={styles["label"]}>
-                            Visibilidad
-                            <select className={styles["input"]} name="visibility" value={form.visibility} onChange={handleFormChange}>
-                                {VISIBILITY_OPTIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>{option.label}</option>
-                                ))}
-                            </select>
+                            Créditos (equipo / colaboradores)
+                            <textarea
+                                className={styles["textarea"]}
+                                name="credits"
+                                value={form.credits}
+                                onChange={handleFormChange}
+                                placeholder={"Equipo: ...\nColaboradores: ..."}
+                            />
                         </label>
+
+                        <label className={styles["label"]}>
+                            Enlaces (uno por línea)
+                            <textarea
+                                className={styles["textarea"]}
+                                name="links"
+                                value={form.links}
+                                onChange={handleFormChange}
+                                placeholder={"https://...\nhttps://discord.gg/..."}
+                            />
+                        </label>
+
+                        <div className={styles["form-grid"]}>
+                            <label className={styles["label"]}>
+                                Requisitos / dependencias
+                                <textarea
+                                    className={styles["textarea"]}
+                                    name="requirements"
+                                    value={form.requirements}
+                                    onChange={handleFormChange}
+                                    placeholder={"Windows 10 64-bit\nGTA SA 1.0 US"}
+                                />
+                            </label>
+
+                            <label className={styles["label"]}>
+                                Changelog / notas de versión
+                                <textarea
+                                    className={styles["textarea"]}
+                                    name="changelog"
+                                    value={form.changelog}
+                                    onChange={handleFormChange}
+                                    placeholder={"v0.1.0\n- Primer release"}
+                                />
+                            </label>
+                        </div>
+
+                        <label className={styles["label"]}>
+                            Idioma(s)
+                            <input
+                                className={styles["input"]}
+                                type="text"
+                                name="languages"
+                                value={form.languages}
+                                onChange={handleFormChange}
+                                placeholder="Español, Inglés"
+                            />
+                        </label>
+
+                        <span className={styles["group-title"]}>Assets</span>
+
+                        {ASSET_FIELDS.map((asset) => (
+                            <div className={styles["asset-row"]} key={asset.key}>
+                                <span className={styles["asset-label"]}>{asset.label}</span>
+                                <div className={styles["asset-controls"]}>
+                                    {asset.key !== "hoverMusic" && assets[asset.key] && (
+                                        <div className={styles["asset-thumb"]}>
+                                            <img src={assets[asset.key]} alt="" />
+                                        </div>
+                                    )}
+                                    <input
+                                        className={styles["input"]}
+                                        type="text"
+                                        value={assets[asset.key] || ""}
+                                        onChange={(event) => setAssets((previous) => ({ ...previous, [asset.key]: event.target.value }))}
+                                        placeholder={asset.key === "hoverMusic" ? "Archivo de audio..." : "https://..."}
+                                    />
+                                    <button type="button" className={styles["browse-btn"]} onClick={() => setAssetDialog(asset.key)}>
+                                        Examinar
+                                    </button>
+                                    {assets[asset.key] && (
+                                        <button
+                                            type="button"
+                                            className={styles["clear-btn"]}
+                                            title="Quitar asset"
+                                            onClick={() => setAssets((previous) => ({ ...previous, [asset.key]: "" }))}
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+
+                        <label className={styles["label"]}>
+                            Trailer (URL)
+                            <input
+                                className={styles["input"]}
+                                type="url"
+                                value={assets.trailer || ""}
+                                onChange={(event) => setAssets((previous) => ({ ...previous, trailer: event.target.value }))}
+                                placeholder="https://youtube.com/..."
+                            />
+                        </label>
+
+                        <div className={styles["label"]}>
+                            <div className={styles["label-head"]}>
+                                Galería de screenshots
+                                <button type="button" className={styles["preview-toggle"]} onClick={() => setShotsDialog(true)}>
+                                    + Agregar imagen
+                                </button>
+                            </div>
+                            {screenshots.length > 0 && (
+                                <div className={styles["shots-grid"]}>
+                                    {screenshots.map((shot, index) => (
+                                        <div className={styles["shot-item"]} key={`${shot.slice(-24)}-${index}`}>
+                                            <img src={shot} alt={`Screenshot ${index + 1}`} />
+                                            <button
+                                                type="button"
+                                                className={styles["shot-remove"]}
+                                                title="Quitar screenshot"
+                                                onClick={() => setScreenshots((previous) => previous.filter((_, shotIndex) => shotIndex !== index))}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
                         {error && <p className={styles["error"]}>{error}</p>}
 
@@ -668,6 +979,24 @@ function Creator({ onNavigate })
                         filters={IMAGE_FILTERS}
                         onSelect={handleSelectCover}
                         onCancel={() => setCoverDialog(false)}
+                    />
+                )}
+
+                {assetDialog && (
+                    <CustomFileDialog
+                        title="Selecciona el asset"
+                        filters={assetDialog === "hoverMusic" ? AUDIO_FILTERS : IMAGE_FILTERS}
+                        onSelect={handleSelectAsset}
+                        onCancel={() => setAssetDialog(null)}
+                    />
+                )}
+
+                {shotsDialog && (
+                    <CustomFileDialog
+                        title="Agregar screenshot"
+                        filters={IMAGE_FILTERS}
+                        onSelect={handleAddScreenshot}
+                        onCancel={() => setShotsDialog(false)}
                     />
                 )}
             </div>
@@ -733,7 +1062,12 @@ function Creator({ onNavigate })
                         </div>
                     </div>
 
-                    {project.description && <p className={styles["detail-desc"]}>{project.description}</p>}
+                    {project.description && (
+                        <div
+                            className={`${styles["detail-desc"]} ${styles["md-preview"]}`}
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(project.description) }}
+                        />
+                    )}
 
                     {error && <p className={styles["error"]}>{error}</p>}
 

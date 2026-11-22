@@ -13,6 +13,8 @@
     "@tauri-apps/api": "2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-opener": "^2",
+    "dompurify": "^3.5.0",
+    "marked": "^18.2.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
