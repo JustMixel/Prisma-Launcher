@@ -92,6 +92,8 @@ function mapProject(project) {
         version: project.version,
         executablePath: project.executablePath,
         link: project.link,
+        downloadMain: project.downloadMain || null,
+        downloadUpdate: project.downloadUpdate || null,
         statsIni: project.statsIni,
         releasedate: project.releasedate || null,
         countdownBadge: Boolean(project.countdownBadge),
@@ -304,6 +306,8 @@ router.post('/creator/projects', (req, res) => {
         version: typeof body.version === 'string' && body.version.trim() ? body.version.trim() : '0.1.0',
         executablePath: body.executablePath || null,
         link: null,
+        downloadMain: typeof body.downloadMain === 'string' && body.downloadMain.trim() ? body.downloadMain.trim() : null,
+        downloadUpdate: typeof body.downloadUpdate === 'string' && body.downloadUpdate.trim() ? body.downloadUpdate.trim() : null,
         statsIni: body.statsIni || null,
         releasedate: typeof body.releasedate === 'string' ? body.releasedate : null,
         countdownBadge: Boolean(body.countdownBadge),
@@ -343,7 +347,7 @@ router.patch('/creator/projects/:id', (req, res) => {
         return res.status(400).json({ error: 'missing_fields' });
     }
 
-    ['name', 'description', 'category', 'cover', 'version', 'executablePath', 'statsIni', 'releasedate', 'credits', 'requirements', 'changelog', 'languages'].forEach((field) => {
+    ['name', 'description', 'category', 'cover', 'version', 'executablePath', 'statsIni', 'releasedate', 'credits', 'requirements', 'changelog', 'languages', 'downloadMain', 'downloadUpdate'].forEach((field) => {
         if (body[field] !== undefined) {
             project[field] = body[field];
         }

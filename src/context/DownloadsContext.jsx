@@ -134,11 +134,12 @@ function DownloadsProvider({ children })
                 producer: mod.m_producername || null,
                 producerLogo: mod.m_producerlogo || null,
                 devgroupLogo: mod.m_devgrouplogo || null,
-                version: mod.m_update?.version || mod.m_version || "1.0.0",
+                version: mod.m_version || mod.m_update?.version || "1.0.0",
                 downloads: mod.m_downloads || 0,
                 rating: mod.m_ratingAverage || 0,
                 tags: mod.m_tags || [],
                 link: mod.m_link || null,
+                updateLink: mod.m_update?.download_url || null,
                 installedAt: new Date().toISOString()
             };
 

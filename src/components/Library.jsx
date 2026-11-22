@@ -118,9 +118,10 @@ function Library()
     const { filteredItems, tokens, trimmedSearch } = search;
     const suggestions = [...new Set(mergedLibrary.flatMap((item) => [item.name, item.publisher, item.producer]).filter(Boolean))];
     const selectedMod = mergedLibrary.find((item) => String(item.id) === String(selectedId)) || null;
+    const selectedUpdate = selectedMod ? getAvailableUpdate(serverUpdates[selectedMod.id], selectedMod.version) : null;
 
     if (selectedMod) {
-        return <ModPlayView mod={selectedMod} onBack={() => setSelectedId(null)} />;
+        return <ModPlayView mod={selectedMod} update={selectedUpdate} onBack={() => setSelectedId(null)} />;
     }
 
     return (

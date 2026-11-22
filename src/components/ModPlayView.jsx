@@ -46,7 +46,18 @@ function GearIcon()
     );
 }
 
-function ModPlayView({ mod, onBack })
+function DownloadIcon()
+{
+    return (
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3v12" />
+            <polyline points="7 11 12 16 17 11" />
+            <path d="M4 20h16" />
+        </svg>
+    );
+}
+
+function ModPlayView({ mod, update, onBack })
 {
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
@@ -56,6 +67,8 @@ function ModPlayView({ mod, onBack })
 
     const creator = mod.publisher || mod.producer || "Desconocido";
     const year = mod.installedAt ? new Date(mod.installedAt).getFullYear() : "";
+    const hasUpdate = Boolean(update?.download_url);
+    const hasMainLink = Boolean(mod.link);
 
     async function handlePlay()
     {
@@ -104,8 +117,45 @@ function ModPlayView({ mod, onBack })
         }
     }
 
+    async function openDownload(url, message)
+    {
+        setError("");
+        setNotice("");
+        try {
+            await openUrl(url);
+            setNotice(message);
+        } catch (openError) {
+            setError(String(openError));
+        }
+    }
+
+    function handleUpdate()
+    {
+        if (hasUpdate) {
+            openDownload(update.download_url, `Descargando update a ${update.version} (solo archivos de la update).`);
+        }
+    }
+
+    function handleMainDownload()
+    {
+        if (hasMainLink) {
+            openDownload(mod.link, "Descargando la descarga principal (paquete completo).");
+        }
+    }
+
     return (
         <div className={styles["play-view"]}>
+            <button
+                className={styles["retail-btn"]}
+                type="button"
+                title={hasMainLink ? "Descarga principal: paquete completo en su última versión" : "Este mod no tiene descarga principal registrada"}
+                onClick={handleMainDownload}
+                disabled={!hasMainLink}
+            >
+                <DownloadIcon />
+                DESCARGA PRINCIPAL
+            </button>
+
             <div className={styles["center"]}>
                 {logoFailed ? (
                     <h1 className={styles["logo"]}>{mod.name}</h1>
@@ -128,6 +178,15 @@ function ModPlayView({ mod, onBack })
                         onClick={handleOpenFolder}
                     >
                         <GearIcon />
+                    </button>
+                    <button
+                        className={styles["update-btn"]}
+                        type="button"
+                        title={hasUpdate ? `Descargar solo los archivos para actualizar a ${update.version}` : "Sin actualizaciones disponibles"}
+                        onClick={handleUpdate}
+                        disabled={!hasUpdate}
+                    >
+                        {hasUpdate ? `ACTUALIZAR · ${update.version}` : "AL DÍA"}
                     </button>
                     <button
                         className={styles["play-btn"]}
@@ -167,6 +226,14 @@ function ModPlayView({ mod, onBack })
                 >
                     <TrophyIcon />
                 </button>
+                <button
+                    className={`${styles["rail-btn"]} ${panel === "downloads" ? styles["rail-btn-active"] : ""}`}
+                    type="button"
+                    title="Descargas (principal y update)"
+                    onClick={() => setPanel(panel === "downloads" ? null : "downloads")}
+                >
+                    <DownloadIcon />
+                </button>
             </aside>
 
             {panel === "stats" && (
@@ -186,6 +253,32 @@ function ModPlayView({ mod, onBack })
                 <div className={styles["panel"]}>
                     <h2>Logros</h2>
                     <p className={styles["panel-text"]}>Próximamente.</p>
+                </div>
+            )}
+
+            {panel === "downloads" && (
+                <div className={styles["panel"]}>
+                    <h2>Descargas</h2>
+                    <button
+                        className={styles["dl-option"]}
+                        type="button"
+                        onClick={handleMainDownload}
+                        disabled={!hasMainLink}
+                        title={hasMainLink ? "Paquete completo del mod en su última versión" : "Sin descarga principal registrada"}
+                    >
+                        <strong>Descarga principal</strong>
+                        <span>{hasMainLink ? "Paquete completo · última versión" : "No disponible"}</span>
+                    </button>
+                    <button
+                        className={styles["dl-option"]}
+                        type="button"
+                        onClick={handleUpdate}
+                        disabled={!hasUpdate}
+                        title={hasUpdate ? `Solo los archivos para actualizar a ${update.version}` : "Sin actualizaciones disponibles"}
+                    >
+                        <strong>Descarga update</strong>
+                        <span>{hasUpdate ? `Solo archivos → v${update.version}` : "Sin updates"}</span>
+                    </button>
                 </div>
             )}
         </div>

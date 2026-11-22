@@ -65,7 +65,9 @@ const EMPTY_FORM = {
     links: "",
     requirements: "",
     changelog: "",
-    languages: []
+    languages: [],
+    downloadMain: "",
+    downloadUpdate: ""
 };
 
 const EMPTY_ASSETS = {
@@ -353,7 +355,9 @@ function Creator({ onNavigate })
                 ? project.languages
                 : (typeof project.languages === "string" && project.languages
                     ? project.languages.split(",").map((lang) => lang.trim()).filter(Boolean)
-                    : [])
+                    : []),
+            downloadMain: project.downloadMain || "",
+            downloadUpdate: project.downloadUpdate || ""
         });
         setCoverDataUrl(typeof project.cover === "string" && project.cover.startsWith("data:") ? project.cover : "");
         setCoverPath("");
@@ -448,6 +452,8 @@ function Creator({ onNavigate })
             requirements: form.requirements,
             changelog: form.changelog,
             languages: form.languages,
+            downloadMain: form.downloadMain.trim() || null,
+            downloadUpdate: form.downloadUpdate.trim() || null,
             assets: {
                 banner: assets.banner || null,
                 icon: assets.icon || null,
@@ -1000,6 +1006,38 @@ function Creator({ onNavigate })
                                     ))}
                             </select>
                             <p className={styles["field-hint"]}>Elegí el idioma de la lista; ✕ en el chip para quitarlo.</p>
+                        </div>
+
+                        <span className={styles["group-title"]}>Descargas</span>
+
+                        <div className={styles["label"]}>
+                            Descarga principal (paquete completo)
+                            <input
+                                className={styles["input"]}
+                                type="url"
+                                name="downloadMain"
+                                value={form.downloadMain}
+                                onChange={handleFormChange}
+                                placeholder="https://.../v1.0.0-full.zip"
+                            />
+                            <p className={styles["field-hint"]}>
+                                Proyecto entero siempre actualizado a su última versión (retail).
+                            </p>
+                        </div>
+
+                        <div className={styles["label"]}>
+                            Descarga update (solo archivos de la update)
+                            <input
+                                className={styles["input"]}
+                                type="url"
+                                name="downloadUpdate"
+                                value={form.downloadUpdate}
+                                onChange={handleFormChange}
+                                placeholder="https://.../v1.1.0-patch.zip"
+                            />
+                            <p className={styles["field-hint"]}>
+                                Solo los archivos necesarios para actualizar a esta versión.
+                            </p>
                         </div>
 
                         <span className={styles["group-title"]}>Assets</span>

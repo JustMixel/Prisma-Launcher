@@ -108,7 +108,7 @@ const versions = {
         version: '1.2.0',
         changelog: 'Balance changes and new missions.',
         released_at: '2026-11-18T19:00:00.000Z',
-        download_url: null,
+        download_url: 'https://prisma.example/downloads/syndicate/v1.2.0-full.zip',
         checksum: 'sha256:zip501',
         file_size: 524288000,
         dependencies: [],
@@ -127,7 +127,7 @@ const versions = {
         name: 'The November Update',
         changelog: 'Nueva campaña, mejoras de IA y balance general.',
         released_at: '2026-11-19T18:00:00.000Z',
-        download_url: null,
+        download_url: 'https://prisma.example/downloads/syndicate/v1.4.0-patch.zip',
         checksum: 'sha256:zip520',
         file_size: 576716800,
         dependencies: [],
@@ -146,7 +146,7 @@ const versions = {
         version: '2.0.1',
         changelog: 'Initial release.',
         released_at: null,
-        download_url: null,
+        download_url: 'https://prisma.example/downloads/neondrift/v2.0.1-full.zip',
         checksum: 'sha256:zip881',
         file_size: 268435456,
         dependencies: [],
@@ -165,7 +165,7 @@ const versions = {
         name: 'Neon Nights Update',
         changelog: 'Nuevos circuitos nocturnos, autos y sistema de clima.',
         released_at: '2026-11-19T20:00:00.000Z',
-        download_url: null,
+        download_url: 'https://prisma.example/downloads/neondrift/v2.1.0-patch.zip',
         checksum: 'sha256:zip890',
         file_size: 314572800,
         dependencies: [],
@@ -204,7 +204,8 @@ const mods = [
         m_update: {
             version: '1.4.0',
             name: 'The November Update',
-            display: 'version'
+            display: 'version',
+            download_url: 'https://prisma.example/downloads/syndicate/v1.4.0-patch.zip'
         }
     },
     {
@@ -230,7 +231,8 @@ const mods = [
         m_update: {
             version: '2.1.0',
             name: 'Neon Nights Update',
-            display: 'name'
+            display: 'name',
+            download_url: 'https://prisma.example/downloads/neondrift/v2.1.0-patch.zip'
         }
     }
 ];
