@@ -1,4 +1,4 @@
-export function getUpdateLabel(update)
+export function getUpdateName(update)
 {
     if (!update) {
         return null;
@@ -11,8 +11,13 @@ export function getUpdateLabel(update)
         return null;
     }
 
-    const selected = update.display === "name" ? (name || version) : (version || name);
-    return `Update (${selected})`;
+    return update.display === "name" ? (name || version) : (version || name);
+}
+
+export function getUpdateLabel(update)
+{
+    const selected = getUpdateName(update);
+    return selected ? `Update (${selected})` : null;
 }
 
 export function compareVersions(left, right)

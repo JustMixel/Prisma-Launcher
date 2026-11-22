@@ -73,6 +73,11 @@
     border-color: #d0d0d0;
 }
 
+.gear-btn-active {
+    border-color: var(--accent, #d9cd00);
+    color: var(--accent, #d9cd00);
+}
+
 .play-btn {
     min-width: 210px;
     height: 50px;
@@ -102,30 +107,21 @@
     min-width: 170px;
     height: 50px;
     padding: 0 20px;
-    background-color: #3a3312;
-    border: 3px solid #d9b24a;
+    background-color: var(--accent, #d9cd00);
+    border: 3px solid #111;
     border-radius: 0;
-    color: #ffe9a3;
+    color: #111;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: 1px;
+    white-space: nowrap;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: filter 0.15s ease;
 }
 
-.update-btn:hover:not(:disabled) {
-    background-color: #4d431a;
-    border-color: #f0c95e;
-    color: #ffffff;
-}
-
-.update-btn:disabled {
-    background-color: #2b2b3a;
-    border-color: #777777;
-    color: #bbbbbb;
-    cursor: default;
-    letter-spacing: 2px;
+.update-btn:hover {
+    filter: brightness(1.1);
 }
 
 .retail-btn {
@@ -223,6 +219,22 @@
     outline: 1px solid #f0f0f0;
 }
 
+.rail-btn-update {
+    color: var(--accent, #d9cd00);
+    border-color: var(--accent, #d9cd00);
+}
+
+.rail-btn-update:hover {
+    color: var(--accent, #d9cd00);
+    outline: 1px solid var(--accent, #d9cd00);
+}
+
+.rail-btn-update-active {
+    color: var(--accent, #d9cd00);
+    outline: 1px solid var(--accent, #d9cd00);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
 .panel {
     position: absolute;
     top: 50%;
@@ -302,4 +314,72 @@
 .dl-option span {
     font-size: 11px;
     color: #9a9a9a;
+}
+
+.config-panel {
+    position: absolute;
+    bottom: 116px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 270px;
+    padding: 16px 18px;
+    background-color: #1e1e1e;
+    border: 1px solid #555;
+    color: #e8e8e8;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    z-index: 5;
+}
+
+.config-panel h2 {
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #444;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.config-folder {
+    width: 100%;
+    padding: 9px 12px;
+    background-color: #2b2b3a;
+    border: 1px solid #555;
+    border-radius: 0;
+    color: #e8e8e8;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.config-folder:hover {
+    border-color: #9a9a9a;
+    background-color: #33333f;
+}
+
+.config-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #444;
+    font-size: 13px;
+}
+
+.config-status span {
+    color: #9a9a9a;
+}
+
+.status-idle {
+    color: #9a9a9a;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.status-update {
+    color: var(--accent, #d9cd00);
+    font-weight: 700;
+    text-align: right;
 }

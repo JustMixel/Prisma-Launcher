@@ -2,6 +2,7 @@ import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import stelLogo from "../../Mock/Main Screens/STEL3.png";
+import { getUpdateName } from "../utils/update.js";
 import styles from "./ModPlayView.module.css";
 
 function HomeIcon()
@@ -69,6 +70,7 @@ function ModPlayView({ mod, update, onBack })
     const year = mod.installedAt ? new Date(mod.installedAt).getFullYear() : "";
     const hasUpdate = Boolean(update?.download_url);
     const hasMainLink = Boolean(mod.link);
+    const updateName = getUpdateName(update);
 
     async function handlePlay()
     {
@@ -112,6 +114,7 @@ function ModPlayView({ mod, update, onBack })
 
         try {
             await openPath(mod.folder);
+            setPanel(null);
         } catch (openError) {
             setError(String(openError));
         }
@@ -172,22 +175,23 @@ function ModPlayView({ mod, update, onBack })
             <div className={styles["actions-wrap"]}>
                 <div className={styles["actions"]}>
                     <button
-                        className={styles["gear-btn"]}
+                        className={`${styles["gear-btn"]} ${panel === "config" ? styles["gear-btn-active"] : ""}`}
                         type="button"
-                        title="Abrir carpeta del mod"
-                        onClick={handleOpenFolder}
+                        title="Configuración del mod"
+                        onClick={() => setPanel(panel === "config" ? null : "config")}
                     >
                         <GearIcon />
                     </button>
-                    <button
-                        className={styles["update-btn"]}
-                        type="button"
-                        title={hasUpdate ? `Descargar solo los archivos para actualizar a ${update.version}` : "Sin actualizaciones disponibles"}
-                        onClick={handleUpdate}
-                        disabled={!hasUpdate}
-                    >
-                        {hasUpdate ? `ACTUALIZAR · ${update.version}` : "AL DÍA"}
-                    </button>
+                    {hasUpdate && (
+                        <button
+                            className={styles["update-btn"]}
+                            type="button"
+                            title={`Descargar solo los archivos para actualizar a ${updateName}`}
+                            onClick={handleUpdate}
+                        >
+                            {`ACTUALIZAR · ${updateName}`}
+                        </button>
+                    )}
                     <button
                         className={styles["play-btn"]}
                         type="button"
@@ -226,14 +230,16 @@ function ModPlayView({ mod, update, onBack })
                 >
                     <TrophyIcon />
                 </button>
-                <button
-                    className={`${styles["rail-btn"]} ${panel === "downloads" ? styles["rail-btn-active"] : ""}`}
-                    type="button"
-                    title="Descargas (principal y update)"
-                    onClick={() => setPanel(panel === "downloads" ? null : "downloads")}
-                >
-                    <DownloadIcon />
-                </button>
+                {hasUpdate && (
+                    <button
+                        className={`${styles["rail-btn"]} ${styles["rail-btn-update"]} ${panel === "downloads" ? styles["rail-btn-update-active"] : ""}`}
+                        type="button"
+                        title="Descargas (principal y update)"
+                        onClick={() => setPanel(panel === "downloads" ? null : "downloads")}
+                    >
+                        <DownloadIcon />
+                    </button>
+                )}
             </aside>
 
             {panel === "stats" && (
@@ -274,11 +280,28 @@ function ModPlayView({ mod, update, onBack })
                         type="button"
                         onClick={handleUpdate}
                         disabled={!hasUpdate}
-                        title={hasUpdate ? `Solo los archivos para actualizar a ${update.version}` : "Sin actualizaciones disponibles"}
+                        title={hasUpdate ? `Solo los archivos para actualizar a ${updateName}` : "Sin actualizaciones disponibles"}
                     >
                         <strong>Descarga update</strong>
-                        <span>{hasUpdate ? `Solo archivos → v${update.version}` : "Sin updates"}</span>
+                        <span>{hasUpdate ? `Solo archivos → ${updateName}` : "Sin updates"}</span>
                     </button>
+                </div>
+            )}
+
+            {panel === "config" && (
+                <div className={styles["config-panel"]}>
+                    <h2>Configuración del mod</h2>
+                    <button className={styles["config-folder"]} type="button" onClick={handleOpenFolder}>
+                        Abrir carpeta del mod
+                    </button>
+                    <div className={styles["config-status"]}>
+                        <span>Actualizaciones</span>
+                        {hasUpdate ? (
+                            <strong className={styles["status-update"]}>{updateName}</strong>
+                        ) : (
+                            <strong className={styles["status-idle"]}>AL DÍA</strong>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
