@@ -126,6 +126,27 @@ function normalizeAssets(assets) {
     };
 }
 
+function normalizeLanguages(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+    const seen = new Set();
+    const result = [];
+    list.forEach((entry) => {
+        if (typeof entry !== 'string') {
+            return;
+        }
+        const value = entry.trim();
+        const key = value.toLowerCase();
+        if (!value || seen.has(key)) {
+            return;
+        }
+        seen.add(key);
+        result.push(value);
+    });
+    return result;
+}
+
 function normalizeScreenshots(list) {
     if (!Array.isArray(list)) {
         return [];
@@ -272,9 +293,7 @@ router.post('/creator/projects', (req, res) => {
         links: Array.isArray(body.links) ? body.links.filter((entry) => typeof entry === 'string') : [],
         requirements: typeof body.requirements === 'string' ? body.requirements : '',
         changelog: typeof body.changelog === 'string' ? body.changelog : '',
-        languages: Array.isArray(body.languages)
-            ? body.languages.filter((entry) => typeof entry === 'string' && entry.trim())
-            : [],
+        languages: normalizeLanguages(body.languages),
         assets: normalizeAssets(body.assets),
         screenshots: normalizeScreenshots(body.screenshots),
         visibility: 'hidden', // los proyectos siempre nacen ocultos
@@ -322,7 +341,7 @@ router.patch('/creator/projects/:id', (req, res) => {
         project.links = body.links.filter((entry) => typeof entry === 'string');
     }
     if (Array.isArray(body.languages)) {
-        project.languages = body.languages.filter((entry) => typeof entry === 'string' && entry.trim());
+        project.languages = normalizeLanguages(body.languages);
     }
     if (body.screenshots !== undefined) {
         project.screenshots = normalizeScreenshots(body.screenshots);
