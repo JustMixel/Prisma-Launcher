@@ -116,7 +116,7 @@ function AppContent({ userName, onNameChange })
       {activeTab === "store" && <Store />}
       {activeTab === "library" && <Library />}
       {activeTab === "downloads" && <Downloads />}
-      {activeTab === "creator" && <Creator />}
+      {activeTab === "creator" && <Creator onNavigate={setActiveTab} />}
       {activeTab === "configuration" && (
         <Configuration
           userName={userName}

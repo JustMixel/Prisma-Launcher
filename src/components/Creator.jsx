@@ -21,6 +21,16 @@ const ROLE_LABELS = {
     developer: "Desarrollador"
 };
 
+// Mock local de invitaciones (flujo real pendiente — ver CONTEXT.md)
+const MOCK_REQUESTS = [
+    {
+        id: "req-1",
+        title: "¡Has sido invitado!",
+        project: 'Proyecto Prisma – “devgroupname/producername”',
+        meta: "Total Conversion · v0.1 · 18 tester(s)"
+    }
+];
+
 const API_ERRORS = {
     missing_fields: "Faltan campos obligatorios.",
     unknown_creator: "Creador desconocido.",
@@ -69,7 +79,7 @@ function jsonOptions(method, body) {
     };
 }
 
-function Creator()
+function Creator({ onNavigate })
 {
     const [session, setSession] = useState(getSession);
     const isDeveloper = session?.role === "developer";
@@ -776,54 +786,99 @@ function Creator()
 
     return (
         <div className={styles["creator"]}>
-            <header className={styles["header"]}>
-                <div className={styles["header-text"]}>
-                    <h1>CREATOR NETWORK</h1>
-                    <p>Gestioná tus proyectos: metadatos, códigos, testers y visibilidad.</p>
-                </div>
-                <div className={styles["header-actions"]}>
-                    <span className={styles["account-chip"]}>
-                        {session.displayName}
-                        <span className={styles["account-role"]}>
-                            {ROLE_LABELS[session.role] || session.role}
-                            {session.activated ? "" : " · sin activar"}
-                        </span>
-                    </span>
-                    <button type="button" className={styles["logout-btn"]} onClick={handleLogout}>
-                        Cerrar sesión
+            <header className={styles["welcome-bar"]}>
+                <h1 className={styles["welcome"]}>¡Bienvenido, {session.displayName}!</h1>
+                <div className={styles["header-buttons"]}>
+                    <button
+                        type="button"
+                        className={styles["icon-btn"]}
+                        title="Perfil"
+                        aria-label="Perfil"
+                        onClick={() => onNavigate && onNavigate("configuration")}
+                    >
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
                     </button>
-                    <button type="button" className={styles["new-btn"]} onClick={openCreate}>
-                        + Nuevo proyecto
+                    <button
+                        type="button"
+                        className={styles["icon-btn"]}
+                        title="Configuración"
+                        aria-label="Configuración"
+                        onClick={() => onNavigate && onNavigate("configuration")}
+                    >
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles["icon-btn"]} ${styles["icon-btn-danger"]}`}
+                        title="Salir"
+                        aria-label="Salir"
+                        onClick={handleLogout}
+                    >
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                            <line x1="12" y1="2" x2="12" y2="12" />
+                        </svg>
                     </button>
                 </div>
             </header>
 
-            {error && <p className={styles["error"]}>{error}</p>}
+            <section className={styles["pcn-section"]}>
+                <h2 className={styles["section-heading"]}>Tus requests</h2>
+                {MOCK_REQUESTS.map((request) => (
+                    <div key={request.id} className={styles["request-card"]}>
+                        <div className={styles["request-icon"]}>
+                            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+                                <path d="M12 2 22 12 12 22 2 12Z" />
+                            </svg>
+                        </div>
+                        <div className={styles["request-info"]}>
+                            <p className={styles["request-title"]}>{request.title}</p>
+                            <p className={styles["request-sub"]}>{request.project}</p>
+                            <p className={styles["request-meta"]}>{request.meta}</p>
+                        </div>
+                    </div>
+                ))}
+            </section>
 
-            {projects.length > 0 ? (
-                <div className={styles["project-list"]}>
-                    {projects.map((project) => (
-                        <button key={project.id} type="button" className={styles["project-row"]} onClick={() => openDetail(project.id)}>
-                            <div className={styles["row-cover"]}>
-                                <img src={project.cover || testCrop} alt="" onError={(event) => { event.currentTarget.src = testCrop; }} />
-                            </div>
-                            <div className={styles["row-info"]}>
-                                <p className={styles["row-name"]}>{project.name}</p>
-                                <p className={styles["row-meta"]}>
-                                    {project.category} · v{project.version || "—"} · {project.codes.length} código(s) · {project.testers.length} tester(s)
-                                </p>
-                            </div>
-                            <span className={`${styles["badge"]} ${styles[`badge-${project.visibility}`]}`}>
-                                {VISIBILITY_OPTIONS.find((option) => option.value === project.visibility)?.label || project.visibility}
-                            </span>
-                        </button>
-                    ))}
+            <section className={styles["pcn-section"]}>
+                <div className={styles["section-bar"]}>
+                    <h2 className={styles["section-heading"]}>Tus mods</h2>
+                    <button type="button" className={styles["new-btn"]} onClick={openCreate}>
+                        + Nuevo proyecto
+                    </button>
                 </div>
-            ) : (
-                <div className={styles["state-block"]}>
-                    <p className={styles["state-text"]}>Todavía no tenés proyectos. Creá uno con “Nuevo proyecto”.</p>
-                </div>
-            )}
+
+                {error && <p className={styles["error"]}>{error}</p>}
+
+                {projects.length > 0 ? (
+                    <div className={styles["project-list"]}>
+                        {projects.map((project) => (
+                            <button key={project.id} type="button" className={styles["project-row"]} onClick={() => openDetail(project.id)}>
+                                <div className={styles["row-cover"]}>
+                                    <img src={project.cover || testCrop} alt="" onError={(event) => { event.currentTarget.src = testCrop; }} />
+                                </div>
+                                <div className={styles["row-info"]}>
+                                    <p className={styles["row-name"]}>{project.name}</p>
+                                    <p className={styles["row-meta"]}>
+                                        {project.category} · v{project.version || "—"} · {project.codes.length} código(s) · {project.testers.length} tester(s)
+                                    </p>
+                                </div>
+                                <span className={`${styles["badge"]} ${styles[`badge-${project.visibility}`]}`}>
+                                    {VISIBILITY_OPTIONS.find((option) => option.value === project.visibility)?.label || project.visibility}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <p className={styles["empty-text"]}>Todavía no tenés proyectos. Creá uno con “+ Nuevo proyecto”.</p>
+                )}
+            </section>
         </div>
     );
 }
