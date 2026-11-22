@@ -39,6 +39,19 @@ const projects = [
 
 const VISIBILITIES = ['draft', 'hidden', 'published'];
 
+// Lista curada de idiomas para el form (el usuario solo elige, no escribe)
+const LANGUAGES = [
+    'Español', 'English', 'Português', 'Français', 'Deutsch', 'Italiano',
+    'Nederlands', 'Русский', 'Українська', 'Polski', 'Türkçe', 'Svenska',
+    'Norsk', 'Dansk', 'Suomi', 'Íslenska', 'Čeština', 'Slovenčina',
+    'Magyar', 'Română', 'Български', 'Ελληνικά', 'Srpski', 'Hrvatski',
+    'Slovenščina', 'Lietuvių', 'Latviešu', 'Eesti', '日本語', '中文 (简体)',
+    '한국어', 'العربية', 'فارسی', 'עברית', 'हिन्दी', 'বাংলা',
+    'ไทย', 'Tiếng Việt', 'Bahasa Indonesia', 'Bahasa Melayu', 'Filipino',
+    'Català', 'Galego', 'Euskara', 'Gaeilge', 'Cymraeg', 'Gàidhlig',
+    'Esperanto'
+];
+
 function publicUser(user) {
     const { password, ...rest } = user;
     return rest;
@@ -190,6 +203,11 @@ router.post('/auth/login', (req, res) => {
 // GET /api/users — usuarios (para asignar testers en F2)
 router.get('/users', (req, res) => {
     res.json(users.map(publicUser));
+});
+
+// GET /api/languages — lista curada de idiomas para el form
+router.get('/languages', (req, res) => {
+    res.json([...LANGUAGES].sort((a, b) => a.localeCompare(b, 'es')));
 });
 
 // POST /api/codes/redeem — valida un código de activación y devuelve el proyecto

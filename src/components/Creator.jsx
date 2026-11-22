@@ -153,7 +153,7 @@ function Creator({ onNavigate })
     const [assetDialog, setAssetDialog] = useState(null);
     const [shotsDialog, setShotsDialog] = useState(false);
     const [showDescPreview, setShowDescPreview] = useState(false);
-    const [langDraft, setLangDraft] = useState("");
+    const [languageOptions, setLanguageOptions] = useState([]);
     const [shotEditIndex, setShotEditIndex] = useState(null);
     const [shotDragIndex, setShotDragIndex] = useState(null);
     const [executableDialog, setExecutableDialog] = useState(false);
@@ -176,15 +176,17 @@ function Creator({ onNavigate })
 
         (async () => {
             try {
-                const [projectData, userData] = await Promise.all([
+                const [projectData, userData, languageData] = await Promise.all([
                     fetchJson(`${API}/creator/projects?creator=${encodeURIComponent(session.username)}`),
-                    fetchJson(`${API}/users`)
+                    fetchJson(`${API}/users`),
+                    fetchJson(`${API}/languages`).catch(() => [])
                 ]);
                 if (cancelled) {
                     return;
                 }
                 setProjects(Array.isArray(projectData) ? projectData : []);
                 setUsers(Array.isArray(userData) ? userData : []);
+                setLanguageOptions(Array.isArray(languageData) ? languageData : []);
                 setStatus("ready");
             } catch (loadError) {
                 if (!cancelled) {
@@ -252,23 +254,21 @@ function Creator({ onNavigate })
         setAssets({ ...EMPTY_ASSETS });
         setScreenshots([]);
         setShowDescPreview(false);
-        setLangDraft("");
         setShotEditIndex(null);
         setError("");
         setView("form");
     }
 
-    function addLanguage() {
-        const value = langDraft.trim();
-        if (!value) {
+    function addLanguage(value) {
+        const language = (value || "").trim();
+        if (!language) {
             return;
         }
         setForm((previous) => (
-            previous.languages.some((lang) => lang.toLowerCase() === value.toLowerCase())
+            previous.languages.some((lang) => lang.toLowerCase() === language.toLowerCase())
                 ? previous
-                : { ...previous, languages: [...previous.languages, value] }
+                : { ...previous, languages: [...previous.languages, language] }
         ));
-        setLangDraft("");
     }
 
     function removeLanguage(lang) {
@@ -366,7 +366,6 @@ function Creator({ onNavigate })
                 : []
         );
         setShowDescPreview(false);
-        setLangDraft("");
         setShotEditIndex(null);
         setError("");
         setView("form");
@@ -961,10 +960,7 @@ function Creator({ onNavigate })
 
                         <div className={styles["label"]}>
                             Idioma(s)
-                            <div
-                                className={styles["lang-box"]}
-                                onClick={() => document.getElementById("lang-input")?.focus()}
-                            >
+                            {form.languages.length > 0 && (
                                 <div className={styles["lang-chips"]}>
                                     {form.languages.map((lang) => (
                                         <span className={styles["lang-chip"]} key={lang}>
@@ -973,29 +969,37 @@ function Creator({ onNavigate })
                                                 type="button"
                                                 className={styles["lang-chip-remove"]}
                                                 title={`Quitar ${lang}`}
-                                                onClick={(event) => { event.stopPropagation(); removeLanguage(lang); }}
+                                                onClick={() => removeLanguage(lang)}
                                             >
                                                 ✕
                                             </button>
                                         </span>
                                     ))}
-                                    <input
-                                        id="lang-input"
-                                        className={styles["lang-input"]}
-                                        type="text"
-                                        value={langDraft}
-                                        onChange={(event) => setLangDraft(event.target.value)}
-                                        onKeyDown={(event) => {
-                                            if (event.key === "Enter") {
-                                                event.preventDefault();
-                                                addLanguage();
-                                            }
-                                        }}
-                                        placeholder={form.languages.length === 0 ? "Escribe un idioma y presiona Enter" : "Agregar otro..."}
-                                    />
                                 </div>
-                            </div>
-                            <p className={styles["field-hint"]}>Escribí el idioma y presioná Enter para agregarlo.</p>
+                            )}
+                            <select
+                                className={styles["input"]}
+                                value=""
+                                onChange={(event) => { if (event.target.value) addLanguage(event.target.value); }}
+                                disabled={
+                                    languageOptions.length > 0
+                                    && languageOptions.every((lang) => form.languages.includes(lang))
+                                }
+                            >
+                                <option value="" disabled>
+                                    {languageOptions.length === 0
+                                        ? "Cargando idiomas..."
+                                        : (languageOptions.every((lang) => form.languages.includes(lang))
+                                            ? "Ya agregaste todos los idiomas"
+                                            : "Elegí un idioma para agregarlo...")}
+                                </option>
+                                {languageOptions
+                                    .filter((lang) => !form.languages.includes(lang))
+                                    .map((lang) => (
+                                        <option key={lang} value={lang}>{lang}</option>
+                                    ))}
+                            </select>
+                            <p className={styles["field-hint"]}>Elegí el idioma de la lista; ✕ en el chip para quitarlo.</p>
                         </div>
 
                         <span className={styles["group-title"]}>Assets</span>
