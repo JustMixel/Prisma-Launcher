@@ -324,7 +324,7 @@
     margin: 0;
 }
 
-/* ---- Formulario ---- */
+/* ---- Formulario (PL_PCN_01) ---- */
 .form-panel {
     position: relative;
     max-width: 640px;
@@ -349,24 +349,39 @@
     color: rgba(255, 255, 255, 0.6);
 }
 
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+.form-head {
+    text-align: center;
+    margin-bottom: 18px;
 }
 
-.preview-row {
+.form-title {
+    margin: 0 0 6px;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    color: #ffffff;
+}
+
+.form-subtitle {
+    margin: 0;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.preview-card {
     display: flex;
     align-items: center;
-    gap: 18px;
-    padding: 14px;
-    background-color: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 20px;
+    max-width: 720px;
+    margin: 0 auto 22px;
+    padding: 14px 18px;
+    background-color: rgba(18, 18, 17, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .preview-frame {
-    width: 128px;
-    height: 72px;
+    width: 160px;
+    height: 112px;
     flex-shrink: 0;
     overflow: hidden;
     background-color: #000;
@@ -398,6 +413,17 @@
     margin: 0;
     font-size: 13px;
     color: rgba(255, 255, 255, 0.55);
+}
+
+.meta-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 420px;
+    box-sizing: border-box;
+    padding: 26px 30px 20px;
+    background-color: rgba(10, 10, 9, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .label {
@@ -489,7 +515,8 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    margin-top: 8px;
+    margin-top: auto;
+    padding-top: 8px;
 }
 
 .cancel-btn,
@@ -499,27 +526,29 @@
     font-family: Bahnschrift, "Segoe UI", sans-serif;
     font-size: 15px;
     cursor: pointer;
-    transition: border-color 0.15s ease, filter 0.15s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .cancel-btn {
-    color: #ffffff;
+    color: #ff6b6b;
     background-color: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 70, 70, 0.75);
 }
 
 .cancel-btn:hover {
-    border-color: rgba(255, 255, 255, 0.6);
+    border-color: #ff5a5a;
+    background-color: rgba(80, 10, 10, 0.25);
 }
 
 .submit-btn {
-    color: #0e0e0d;
-    background-color: var(--accent, rgb(219, 205, 0));
-    border: none;
+    color: #ffffff;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.75);
 }
 
 .submit-btn:hover:not(:disabled) {
-    filter: brightness(1.08);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #ffffff;
 }
 
 .submit-btn:disabled {
