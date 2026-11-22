@@ -660,3 +660,83 @@
     opacity: 0.5;
     cursor: default;
 }
+
+/* ---- Header: cuenta + acciones ---- */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.account-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    white-space: nowrap;
+}
+
+.account-role {
+    font-size: 11px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.logout-btn {
+    height: 40px;
+    padding: 0 16px;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+    font-size: 14px;
+    color: #ffffff;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.logout-btn:hover {
+    border-color: antiquewhite;
+}
+
+/* ---- Login (PCN) ---- */
+.login-panel {
+    max-width: 440px;
+    margin: 60px auto 0;
+    padding: 36px 40px;
+    background-color: rgba(18, 18, 17, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.login-btn {
+    height: 42px;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+    font-size: 15px;
+    color: #0e0e0d;
+    background-color: var(--accent, rgb(219, 205, 0));
+    border: none;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+}
+
+.login-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.login-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}

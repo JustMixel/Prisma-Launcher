@@ -132,25 +132,6 @@
     color: #8f8f8f;
 }
 
-.account-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-    min-width: 0;
-}
-
-.account-info strong {
-    font-size: 15px;
-    color: #f0f0f0;
-}
-
-.account-info span {
-    font-size: 12px;
-    font-weight: 100;
-    color: #8f8f8f;
-}
-
 .role-row {
     display: flex;
     justify-content: space-between;

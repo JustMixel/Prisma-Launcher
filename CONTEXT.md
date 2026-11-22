@@ -197,17 +197,17 @@ Módulo del launcher para crear, testear y gestionar mods + activación de proye
 - Testeo: módulo propio (validar/lanzar/logs) + rol **Tester** otorgado por el desarrollador; los testers ven el botón **"Activar Proyecto"** en Library; los miembros normales no.
 - Códigos: **multi-uso con límite** (opcional expiración); activan proyectos ocultos que no salen en la Store.
 - Archivos: combinación **local + alojados en servidor** (F4).
-- Identidad: **cuentas con login** (mock ahora, SQL después).
+- Identidad: **cuentas con login** (mock ahora, SQL después); el login/logout se hace **en el módulo PCN** (no en Configuration).
 - Dueño/desarrollador: ve sus proyectos ocultos en su PCN **sin código** (hecho en F2).
 
 ### Estado
 - [x] **F0 — modelo + endpoints mock**: `server/Routes/creatorRoutes.js` montado en `/api`:
   `POST /api/auth/login`, `POST /api/codes/redeem`, `GET /api/creator/projects`, `GET /api/users`.
   Seed: `dev/dev123` (developer), `tester/tester123` (tester), `user/user123` (member, `activated: false`), `tester2/tester123` (member activado, id 4); proyecto oculto `prj-1` con código `PRISMA-TEST` (100 usos, sin expiración, usado 1).
-- [x] **F1 — canje en Library**: `src/utils/session.js` (sesión en `localStorage` `prisma-session`), sección **"Cuenta Prisma"** en Configuration (login/logout), botón **"Activar Proyecto"** en Library visible solo con rol `tester`, `RedeemProject.jsx` (buscar código → preview con usos restantes → activar → `addToLibrary` con `source: "code"`).
+- [x] **F1 — canje en Library**: `src/utils/session.js` (sesión en `localStorage` `prisma-session`), botón **"Activar Proyecto"** en Library visible solo con rol `tester`, `RedeemProject.jsx` (buscar código → preview con usos restantes → activar → `addToLibrary` con `source: "code"`). **Login/logout vive en el módulo PCN** (sección "Cuenta Prisma" eliminada de Configuration).
 - [x] Store: `/api/mods` y `/api/catalog` filtran `m_status === 'published'` (ocultos no aparecen).
 - [x] **F2 — sidebar + módulo PCN**: botón **Creator** en el sidebar (abajo, `App.jsx` + `.sidebar-footer`/`.creator-btn` en `App.css`), pestaña `"creator"` en `TABS`/`TAB_LABELS`, `src/components/Creator.jsx` + `Creator.module.css`:
-  - **Gate de rol**: solo `session.role === "developer"` (si no, mensaje de acceso); sin sesión → indica login en Configuration.
+  - **Gate de rol**: sin sesión → **formulario de login dentro del propio PCN** (usuario/contraseña, cuentas de prueba, `handleLogin`/`handleLogout` en `Creator.jsx`); sesión no-developer → mensaje "solo desarrolladores" + botón Cerrar sesión; developer → módulo completo. En la lista, chip de cuenta (nombre + rol) + **Cerrar sesión** en el header.
   - **Lista**: proyectos con cover, categoría, versión, conteo de códigos/testers y badge de visibilidad (borrador/oculto/publicado).
   - **Crear/Editar** (form estilo AddLocalMod): nombre, descripción, categoría (reutiliza `CATEGORIES` exportado de `AddLocalMod.jsx`), portada (URL o archivo local vía `read_file_as_data_url` + `CustomFileDialog`), ruta del ejecutable (explorador), versión, archivo `.ini` de stats, tags (CSV), visibilidad inicial. Crear genera código inicial (`generateCodeMaxUses: 100`).
   - **Detalle**: editar / botón "Testear" **deshabilitado "Próximamente (F3)"**, secciones de **Visibilidad** (POST `/visibility`), **Códigos** (lista con usos restantes + copiar + generar con usos máximos) y **Testers** (chips quitar + select de miembros activados para asignar).
@@ -220,6 +220,7 @@ Módulo del launcher para crear, testear y gestionar mods + activación de proye
 ## Comandos
 - Frontend: `npm run build` (raíz del proyecto).
 - Servidor: `node index.js` **desde `server/`** (dotenv falla desde la raíz). Reiniciar tras editar mocks (los datos se cargan al arrancar).
+- **Si el login falla con "No se pudo conectar con el servidor"**: verificar que el proceso node del puerto 3000 sea actual (`GET /api/auth/login` debe responder, no 404) — matar el viejo (`Stop-Process -Id <pid>`) y relanzar `node index.js`.
 - Sintaxis rutas: `node --check Routes/launcherRoutes.js` y `node --check Routes/creatorRoutes.js` (desde `server/`).
 
 ## Relevo para siguiente modelo — Store y búsqueda

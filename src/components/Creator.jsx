@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import testCrop from "../assets/modRender.png";
 import CustomFileDialog, { IMAGE_FILTERS } from "./CustomFileDialog.jsx";
 import { CATEGORIES } from "./AddLocalMod.jsx";
-import { getSession } from "../utils/session.js";
+import { clearSession, getSession, saveSession } from "../utils/session.js";
 import styles from "./Creator.module.css";
 
 const API = "http://localhost:3000/api";
@@ -13,6 +13,13 @@ const VISIBILITY_OPTIONS = [
     { value: "hidden", label: "Oculto" },
     { value: "published", label: "Publicado" }
 ];
+
+const ROLE_LABELS = {
+    member: "Miembro",
+    activated: "Miembro activado",
+    tester: "Tester",
+    developer: "Desarrollador"
+};
 
 const API_ERRORS = {
     missing_fields: "Faltan campos obligatorios.",
@@ -64,7 +71,7 @@ function jsonOptions(method, body) {
 
 function Creator()
 {
-    const session = getSession();
+    const [session, setSession] = useState(getSession);
     const isDeveloper = session?.role === "developer";
 
     const [view, setView] = useState("list");
@@ -84,6 +91,9 @@ function Creator()
     const [actionBusy, setActionBusy] = useState(false);
     const [codeMaxUses, setCodeMaxUses] = useState("100");
     const [testerUserId, setTesterUserId] = useState("");
+    const [accountUser, setAccountUser] = useState("");
+    const [accountPass, setAccountPass] = useState("");
+    const [accountBusy, setAccountBusy] = useState(false);
 
     useEffect(() => {
         if (!isDeveloper) {
@@ -118,6 +128,44 @@ function Creator()
 
     function reload() {
         setReloadKey((key) => key + 1);
+    }
+
+    async function handleLogin(event) {
+        event.preventDefault();
+        if (accountBusy || !accountUser.trim() || !accountPass) {
+            return;
+        }
+
+        setAccountBusy(true);
+        setError("");
+        try {
+            const data = await fetchJson(`${API}/auth/login`, jsonOptions("POST", {
+                username: accountUser.trim(),
+                password: accountPass
+            }));
+            saveSession(data.user);
+            setSession(data.user);
+            setAccountPass("");
+            setView("list");
+        } catch (loginError) {
+            const message = String(loginError?.message || loginError);
+            setError(message === "invalid"
+                ? "Usuario o contraseña incorrectos."
+                : mapError(loginError));
+        } finally {
+            setAccountBusy(false);
+        }
+    }
+
+    function handleLogout() {
+        clearSession();
+        setSession(null);
+        setAccountUser("");
+        setAccountPass("");
+        setError("");
+        setView("list");
+        setSelectedId(null);
+        setStatus("loading");
     }
 
     function handleFormChange(event) {
@@ -300,15 +348,72 @@ function Creator()
         }
     }
 
-    if (!session || !isDeveloper) {
+    if (!session) {
+        return (
+            <div className={styles["creator"]}>
+                <div className={styles["login-panel"]}>
+                    <h1 className={styles["title"]}>PRISMA CREATOR NETWORK</h1>
+                    <p className={styles["subtitle"]}>
+                        Iniciá sesión con tu cuenta Prisma para gestionar tus proyectos.
+                    </p>
+
+                    <form onSubmit={handleLogin} className={styles["login-form"]}>
+                        <label className={styles["label"]}>
+                            Usuario
+                            <input
+                                className={styles["input"]}
+                                type="text"
+                                value={accountUser}
+                                onChange={(event) => setAccountUser(event.target.value)}
+                                autoComplete="username"
+                                placeholder="Usuario"
+                            />
+                        </label>
+
+                        <label className={styles["label"]}>
+                            Contraseña
+                            <input
+                                className={styles["input"]}
+                                type="password"
+                                value={accountPass}
+                                onChange={(event) => setAccountPass(event.target.value)}
+                                autoComplete="current-password"
+                                placeholder="Contraseña"
+                            />
+                        </label>
+
+                        {error && <p className={styles["error"]}>{error}</p>}
+
+                        <button
+                            type="submit"
+                            className={styles["login-btn"]}
+                            disabled={accountBusy || !accountUser.trim() || !accountPass}
+                        >
+                            {accountBusy ? "Conectando…" : "Iniciar sesión"}
+                        </button>
+                    </form>
+
+                    <p className={styles["hint"]}>
+                        Cuentas de prueba: dev/dev123 · tester/tester123 · user/user123
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isDeveloper) {
         return (
             <div className={styles["creator"]}>
                 <div className={styles["state-block"]}>
                     <p className={styles["state-text"]}>
-                        {session
-                            ? "Esta sección es solo para desarrolladores."
-                            : "Iniciá sesión como desarrollador (dev/dev123) en Configuration → Cuenta Prisma."}
+                        Esta sección es solo para desarrolladores.
                     </p>
+                    <p className={styles["state-text"]}>
+                        Sesión actual: {session.displayName} ({ROLE_LABELS[session.role] || session.role}).
+                    </p>
+                    <button type="button" className={styles["retry-btn"]} onClick={handleLogout}>
+                        Cerrar sesión
+                    </button>
                 </div>
             </div>
         );
@@ -676,9 +781,21 @@ function Creator()
                     <h1>CREATOR NETWORK</h1>
                     <p>Gestioná tus proyectos: metadatos, códigos, testers y visibilidad.</p>
                 </div>
-                <button type="button" className={styles["new-btn"]} onClick={openCreate}>
-                    + Nuevo proyecto
-                </button>
+                <div className={styles["header-actions"]}>
+                    <span className={styles["account-chip"]}>
+                        {session.displayName}
+                        <span className={styles["account-role"]}>
+                            {ROLE_LABELS[session.role] || session.role}
+                            {session.activated ? "" : " · sin activar"}
+                        </span>
+                    </span>
+                    <button type="button" className={styles["logout-btn"]} onClick={handleLogout}>
+                        Cerrar sesión
+                    </button>
+                    <button type="button" className={styles["new-btn"]} onClick={openCreate}>
+                        + Nuevo proyecto
+                    </button>
+                </div>
             </header>
 
             {error && <p className={styles["error"]}>{error}</p>}
