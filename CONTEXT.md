@@ -199,6 +199,14 @@ Módulo del launcher para crear, testear y gestionar mods + activación de proye
 - Archivos: combinación **local + alojados en servidor** (F4).
 - Identidad: **cuentas con login** (mock ahora, SQL después); el login/logout se hace **en el módulo PCN** (no en Configuration).
 - Dueño/desarrollador: ve sus proyectos ocultos en su PCN **sin código** (hecho en F2).
+- **Metadata del mod (decisión del usuario, ver lista abajo)**:
+  - **Descripción en Markdown** con HTML permitido (imágenes/GIFs); sanitizar al renderizar (XSS).
+  - **Fecha de lanzamiento** como campo (alimenta countdown de Store y "año" en ModView).
+  - **Publicar como**: si el usuario pertenece a un **grupo de desarrollo**, puede elegir publicar bajo **su nombre o el del grupo** (`m_producername`); si no, su nombre. Grupos: **crear / unirse / invitar** (vista Grupos, pendiente).
+  - **Visibilidad fuera del form**: al crear siempre **"Oculto"**; se cambia desde el detalle.
+  - **Assets subibles por proyecto**: portada, **banner de Store**, **icono** (ya modelado en `m_assetids.icon`), **logo** (ModPlayView), **imagen de Library**, **hover image** y **hover music** (`m_assetids.hover_background`/`hover_music` ya existen), **galería de screenshots**, **trailer**.
+  - **ModView**: la pestaña **"Videos" pasa a "Media"** con separación clara (estilo launcher) entre **imágenes** y **videos**; cada media tiene campos **opcionales** de nombre y descripción.
+  - **Metadata extra en el form**: créditos (equipo/colaboradores), enlaces (web/Discord/YouTube), requisitos/dependencias, changelog/notas de versión, idioma(s). **Licencia descartada** (no aplica).
 
 ### Estado
 - [x] **F0 — modelo + endpoints mock**: `server/Routes/creatorRoutes.js` montado en `/api`:
@@ -215,7 +223,9 @@ Módulo del launcher para crear, testear y gestionar mods + activación de proye
   - Endpoints gestión en `creatorRoutes.js`: `POST /creator/projects`, `PATCH /:id`, `POST /:id/visibility`, `POST /:id/codes` (genera `PCN-XXXXXXXX`), `POST /:id/testers` (add/remove, valida `activated`); respuestas `{project}` o `{code}`; errores como códigos (`missing_fields`, `not_activated`, `invalid_max_uses`, etc.) mapeados a español en `API_ERRORS` de `Creator.jsx`.
   - Smoke test OK (login, list, create, patch, visibility, codes, testers add/remove, validaciones 400/404).
 - [ ] **F3**: módulo de testeo (validar estructura/ini, lanzar, logs).
-- [ ] **Vista Grupos de desarrollo**: aún sin diseñar (placeholder en `Creator.jsx`, `view === "groups"`).
+- [ ] **Form Nuevo Mod v2**: aplicar decisiones de metadata (fecha, descripción MD, créditos/enlaces/requisitos/changelog/idioma, sección de assets, quitar visibilidad, "Publicar como" cuando existan grupos).
+- [ ] **ModView "Media"**: renombrar pestaña Videos → Media, separar imágenes/videos, campos opcionales nombre/desc por media.
+- [ ] **Vista Grupos de desarrollo**: aún sin diseñar (placeholder en `Creator.jsx`, `view === "groups"`); crear/unirse/invitar.
 - [ ] **Requests/invitaciones**: flujo real (endpoint + modelo) para la sección "Tus requests" — ahora es mock local `MOCK_REQUESTS` en `Creator.jsx`.
 - [ ] **F4**: subida/descarga real de archivos (Tauri + servidor).
 - [ ] **F5**: integración Store completa + cuentas/roles reales (SQL).
