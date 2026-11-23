@@ -1174,7 +1174,7 @@ function Creator({ onNavigate })
 
                             <p className={styles["field-hint"]}>
                                 Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket público de Tigris y usa
-                                la URL generada como «Descarga principal». Límite operativo: <b>4.5 GB de 5 GB</b>.
+                                la URL generada como «Descarga principal». Límite duro: <b>5 GB por archivo y 5 GB en total</b>.
                             </p>
 
                             {!fsConnected && (
@@ -1232,7 +1232,7 @@ function Creator({ onNavigate })
 
                             {fsUsage && (
                                 <p className={styles["field-hint"]}>
-                                    Espacio usado: {(fsUsage.bytes / (1024 ** 3)).toFixed(2)} GB de 4.5 GB
+                                    Espacio usado: {(fsUsage.bytes / (1024 ** 3)).toFixed(2)} GB de 5 GB
                                     {" · "}{fsUsage.objects} archivos
                                     {fsUsage.error ? ` · ${fsUsage.error}` : ""}
                                 </p>

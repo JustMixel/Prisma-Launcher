@@ -3,6 +3,7 @@
 // Ejecutar con: npm test
 
 import { signRequest } from "../src/utils/fileserver/s3.js";
+import { checkUploadSize } from "../src/utils/fileserver/storageManager.js";
 
 const CREDENTIALS = {
     accessKeyId: "ABCDEF",
@@ -56,6 +57,27 @@ for (const vector of VECTORS) {
     if (!ok) {
         console.log(`   esperado: ${vector.expected}`);
         console.log(`   obtenido: ${signature}`);
+        failed = true;
+    }
+}
+
+// Regla de tamaño del File Server: 5 GB por archivo y 5 GB por bucket.
+const GB = 1024 ** 3;
+const SIZE_CASES = [
+    { name: "archivo de exactamente 5 GB con bucket vacío", fileBytes: 5 * GB, usedBytes: 0, expected: true },
+    { name: "archivo de 5 GB + 1 byte se rechaza siempre", fileBytes: 5 * GB + 1, usedBytes: 0, expectedReason: "file" },
+    { name: "archivo de 5 GB con 1 byte usado se rechaza", fileBytes: 5 * GB, usedBytes: 1, expectedReason: "bucket" },
+    { name: "4 GB + 1 GB usado = 5 GB exactos", fileBytes: 4 * GB, usedBytes: 1 * GB, expected: true },
+    { name: "4 GB + 1 GB + 1 byte usado se rechaza", fileBytes: 4 * GB, usedBytes: 1 * GB + 1, expectedReason: "bucket" },
+    { name: "archivo vacío se rechaza", fileBytes: 0, usedBytes: 0, expectedReason: "empty" }
+];
+
+for (const testCase of SIZE_CASES) {
+    const result = checkUploadSize(testCase.fileBytes, testCase.usedBytes);
+    const ok = testCase.expected ? result.ok === true : result.reason === testCase.expectedReason;
+    console.log(`${ok ? "✅" : "❌"} ${testCase.name}`);
+    if (!ok) {
+        console.log(`   obtenido: ${JSON.stringify(result)}`);
         failed = true;
     }
 }

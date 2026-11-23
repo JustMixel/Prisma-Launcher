@@ -5,7 +5,7 @@
 // verificación de método de pago). Acá sólo guardamos las access keys en
 // Stronghold y subimos el .zip/.rar con SigV4.
 //
-// Límite operativo: 4.5 GB de los 5 GB gratuitos del plan free.
+// Límite duro del free tier de Tigris: 5 GB. Se controla por archivo y por total del bucket.
 
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -29,7 +29,8 @@ const DEFAULT_BUCKET = "prisma-mods";
 const PUBLIC_DOMAIN = "t3.tigrisbucket.io";
 const PART_SIZE = 8 * 1024 * 1024; // 8 MiB
 const SINGLE_PUT_LIMIT = PART_SIZE;
-const OPERATIONAL_LIMIT = 4.5 * 1024 * 1024 * 1024; // 4.5 GB
+const OPERATIONAL_LIMIT = 5 * 1024 * 1024 * 1024; // 5 GB (tope del free tier)
+const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // Ningún archivo puede superar 5 GB, nunca.
 
 const DEFAULT_CONFIG = {
     provider: PROVIDER,
@@ -177,16 +178,47 @@ async function fetchUsedBytes(credentials)
     }
 }
 
+/**
+ * Regla central de tamaño. Se exporta para poder probarla sin Tauri.
+ * - Ningún archivo individual puede superar 5 GB, nunca.
+ * - El total del bucket tampoco puede superar 5 GB.
+ */
+export function checkUploadSize(fileBytes, usedBytes = 0)
+{
+    if (!Number.isFinite(fileBytes) || fileBytes <= 0) {
+        return { ok: false, reason: "empty" };
+    }
+    if (fileBytes > MAX_FILE_SIZE) {
+        return { ok: false, reason: "file", fileBytes, limit: MAX_FILE_SIZE };
+    }
+    if (Number(usedBytes) + fileBytes > OPERATIONAL_LIMIT) {
+        return { ok: false, reason: "bucket", fileBytes, usedBytes: Number(usedBytes), limit: OPERATIONAL_LIMIT };
+    }
+    return { ok: true, fileBytes, usedBytes: Number(usedBytes), limit: OPERATIONAL_LIMIT };
+}
+
+function failSize(check)
+{
+    if (check.reason === "file") {
+        fail(
+            `El archivo pesa ${(check.fileBytes / (1024 ** 3)).toFixed(2)} GB y supera el límite duro de 5 GB. ` +
+            "No se va a subir bajo ningún concepto.",
+            "tamaño"
+        );
+    }
+    fail(
+        `El bucket alcanzaría ${((check.usedBytes + check.fileBytes) / (1024 ** 3)).toFixed(2)} GB y superaría el tope de 5 GB. ` +
+        `Espacio usado actualmente: ${(check.usedBytes / (1024 ** 3)).toFixed(2)} GB.`,
+        "espacio"
+    );
+}
+
 async function ensureSpace(credentials, bytes)
 {
     const used = await fetchUsedBytes(credentials);
-    const projected = used + bytes;
-    if (projected > OPERATIONAL_LIMIT) {
-        fail(
-            `El bucket está en el límite operativo (4.5 GB de 5 GB). ` +
-            `Esta subida lo llevaría a ${(projected / (1024 ** 3)).toFixed(2)} GB.`,
-            "espacio"
-        );
+    const check = checkUploadSize(bytes, used);
+    if (!check.ok) {
+        failSize(check);
     }
 }
 
@@ -220,6 +252,11 @@ export async function uploadPackage(localPath, {
     const total = await getLocalFileSize(localPath);
     if (!total) {
         fail("El archivo está vacío.", "lectura");
+    }
+    // Regla absoluta: se rechaza antes de leer/subir cualquier byte.
+    const earlyCheck = checkUploadSize(total, credentials.usedBytes || 0);
+    if (!earlyCheck.ok && earlyCheck.reason === "file") {
+        failSize(earlyCheck);
     }
     await ensureSpace(credentials, total);
 
