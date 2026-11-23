@@ -93,19 +93,34 @@ export async function signRequest({
     body = null,
     region,
     accessKeyId,
-    secretAccessKey
+    secretAccessKey,
+    virtualHost = false,
+    timestamp = null
 })
 {
-    const url = new URL(`${endpoint.replace(/\/+$/, "")}/${bucket}${key ? `/${encodeUri(key)}` : ""}`);
+    const base = endpoint.replace(/\/+$/, "");
+    const baseUrl = new URL(base);
+    const authority = virtualHost ? `${bucket}.${baseUrl.host}` : baseUrl.host;
+
+    const url = new URL(`${base}${virtualHost ? "" : `/${bucket}`}${key ? `/${encodeUri(key)}` : ""}`);
+    url.host = authority;
 
     Object.entries(query).forEach(([name, value]) => {
         url.searchParams.set(name, value);
     });
 
-    const { dateStamp, amzDate } = timestampNow();
+    const { dateStamp, amzDate } = timestamp
+        ? {
+            dateStamp: timestamp.slice(0, 8),
+            amzDate: timestamp
+        }
+        : timestampNow();
 
-    let payloadHash = UNSIGNED;
-    if (body !== null && body !== undefined) {
+    // Sin cuerpo: hash del payload vacío (lo que espera S3 en GET/HEAD).
+    // Con cuerpo: hash real; si WebCrypto no está disponible se usa UNSIGNED-PAYLOAD.
+    const emptyHash = await sha256Hex(new Uint8Array(0));
+    let payloadHash = emptyHash || UNSIGNED;
+    if (body !== null && body !== undefined && (typeof body !== "object" || body.length)) {
         const bytes = typeof body === "string" ? toBytes(body) : body;
         payloadHash = (await sha256Hex(bytes)) || UNSIGNED;
     }
@@ -121,6 +136,9 @@ export async function signRequest({
                 .map(([name, value]) => [name.toLowerCase(), String(value).trim()])
         )
     };
+
+    // Si el llamador fijó X-Amz-Content-Sha256, ese es el valor que va en la firma.
+    const signedPayloadHash = allHeaders["x-amz-content-sha256"];
 
     const signedHeaderNames = Object.keys(allHeaders).sort();
     const canonicalHeaders = signedHeaderNames
@@ -145,7 +163,7 @@ export async function signRequest({
         canonicalQuery,
         canonicalHeaders,
         signedHeaderNames.join(";"),
-        payloadHash
+        signedPayloadHash
     ].join("\n");
 
     const scope = `${dateStamp}/${region}/s3/aws4_request`;
