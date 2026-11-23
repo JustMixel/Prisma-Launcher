@@ -69,7 +69,6 @@ function ModPlayView({ mod, update, onBack })
     const creator = mod.publisher || mod.producer || "Desconocido";
     const year = mod.installedAt ? new Date(mod.installedAt).getFullYear() : "";
     const hasUpdate = Boolean(update?.download_url);
-    const hasMainLink = Boolean(mod.link);
     const updateName = getUpdateName(update);
 
     async function handlePlay()
@@ -139,26 +138,8 @@ function ModPlayView({ mod, update, onBack })
         }
     }
 
-    function handleMainDownload()
-    {
-        if (hasMainLink) {
-            openDownload(mod.link, "Descargando la descarga principal (paquete completo).");
-        }
-    }
-
     return (
         <div className={styles["play-view"]}>
-            <button
-                className={styles["retail-btn"]}
-                type="button"
-                title={hasMainLink ? "Descarga principal: paquete completo en su última versión" : "Este mod no tiene descarga principal registrada"}
-                onClick={handleMainDownload}
-                disabled={!hasMainLink}
-            >
-                <DownloadIcon />
-                DESCARGA PRINCIPAL
-            </button>
-
             <div className={styles["center"]}>
                 {logoFailed ? (
                     <h1 className={styles["logo"]}>{mod.name}</h1>
@@ -230,16 +211,6 @@ function ModPlayView({ mod, update, onBack })
                 >
                     <TrophyIcon />
                 </button>
-                {hasUpdate && (
-                    <button
-                        className={`${styles["rail-btn"]} ${styles["rail-btn-update"]} ${panel === "downloads" ? styles["rail-btn-update-active"] : ""}`}
-                        type="button"
-                        title="Descargas (principal y update)"
-                        onClick={() => setPanel(panel === "downloads" ? null : "downloads")}
-                    >
-                        <DownloadIcon />
-                    </button>
-                )}
             </aside>
 
             {panel === "stats" && (
@@ -259,32 +230,6 @@ function ModPlayView({ mod, update, onBack })
                 <div className={styles["panel"]}>
                     <h2>Logros</h2>
                     <p className={styles["panel-text"]}>Próximamente.</p>
-                </div>
-            )}
-
-            {panel === "downloads" && (
-                <div className={styles["panel"]}>
-                    <h2>Descargas</h2>
-                    <button
-                        className={styles["dl-option"]}
-                        type="button"
-                        onClick={handleMainDownload}
-                        disabled={!hasMainLink}
-                        title={hasMainLink ? "Paquete completo del mod en su última versión" : "Sin descarga principal registrada"}
-                    >
-                        <strong>Descarga principal</strong>
-                        <span>{hasMainLink ? "Paquete completo · última versión" : "No disponible"}</span>
-                    </button>
-                    <button
-                        className={styles["dl-option"]}
-                        type="button"
-                        onClick={handleUpdate}
-                        disabled={!hasUpdate}
-                        title={hasUpdate ? `Solo los archivos para actualizar a ${updateName}` : "Sin actualizaciones disponibles"}
-                    >
-                        <strong>Descarga update</strong>
-                        <span>{hasUpdate ? `Solo archivos → ${updateName}` : "Sin updates"}</span>
-                    </button>
                 </div>
             )}
 
