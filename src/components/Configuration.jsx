@@ -4,7 +4,7 @@ import pfpTest from "../assets/pfp-test.png";
 import CustomFileDialog, { IMAGE_FILTERS } from "./CustomFileDialog.jsx";
 import { isValidName } from "../utils/name.js";
 import { SETTINGS_KEYS, TABS } from "../utils/settings.js";
-import { COLOR_GROUPS } from "../utils/colors.js";
+import { COLOR_GROUPS, lightenHex } from "../utils/colors.js";
 import styles from "./Configuration.module.css";
 
 const PICTURE_KEY = "prisma-profile-picture";
@@ -147,13 +147,39 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
     function handleColorChange(entry, value)
     {
         if (entry.accent) {
-            onSettingChange(SETTINGS_KEYS.accentColor, value);
+            applyAccent(value);
             return;
+        }
+        if (entry.deriveFrom) {
+            return; // los colores derivados no se editan a mano
         }
         onSettingChange(
             SETTINGS_KEYS.colorOverrides,
             JSON.stringify({ ...colorOverrides, [entry.cssVar]: value })
         );
+    }
+
+    // El acento manda: App.jsx recalcula en vivo sus colores derivados
+    // (Sub-color 2 = Sub-color 1 aclarado), así que acá solo se guarda.
+    function applyAccent(value)
+    {
+        onSettingChange(SETTINGS_KEYS.accentColor, value);
+    }
+
+    function resolveEntryValue(entry)
+    {
+        if (entry.accent) {
+            return settings.accentColor;
+        }
+        if (entry.deriveFrom) {
+            const source = COLOR_GROUPS
+                .flatMap((group) => group.entries)
+                .find((item) => item.id === entry.deriveFrom);
+            if (source) {
+                return lightenHex(resolveEntryValue(source));
+            }
+        }
+        return colorOverrides[entry.cssVar] || entry.value;
     }
 
     function handleGradientChange(part, value)
@@ -441,7 +467,10 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                         {COLOR_GROUPS.map((group) => (
                             <div key={group.id} className={styles["color-group"]}>
                                 <div className={styles["color-group-head"]}>
-                                    <span className={styles["color-group-title"]}>{group.label}</span>
+                                    <div className={styles["color-group-titles"]}>
+                                        <span className={styles["color-group-title"]}>{group.label}</span>
+                                        <span className={styles["color-group-sub"]}>{group.subtitle}</span>
+                                    </div>
                                     <button
                                         className={`${styles["btn"]} ${styles["btn-ghost"]}`}
                                         type="button"
@@ -452,18 +481,17 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                                 </div>
 
                                 {group.entries.map((entry) => {
-                                    const value = entry.accent
-                                        ? settings.accentColor
-                                        : colorOverrides[entry.cssVar] || entry.value;
+                                    const value = resolveEntryValue(entry);
                                     return (
                                         <div key={entry.id} className={styles["color-entry"]}>
                                             <input
                                                 className={styles["color-entry-preview"]}
                                                 type="color"
                                                 value={value}
+                                                disabled={Boolean(entry.deriveFrom)}
                                                 onChange={(event) => handleColorChange(entry, event.target.value)}
                                                 aria-label={entry.label}
-                                                title={entry.label}
+                                                title={entry.deriveFrom ? "Se genera automáticamente desde el Sub-color 1" : entry.label}
                                             />
                                             <div className={styles["color-entry-info"]}>
                                                 <span className={styles["color-entry-label"]}>{entry.label}</span>
@@ -479,7 +507,7 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                                                             type="button"
                                                             title={`Acento ${accent.label}`}
                                                             aria-label={`Acento ${accent.label}`}
-                                                            onClick={() => onSettingChange(SETTINGS_KEYS.accentColor, accent.value)}
+                                                            onClick={() => applyAccent(accent.value)}
                                                         />
                                                     ))}
                                                 </div>

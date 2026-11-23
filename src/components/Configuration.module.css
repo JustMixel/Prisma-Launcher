@@ -375,11 +375,25 @@
     border-bottom: 1px solid var(--c-gris-9, #3a3a3a);
 }
 
+.color-group-titles {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    min-width: 0;
+}
+
 .color-group-title {
     font-size: 14px;
     font-weight: 700;
     color: var(--c-gris-16, #f0f0f0);
     letter-spacing: 0.4px;
+}
+
+.color-group-sub {
+    font-size: 12px;
+    font-weight: 100;
+    color: var(--c-gris-12, #9a9a9a);
+    letter-spacing: 0.3px;
 }
 
 .btn-ghost {
@@ -425,6 +439,15 @@
 
 .color-entry-preview::-webkit-color-swatch {
     border: none;
+}
+
+.color-entry-preview:disabled {
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.color-entry-preview:disabled::-webkit-color-swatch-wrapper {
+    padding: 2px;
 }
 
 .color-entry-info {

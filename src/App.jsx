@@ -13,7 +13,7 @@ import Configuration, { readStoredPicture } from "./components/Configuration.jsx
 import Creator from "./components/Creator.jsx";
 import FirstRunSetup from "./components/FirstRunSetup.jsx";
 import { SETTINGS_KEYS, TABS, readSetting, writeSetting } from "./utils/settings.js";
-import { parseColorOverrides, parseGradient } from "./utils/colors.js";
+import { parseColorOverrides, parseGradient, lightenHex } from "./utils/colors.js";
 import "./App.css";
 
 const SETTINGS_STATE_KEYS = {
@@ -101,7 +101,7 @@ function AppContent({ userName, onNameChange })
             };
 
   return(
-    <div className="container" style={{ "--accent": settings.accentColor, ...settings.colorOverrides }}>
+    <div className="container" style={{ "--accent": settings.accentColor, ...settings.colorOverrides, "--c-accent-claro": lightenHex(settings.accentColor) }}>
       <aside className="sidebar">
         <div className="user-box">
           <img src={profilePicture || pfpTest} alt="You." className="profile-pic"/>
