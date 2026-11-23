@@ -1,6 +1,8 @@
 export const SETTINGS_KEYS = {
     backgroundMode: "prisma-background-mode",
     accentColor: "prisma-accent-color",
+    customBackgroundColor: "prisma-custom-background-color",
+    customBackgroundImage: "prisma-custom-background-image",
     modsPath: "prisma-mods-path",
     rememberTab: "prisma-remember-tab",
     startupTab: "prisma-startup-tab",
@@ -10,6 +12,8 @@ export const SETTINGS_KEYS = {
 const DEFAULTS = {
     [SETTINGS_KEYS.backgroundMode]: "image",
     [SETTINGS_KEYS.accentColor]: "#d9cd00",
+    [SETTINGS_KEYS.customBackgroundColor]: "#121212",
+    [SETTINGS_KEYS.customBackgroundImage]: "",
     [SETTINGS_KEYS.modsPath]: "",
     [SETTINGS_KEYS.rememberTab]: "true",
     [SETTINGS_KEYS.startupTab]: "store",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useDownloads } from "./context/DownloadsContext.jsx";
 import { DownloadsProvider } from "./context/DownloadsContext.jsx";
@@ -17,6 +17,8 @@ import "./App.css";
 const SETTINGS_STATE_KEYS = {
   [SETTINGS_KEYS.backgroundMode]: "backgroundMode",
   [SETTINGS_KEYS.accentColor]: "accentColor",
+  [SETTINGS_KEYS.customBackgroundColor]: "customBackgroundColor",
+  [SETTINGS_KEYS.customBackgroundImage]: "customBackgroundImage",
   [SETTINGS_KEYS.modsPath]: "modsPath",
   [SETTINGS_KEYS.rememberTab]: "rememberTab",
   [SETTINGS_KEYS.startupTab]: "startupTab"
@@ -27,6 +29,8 @@ function AppContent({ userName, onNameChange })
   const [settings, setSettings] = useState(() => ({
     backgroundMode: readSetting(SETTINGS_KEYS.backgroundMode),
     accentColor: readSetting(SETTINGS_KEYS.accentColor),
+    customBackgroundColor: readSetting(SETTINGS_KEYS.customBackgroundColor),
+    customBackgroundImage: readSetting(SETTINGS_KEYS.customBackgroundImage),
     modsPath: readSetting(SETTINGS_KEYS.modsPath),
     rememberTab: readSetting(SETTINGS_KEYS.rememberTab) === "true",
     startupTab: readSetting(SETTINGS_KEYS.startupTab)
@@ -58,6 +62,24 @@ function AppContent({ userName, onNameChange })
       setActiveTab(value);
     }
   }
+
+  const storedBackground = settings.customBackgroundImage || "";
+  const backgroundStyle =
+    settings.backgroundMode === "solid"
+      ? { backgroundColor: settings.customBackgroundColor || "#121212", backgroundImage: "none" }
+      : settings.backgroundMode === "custom"
+        ? storedBackground
+          ? {
+              backgroundImage: `url("${storedBackground.startsWith("data:") ? storedBackground : convertFileSrc(storedBackground)}")`,
+              backgroundColor: "#121212",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }
+          : { backgroundImage: "none", backgroundColor: "#121212" }
+        : {
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url(${appBase})`,
+            backgroundColor: "#1e1e1e"
+          };
 
   return(
     <div className="container" style={{ "--accent": settings.accentColor }}>
@@ -106,12 +128,7 @@ function AppContent({ userName, onNameChange })
 
     <main
       className="main-content"
-      style={settings.backgroundMode === "image"
-        ? {
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url(${appBase})`,
-            backgroundColor: "#1e1e1e"
-          }
-        : { backgroundImage: "none", backgroundColor: "#121212" }}
+      style={backgroundStyle}
     >
       {activeTab === "store" && <Store />}
       {activeTab === "library" && <Library />}

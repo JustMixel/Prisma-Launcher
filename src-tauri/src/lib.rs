@@ -333,6 +333,30 @@ fn safe_mod_folder_name(name: &str) -> String {
 }
 
 #[tauri::command]
+fn save_background_image(path: &str) -> Result<String, String> {
+    let source = std::path::Path::new(path);
+    if !source.exists() {
+        return Err(String::from("El archivo de imagen no existe"));
+    }
+
+    let extension = source
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("png");
+
+    let background_dir = prisma_dir()?.join("backgrounds");
+    std::fs::create_dir_all(&background_dir)
+        .map_err(|error| format!("No se pudo crear la carpeta de fondos: {}", error))?;
+
+    let destination = background_dir.join(format!("background.{}", extension));
+    
+    std::fs::copy(source, &destination)
+        .map_err(|error| format!("No se pudo copiar la imagen: {}", error))?;
+
+    Ok(destination.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 fn save_installed_mod(installed_mod: Value) -> Result<Value, String> {
     let name = installed_mod
         .get("name")
@@ -475,6 +499,7 @@ pub fn run() {
             launch_executable,
             initialize_launcher,
             save_user_name,
+            save_background_image,
             get_window_label,
             start_window_drag,
             complete_setup,
