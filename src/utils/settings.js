@@ -20,11 +20,11 @@ const DEFAULTS = {
     [SETTINGS_KEYS.colorOverrides]: "{}",
     [SETTINGS_KEYS.modsPath]: "",
     [SETTINGS_KEYS.rememberTab]: "true",
-    [SETTINGS_KEYS.startupTab]: "store",
-    [SETTINGS_KEYS.lastTab]: "store"
+    [SETTINGS_KEYS.startupTab]: "home",
+    [SETTINGS_KEYS.lastTab]: "home"
 };
 
-export const TABS = ["store", "library", "downloads", "configuration", "creator"];
+export const TABS = ["home", "store", "library", "downloads", "configuration", "creator"];
 
 export function readSetting(key)
 {

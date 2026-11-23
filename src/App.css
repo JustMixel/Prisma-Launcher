@@ -154,6 +154,18 @@
   /* u otras propiedades */
 }
 
+/* Botón Escritorio: ícono + label en fila */
+.nav-btn.home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.nav-btn.home-btn svg {
+  flex-shrink: 0;
+}
+
 /* ---- Prisma Creator Network: botón al fondo de la sidebar ---- */
 .sidebar-footer {
   margin-top: auto;              /* empuja el bloque al fondo */

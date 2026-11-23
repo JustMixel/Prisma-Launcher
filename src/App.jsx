@@ -6,6 +6,7 @@ import { DownloadsProvider } from "./context/DownloadsContext.jsx";
 import appBase from "./assets/app-base.png";
 import pfpTest from "./assets/pfp-test.png";
 import Store from "./components/Store.jsx";
+import Home from "./components/Home.jsx";
 import Downloads from "./components/Downloads.jsx";
 import Library from "./components/Library.jsx";
 import Configuration, { readStoredPicture } from "./components/Configuration.jsx";
@@ -111,6 +112,13 @@ function AppContent({ userName, onNameChange })
         </div>
 
     <nav className="nav">
+      <button className={activeTab === "home" ? "nav-btn active home-btn" : "nav-btn home-btn"} onClick={() => setActiveTab("home")}>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z" />
+        </svg>
+        Escritorio
+      </button>
+
       <button className={activeTab === "store" ? "nav-btn active" : "nav-btn"} onClick={() => setActiveTab("store")}>
         Store
       </button>
@@ -148,6 +156,7 @@ function AppContent({ userName, onNameChange })
       className="main-content"
       style={backgroundStyle}
     >
+      {activeTab === "home" && <Home />}
       {activeTab === "store" && <Store />}
       {activeTab === "library" && <Library />}
       {activeTab === "downloads" && <Downloads />}

@@ -51,6 +51,7 @@ function HexColorInput({ value, onChange })
 }
 
 const TAB_LABELS = {
+    home: "Escritorio",
     store: "Tienda",
     library: "Biblioteca",
     downloads: "Descargas",
