@@ -17,8 +17,8 @@
 }
 
 .add-btn {
-    background-color: #d9cd00;
-    color: #1a1a1a;
+    background-color: var(--accent, #d9cd00);
+    color: var(--c-gris-4, #1e1e1e);
     border: none;
     padding: 8px 16px;
     font-family: Bahnschrift, sans-serif;
@@ -29,7 +29,7 @@
 }
 
 .add-btn:hover {
-    background-color: #f0e033;
+    background-color: var(--c-accent-claro, #f0e033);
 }
 
 .actions-row {
@@ -41,8 +41,8 @@
 
 .activate-btn {
     background-color: transparent;
-    color: #d9cd00;
-    border: 1px solid #d9cd00;
+    color: var(--accent, #d9cd00);
+    border: 1px solid var(--accent, #d9cd00);
     padding: 7px 16px;
     font-family: Bahnschrift, sans-serif;
     font-size: 14px;
@@ -54,8 +54,8 @@
 }
 
 .activate-btn:hover {
-    background-color: #d9cd00;
-    color: #1a1a1a;
+    background-color: var(--accent, #d9cd00);
+    color: var(--c-gris-4, #1e1e1e);
 }
 
 .cards {
@@ -75,7 +75,7 @@
 }
 
 .state-text {
-    color: #c8c8c8;
+    color: var(--c-gris-14, #d0d0d0);
     font-size: 17px;
     font-weight: 300;
     font-family: Bahnschrift, sans-serif;

@@ -7,7 +7,7 @@
     border-radius: 6px;
     margin: 15px;
     overflow: hidden;
-    background-color: rgb(18, 18, 17);
+    background-color: var(--c-gris-3, #121211);
     box-shadow: 0 10px 20px hsla(0, 0%, 0%, 0.35);
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -16,7 +16,7 @@
 .our-card:hover
 {
     transform: translateY(-4px);
-    border-color: #d9cd00;
+    border-color: var(--accent, #d9cd00);
     box-shadow: 0 14px 28px hsla(0, 0%, 0%, 0.45);
 }
 
@@ -29,8 +29,8 @@
     padding: 5px 9px;
     border: 1px solid rgba(255, 230, 120, 0.85);
     border-radius: 4px;
-    background: linear-gradient(135deg, #f5d000 0%, #c99600 100%);
-    color: #1a1a1a;
+    background: linear-gradient(135deg, var(--c-gold-1, #f5d000) 0%, var(--c-gold-2, #c99600) 100%);
+    color: var(--c-gris-4, #1e1e1e);
     font-family: Bahnschrift, sans-serif;
     font-size: 12px;
     font-weight: 700;
@@ -91,7 +91,7 @@
     flex-direction: column;
     justify-content: flex-end;
     gap: 4px;
-    color: #f5f2eb;
+    color: var(--c-gris-16, #f0f0f0);
     text-align: left;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
 }
@@ -115,7 +115,7 @@
     font-family: Bahnschrift, sans-serif;
     font-size: 12px;
     font-weight: 100;
-    color: #d9d9d9;
+    color: var(--c-gris-14, #d0d0d0);
 }
 
 .stats
@@ -125,7 +125,7 @@
     margin-top: 4px;
     font-family: Bahnschrift, sans-serif;
     font-size: 11px;
-    color: #e0e0e0;
+    color: var(--c-gris-15, #e8e8e8);
 }
 
 .stat

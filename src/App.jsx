@@ -12,13 +12,13 @@ import Configuration, { readStoredPicture } from "./components/Configuration.jsx
 import Creator from "./components/Creator.jsx";
 import FirstRunSetup from "./components/FirstRunSetup.jsx";
 import { SETTINGS_KEYS, TABS, readSetting, writeSetting } from "./utils/settings.js";
+import { parseColorOverrides } from "./utils/colors.js";
 import "./App.css";
 
 const SETTINGS_STATE_KEYS = {
-  [SETTINGS_KEYS.backgroundMode]: "backgroundMode",
   [SETTINGS_KEYS.accentColor]: "accentColor",
-  [SETTINGS_KEYS.customBackgroundColor]: "customBackgroundColor",
   [SETTINGS_KEYS.customBackgroundImage]: "customBackgroundImage",
+  [SETTINGS_KEYS.colorOverrides]: "colorOverrides",
   [SETTINGS_KEYS.modsPath]: "modsPath",
   [SETTINGS_KEYS.rememberTab]: "rememberTab",
   [SETTINGS_KEYS.startupTab]: "startupTab"
@@ -27,10 +27,9 @@ const SETTINGS_STATE_KEYS = {
 function AppContent({ userName, onNameChange })
 {
   const [settings, setSettings] = useState(() => ({
-    backgroundMode: readSetting(SETTINGS_KEYS.backgroundMode),
     accentColor: readSetting(SETTINGS_KEYS.accentColor),
-    customBackgroundColor: readSetting(SETTINGS_KEYS.customBackgroundColor),
     customBackgroundImage: readSetting(SETTINGS_KEYS.customBackgroundImage),
+    colorOverrides: parseColorOverrides(readSetting(SETTINGS_KEYS.colorOverrides)),
     modsPath: readSetting(SETTINGS_KEYS.modsPath),
     rememberTab: readSetting(SETTINGS_KEYS.rememberTab) === "true",
     startupTab: readSetting(SETTINGS_KEYS.startupTab)
@@ -51,7 +50,8 @@ function AppContent({ userName, onNameChange })
   {
     writeSetting(key, typeof value === "boolean" ? String(value) : value);
     const stateKey = SETTINGS_STATE_KEYS[key] ?? key;
-    setSettings((current) => ({ ...current, [stateKey]: value }));
+    const stateValue = key === SETTINGS_KEYS.colorOverrides ? parseColorOverrides(value) : value;
+    setSettings((current) => ({ ...current, [stateKey]: stateValue }));
 
     if (key === SETTINGS_KEYS.rememberTab) {
       const tab = value ? readSetting(SETTINGS_KEYS.lastTab) : settings.startupTab;
@@ -64,25 +64,20 @@ function AppContent({ userName, onNameChange })
   }
 
   const storedBackground = settings.customBackgroundImage || "";
-  const backgroundStyle =
-    settings.backgroundMode === "solid"
-      ? { backgroundColor: settings.customBackgroundColor || "#121212", backgroundImage: "none" }
-      : settings.backgroundMode === "custom"
-        ? storedBackground
-          ? {
-              backgroundImage: `url("${storedBackground.startsWith("data:") ? storedBackground : convertFileSrc(storedBackground)}")`,
-              backgroundColor: "#121212",
-              backgroundSize: "cover",
-              backgroundPosition: "center"
-            }
-          : { backgroundImage: "none", backgroundColor: "#121212" }
-        : {
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url(${appBase})`,
-            backgroundColor: "#1e1e1e"
-          };
+  const backgroundStyle = storedBackground
+    ? {
+        backgroundImage: `url("${storedBackground.startsWith("data:") ? storedBackground : convertFileSrc(storedBackground)}")`,
+        backgroundColor: "var(--c-gris-4, #1e1e1e)",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }
+    : {
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url(${appBase})`,
+        backgroundColor: "var(--c-gris-4, #1e1e1e)"
+      };
 
   return(
-    <div className="container" style={{ "--accent": settings.accentColor }}>
+    <div className="container" style={{ "--accent": settings.accentColor, ...settings.colorOverrides }}>
       <aside className="sidebar">
         <div className="user-box">
           <img src={profilePicture || pfpTest} alt="You." className="profile-pic"/>

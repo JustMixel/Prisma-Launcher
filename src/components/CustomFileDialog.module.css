@@ -18,7 +18,7 @@
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 8px;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
-    color: #e8e8e8;
+    color: var(--c-gris-15, #e8e8e8);
     font-family: "Segoe UI", Bahnschrift, sans-serif;
     overflow: hidden;
 }
@@ -66,14 +66,14 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #aaa;
+    color: var(--c-gris-13, #b8b8b8);
     font-size: 14px;
     cursor: pointer;
 }
 
 .close-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--c-gris-17, #ffffff);
 }
 
 .toolbar {
@@ -95,7 +95,7 @@
     background: transparent;
     border: 1px solid transparent;
     border-radius: 4px;
-    color: #d0d0d0;
+    color: var(--c-gris-14, #d0d0d0);
     cursor: pointer;
 }
 
@@ -141,7 +141,7 @@
     padding: 0;
     font-family: Bahnschrift, "Segoe UI", sans-serif;
     font-size: 13px;
-    color: #d8d8d8;
+    color: var(--c-gris-14, #d0d0d0);
     background: transparent;
     border: none;
     outline: none;
@@ -177,7 +177,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #7a7a7a;
+    color: var(--c-gris-11, #777777);
 }
 
 .sidebar-item {
@@ -189,7 +189,7 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #c8c8c8;
+    color: var(--c-gris-14, #d0d0d0);
     font-family: inherit;
     font-size: 13px;
     text-align: left;
@@ -198,12 +198,12 @@
 
 .sidebar-item:hover {
     background-color: rgba(255, 255, 255, 0.07);
-    color: #fff;
+    color: var(--c-gris-17, #ffffff);
 }
 
 .sidebar-active {
     background-color: rgba(217, 205, 0, 0.14);
-    color: #f0e680;
+    color: var(--c-gold-3, #d8cd7a);
 }
 
 .file-list {
@@ -233,7 +233,7 @@
     background: transparent;
     border: 1px solid transparent;
     border-radius: 4px;
-    color: #dcdcdc;
+    color: var(--c-gris-14, #d0d0d0);
     font-family: inherit;
     font-size: 13px;
     text-align: left;
@@ -269,11 +269,11 @@
     padding: 30px;
     text-align: center;
     font-size: 14px;
-    color: #7a7a7a;
+    color: var(--c-gris-11, #777777);
 }
 
 .list-error {
-    color: #e07a7a;
+    color: var(--c-red-2, #e07878);
 }
 
 .bottom {
@@ -291,7 +291,7 @@
     flex-direction: column;
     gap: 5px;
     font-size: 12px;
-    color: #a8a8a8;
+    color: var(--c-gris-13, #b8b8b8);
 }
 
 .bottom-field:first-child {
@@ -305,7 +305,7 @@
     background-color: rgba(0, 0, 0, 0.45);
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 4px;
-    color: #e8e8e8;
+    color: var(--c-gris-15, #e8e8e8);
     font-family: inherit;
     font-size: 13px;
     outline: none;
@@ -313,7 +313,7 @@
 
 .bottom-field input:focus,
 .bottom-field select:focus {
-    border-color: #d9cd00;
+    border-color: var(--accent, #d9cd00);
 }
 
 .bottom-field select {
@@ -336,20 +336,20 @@
 }
 
 .open-btn {
-    background-color: #d9cd00;
+    background-color: var(--accent, #d9cd00);
     border: none;
-    color: #141414;
+    color: var(--c-gris-3, #121211);
     font-weight: 700;
 }
 
 .open-btn:hover {
-    background-color: #f0e033;
+    background-color: var(--c-accent-claro, #f0e033);
 }
 
 .cancel-btn {
     background-color: transparent;
     border: 1px solid rgba(255, 255, 255, 0.24);
-    color: #d8d8d8;
+    color: var(--c-gris-14, #d0d0d0);
 }
 
 .cancel-btn:hover {

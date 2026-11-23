@@ -33,7 +33,7 @@ function getBasename(path)
 function FolderIcon()
 {
     return (
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="#d9b24a" stroke="none">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--c-gold-3, #d8cd7a)" stroke="none">
             <path d="M2 6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"/>
         </svg>
     );
@@ -42,7 +42,7 @@ function FolderIcon()
 function FileIcon()
 {
     return (
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8ab4d8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--accent, #d9cd00)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
         </svg>

@@ -4,6 +4,7 @@ import pfpTest from "../assets/pfp-test.png";
 import CustomFileDialog, { IMAGE_FILTERS } from "./CustomFileDialog.jsx";
 import { isValidName } from "../utils/name.js";
 import { SETTINGS_KEYS, TABS } from "../utils/settings.js";
+import { COLOR_GROUPS } from "../utils/colors.js";
 import styles from "./Configuration.module.css";
 
 const PICTURE_KEY = "prisma-profile-picture";
@@ -14,53 +15,6 @@ const ACCENTS = [
     { label: "Verde", value: "#7fb069" },
     { label: "Rojo", value: "#d96565" }
 ];
-
-function hexToHsl(hex)
-{
-    const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
-    if (!match) {
-        return { h: 0, s: 0, l: 7 };
-    }
-    const r = parseInt(match[1], 16) / 255;
-    const g = parseInt(match[2], 16) / 255;
-    const b = parseInt(match[3], 16) / 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const lightness = (max + min) / 2;
-    let hue = 0;
-    let saturation = 0;
-    if (max !== min) {
-        const delta = max - min;
-        saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
-        if (max === r) {
-            hue = (g - b) / delta + (g < b ? 6 : 0);
-        } else if (max === g) {
-            hue = (b - r) / delta + 2;
-        } else {
-            hue = (r - g) / delta + 4;
-        }
-        hue *= 60;
-    }
-    return { h: Math.round(hue), s: Math.round(saturation * 100), l: Math.round(lightness * 100) };
-}
-
-function hslToHex(h, s, l)
-{
-    const saturation = s / 100;
-    const lightness = l / 100;
-    const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
-    const section = chroma * (1 - Math.abs(((h / 60) % 2) - 1));
-    const match = lightness - chroma / 2;
-    let rgb = [0, 0, 0];
-    if (h < 60) rgb = [chroma, section, 0];
-    else if (h < 120) rgb = [section, chroma, 0];
-    else if (h < 180) rgb = [0, chroma, section];
-    else if (h < 240) rgb = [0, section, chroma];
-    else if (h < 300) rgb = [section, 0, chroma];
-    else rgb = [chroma, 0, section];
-    const toHex = (channel) => Math.round((channel + match) * 255).toString(16).padStart(2, "0");
-    return `#${toHex(rgb[0])}${toHex(rgb[1])}${toHex(rgb[2])}`;
-}
 
 const TAB_LABELS = {
     store: "Tienda",
@@ -89,7 +43,7 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
     const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
     const [folderDialogOpen, setFolderDialogOpen] = useState(false);
     const [modsPath, setModsPath] = useState(settings.modsPath || "");
-    const [hsl, setHsl] = useState(() => hexToHsl(settings.customBackgroundColor || "#121212"));
+    const colorOverrides = settings.colorOverrides || {};
 
     const valid = isValidName(name);
     const changed = name.trim() !== (userName || "");
@@ -154,18 +108,37 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
         }
     }
 
-    function handleHslChange(part, value)
+    function handleColorChange(entry, value)
     {
-        const next = { ...hsl, [part]: Number(value) };
-        setHsl(next);
-        onSettingChange(SETTINGS_KEYS.customBackgroundColor, hslToHex(next.h, next.s, next.l));
+        if (entry.accent) {
+            onSettingChange(SETTINGS_KEYS.accentColor, value);
+            return;
+        }
+        onSettingChange(
+            SETTINGS_KEYS.colorOverrides,
+            JSON.stringify({ ...colorOverrides, [entry.cssVar]: value })
+        );
     }
 
-    function handleExactColor(event)
+    function handleResetGroup(group)
     {
-        const hex = event.target.value;
-        setHsl(hexToHsl(hex));
-        onSettingChange(SETTINGS_KEYS.customBackgroundColor, hex);
+        const next = { ...colorOverrides };
+        for (const entry of group.entries) {
+            delete next[entry.cssVar];
+            if (entry.accent) {
+                onSettingChange(SETTINGS_KEYS.accentColor, entry.value);
+            }
+        }
+        onSettingChange(SETTINGS_KEYS.colorOverrides, JSON.stringify(next));
+    }
+
+    function handleResetAllColors()
+    {
+        onSettingChange(SETTINGS_KEYS.colorOverrides, "{}");
+        const amarillo = COLOR_GROUPS.find((group) => group.id === "amarillo");
+        if (amarillo) {
+            onSettingChange(SETTINGS_KEYS.accentColor, amarillo.entries[0].value);
+        }
     }
 
     function handleResetPicture()
@@ -260,23 +233,37 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                 <h2>Apariencia</h2>
 
                 <div className={styles["setting-block"]}>
-                    <span className={styles["label"]}>Fondo del launcher</span>
-                    <div className={styles["segmented"]}>
-                        {[
-                            { value: "image", label: "Por defecto" },
-                            { value: "custom", label: "Personalizada" },
-                            { value: "solid", label: "Color sólido" }
-                        ].map((option) => (
+                    <label className={styles["label"]} htmlFor="custom-background">Imagen de fondo</label>
+                    <div className={styles["name-row"]}>
+                        <input
+                            id="custom-background"
+                            className={styles["input"]}
+                            type="text"
+                            value={settings.customBackgroundImage || ""}
+                            readOnly
+                            placeholder="Ninguna imagen seleccionada"
+                        />
+                        <button
+                            className={styles["btn"]}
+                            type="button"
+                            onClick={() => setBackgroundDialogOpen(true)}
+                        >
+                            {settings.customBackgroundImage ? "Cambiar" : "Examinar"}
+                        </button>
+                        {settings.customBackgroundImage && (
                             <button
-                                key={option.value}
-                                className={`${styles["segment"]} ${settings.backgroundMode === option.value ? styles["active"] : ""}`}
+                                className={styles["btn secondary"]}
                                 type="button"
-                                onClick={() => onSettingChange(SETTINGS_KEYS.backgroundMode, option.value)}
+                                onClick={() => onSettingChange(SETTINGS_KEYS.customBackgroundImage, "")}
                             >
-                                {option.label}
+                                Quitar
                             </button>
-                        ))}
+                        )}
                     </div>
+                    <p className={styles["hint"]}>
+                        Medidas recomendadas: 1920×1080 px (16:9). Formatos: PNG, JPG, JPEG, WEBP, BMP y
+                        GIF (con animación soportada). Sin imagen se usa el fondo por defecto del launcher.
+                    </p>
                 </div>
 
                 <div className={styles["setting-block"]}>
@@ -296,98 +283,61 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                     </div>
                 </div>
 
-                {settings.backgroundMode === 'custom' && (
-                    <div className={styles["setting-block"]}>
-                        <label className={styles["label"]} htmlFor="custom-background">Imagen personalizada</label>
-                        <div className={styles["name-row"]}>
-                            <input
-                                id="custom-background"
-                                className={styles["input"]}
-                                type="text"
-                                value={settings.customBackgroundImage || ""}
-                                readOnly
-                                placeholder="Ninguna imagen seleccionada"
-                            />
+                <p className={styles["hint"]}>Los cambios se aplican al instante.</p>
+            </section>
+
+            <section className={styles["card"]}>
+                <h2>Customización</h2>
+                <p className={styles["hint"]}>
+                    Inventario completo de colores del launcher, agrupado por familia. Cada color se usa en
+                    todos los módulos indicados; los cambios se aplican al instante.
+                </p>
+
+                {COLOR_GROUPS.map((group) => (
+                    <div key={group.id} className={styles["color-group"]}>
+                        <div className={styles["color-group-head"]}>
+                            <span className={styles["color-group-title"]}>{group.label}</span>
                             <button
-                                className={styles["btn"]}
+                                className={`${styles["btn"]} ${styles["btn-ghost"]}`}
                                 type="button"
-                                onClick={() => setBackgroundDialogOpen(true)}
+                                onClick={() => handleResetGroup(group)}
                             >
-                                {settings.customBackgroundImage ? "Cambiar" : "Examinar"}
+                                Restablecer
                             </button>
                         </div>
-                        <p className={styles["hint"]}>
-                            Medidas recomendadas: 1920×1080 px (16:9). Formatos: PNG, JPG, JPEG, WEBP, BMP y
-                            GIF (con animación soportada). La imagen se adapta a la ventana.
-                        </p>
-                    </div>
-                )}
 
-                {settings.backgroundMode === 'solid' && (
-                    <div className={styles["setting-block"]}>
-                        <span className={styles["label"]}>Color de fondo</span>
-                        <div className={styles["color-picker"]}>
-                            <input
-                                className={styles["color-preview"]}
-                                type="color"
-                                value={hslToHex(hsl.h, hsl.s, hsl.l)}
-                                onChange={handleExactColor}
-                                aria-label="Elegir color exacto"
-                                title="Elegir color exacto"
-                            />
-                            <div className={styles["color-sliders"]}>
-                                <div className={styles["slider-row"]}>
-                                    <label htmlFor="slider-h">Matiz</label>
+                        {group.entries.map((entry) => {
+                            const value = entry.accent
+                                ? settings.accentColor
+                                : colorOverrides[entry.cssVar] || entry.value;
+                            return (
+                                <div key={entry.id} className={styles["color-entry"]}>
                                     <input
-                                        id="slider-h"
-                                        type="range"
-                                        min="0"
-                                        max="360"
-                                        value={hsl.h}
-                                        onChange={(event) => handleHslChange("h", event.target.value)}
-                                        style={{
-                                            "--track": "linear-gradient(to right, hsl(0 100% 50%), hsl(60 100% 50%), hsl(120 100% 50%), hsl(180 100% 50%), hsl(240 100% 50%), hsl(300 100% 50%), hsl(360 100% 50%))"
-                                        }}
+                                        className={styles["color-entry-preview"]}
+                                        type="color"
+                                        value={value}
+                                        onChange={(event) => handleColorChange(entry, event.target.value)}
+                                        aria-label={entry.label}
+                                        title={entry.label}
                                     />
+                                    <div className={styles["color-entry-info"]}>
+                                        <span className={styles["color-entry-label"]}>{entry.label}</span>
+                                        <span className={styles["color-entry-where"]}>{entry.where}</span>
+                                    </div>
+                                    <span className={styles["color-entry-hex"]}>{value.toUpperCase()}</span>
                                 </div>
-                                <div className={styles["slider-row"]}>
-                                    <label htmlFor="slider-s">Saturación</label>
-                                    <input
-                                        id="slider-s"
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        value={hsl.s}
-                                        onChange={(event) => handleHslChange("s", event.target.value)}
-                                        style={{
-                                            "--track": `linear-gradient(to right, hsl(${hsl.h} 0% ${hsl.l}%), hsl(${hsl.h} 100% ${hsl.l}%))`
-                                        }}
-                                    />
-                                </div>
-                                <div className={styles["slider-row"]}>
-                                    <label htmlFor="slider-l">Luminosidad</label>
-                                    <input
-                                        id="slider-l"
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        value={hsl.l}
-                                        onChange={(event) => handleHslChange("l", event.target.value)}
-                                        style={{
-                                            "--track": `linear-gradient(to right, hsl(${hsl.h} ${hsl.s}% 0%), hsl(${hsl.h} ${hsl.s}% 50%), hsl(${hsl.h} ${hsl.s}% 100%))`
-                                        }}
-                                    />
-                                </div>
-                                <div className={styles["color-meta"]}>
-                                    <span className={styles["color-hex"]}>{hslToHex(hsl.h, hsl.s, hsl.l).toUpperCase()}</span>
-                                    <span className={styles["color-hsl"]}>{`${hsl.h}° · ${hsl.s}% · ${hsl.l}%`}</span>
-                                </div>
-                            </div>
-                        </div>
+                            );
+                        })}
                     </div>
-                )}
+                ))}
 
-                <p className={styles["hint"]}>Los cambios se aplican al instante.</p>
+                <button
+                    className={styles["btn"]}
+                    type="button"
+                    onClick={handleResetAllColors}
+                >
+                    Restablecer todos los colores
+                </button>
             </section>
 
             <section className={styles["card"]}>

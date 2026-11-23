@@ -9,11 +9,11 @@
 }
 
 .filled {
-    color: #ffc107;
+    color: var(--c-gold-1, #f5d000);
 }
 
 .empty {
-    color: #6a6a6a;
+    color: var(--c-gris-11, #777777);
 }
 
 .clickable {

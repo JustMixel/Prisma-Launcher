@@ -64,7 +64,7 @@ function Card({title, cover, publisher, producer, downloads, rating, releasedate
 
     return(
     <>
-        <div className={styles["our-card"]} style={{ "--accent-color": accentcolor || "#3a2b25" }} onClick={onClick}>
+        <div className={styles["our-card"]} style={accentcolor ? { "--accent": accentcolor } : undefined} onClick={onClick}>
             <div className={styles["f-layer"]}>
                 <img src={coverSource} alt={`${title} cover`} />
             </div>

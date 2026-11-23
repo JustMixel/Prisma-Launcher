@@ -18,9 +18,9 @@
     width: 370px;
     background: transparent;
     border: none;
-    border-bottom: 1px solid #4a4a4a;
+    border-bottom: 1px solid var(--c-gris-9, #3a3a3a);
     outline: none;
-    color: #e0e0e0;
+    color: var(--c-gris-15, #e8e8e8);
     font-size: 15px;
     font-family: Bahnschrift, sans-serif;
     padding: 6px 26px 6px 2px;
@@ -34,7 +34,7 @@
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #8a8a8a;
+    color: var(--c-gris-12, #9a9a9a);
     font-size: 14px;
     cursor: pointer;
     padding: 4px;
@@ -43,7 +43,7 @@
 
 .clear-btn:hover
 {
-    color: #e0e0e0;
+    color: var(--c-gris-15, #e8e8e8);
 }
 
 .suggestions
@@ -52,8 +52,8 @@
     top: calc(100% + 4px);
     left: 0;
     width: 370px;
-    background-color: #141313;
-    border: 1px solid #4a4a4a;
+    background-color: var(--c-gris-3, #121211);
+    border: 1px solid var(--c-gris-9, #3a3a3a);
     display: flex;
     flex-direction: column;
     z-index: 30;
@@ -70,15 +70,15 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #8a8a8a;
-    border-bottom: 1px solid #2a2a2a;
+    color: var(--c-gris-12, #9a9a9a);
+    border-bottom: 1px solid var(--c-gris-6, #2a2a2a);
 }
 
 .recent-clear
 {
     background: none;
     border: none;
-    color: #8a8a8a;
+    color: var(--c-gris-12, #9a9a9a);
     font-size: 11px;
     text-transform: uppercase;
     cursor: pointer;
@@ -88,7 +88,7 @@
 
 .recent-clear:hover
 {
-    color: #e0e0e0;
+    color: var(--c-gris-15, #e8e8e8);
 }
 
 .suggestion-item
@@ -97,7 +97,7 @@
     border: none;
     text-align: left;
     padding: 9px 10px;
-    color: #cfcfcf;
+    color: var(--c-gris-14, #d0d0d0);
     font-size: 14px;
     font-family: Bahnschrift, sans-serif;
     cursor: pointer;
@@ -107,7 +107,7 @@
 .suggestion-item:hover,
 .suggestion-active
 {
-    background-color: #2a2a2a;
+    background-color: var(--c-gris-6, #2a2a2a);
 }
 
 .filter-button
@@ -119,8 +119,8 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    background-color: #141313;
-    border: 1px solid #4a4a4a;
+    background-color: var(--c-gris-3, #121211);
+    border: 1px solid var(--c-gris-9, #3a3a3a);
     border-radius: 4px;
     cursor: pointer;
     transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
@@ -128,19 +128,19 @@
 
 .filter-button:hover
 {
-    background-color: #1d1c1b;
-    border-color: rgb(219, 205, 0);
+    background-color: var(--c-gris-4, #1e1e1e);
+    border-color: var(--accent, #d9cd00);
 }
 
 .filter-button-open
 {
-    background-color: #0f0f0e;
-    border-color: rgb(219, 205, 0);
+    background-color: var(--c-gris-2, #0f0f0e);
+    border-color: var(--accent, #d9cd00);
 }
 
 .filter-button-active
 {
-    border-color: rgb(219, 205, 0);
+    border-color: var(--accent, #d9cd00);
 }
 
 .filter-dot
@@ -151,8 +151,8 @@
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background-color: rgb(219, 205, 0);
-    border: 1px solid #141313;
+    background-color: var(--accent, #d9cd00);
+    border: 1px solid var(--c-gris-3, #121211);
 }
 
 .filter-button:active
@@ -172,8 +172,8 @@
     right: 0;
     min-width: 240px;
     padding: 12px;
-    background-color: #141313;
-    border: 1px solid rgb(219, 205, 0);
+    background-color: var(--c-gris-3, #121211);
+    border: 1px solid var(--accent, #d9cd00);
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -186,7 +186,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #8a8a8a;
+    color: var(--c-gris-12, #9a9a9a);
     margin-top: 6px;
 }
 
@@ -200,7 +200,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #e0e0e0;
+    color: var(--c-gris-15, #e8e8e8);
     font-size: 14px;
     font-family: Bahnschrift, sans-serif;
     cursor: pointer;
@@ -214,9 +214,9 @@
     margin: 0;
     padding: 0;
     flex-shrink: 0;
-    accent-color: rgb(219, 205, 0);
-    border: 1px solid #4a4a4a;
-    background: #141313;
+    accent-color: var(--accent, #d9cd00);
+    border: 1px solid var(--c-gris-9, #3a3a3a);
+    background: var(--c-gris-3, #121211);
 }
 
 .filter-option input[type="radio"]
@@ -235,7 +235,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    color: #8a8a8a;
+    color: var(--c-gris-12, #9a9a9a);
     font-size: 12px;
     font-family: Bahnschrift, sans-serif;
     flex: 1;
@@ -244,9 +244,9 @@
 .filter-number,
 .filter-date
 {
-    background: #0f0f0e;
-    border: 1px solid #4a4a4a;
-    color: #e0e0e0;
+    background: var(--c-gris-2, #0f0f0e);
+    border: 1px solid var(--c-gris-9, #3a3a3a);
+    color: var(--c-gris-15, #e8e8e8);
     font-size: 13px;
     padding: 5px 6px;
     outline: none;
@@ -257,7 +257,7 @@
 .filter-number:focus,
 .filter-date:focus
 {
-    border-color: rgb(219, 205, 0);
+    border-color: var(--accent, #d9cd00);
 }
 
 .filter-number::-webkit-outer-spin-button,
@@ -283,9 +283,9 @@
 
 .tag-chip
 {
-    background: #0f0f0e;
-    border: 1px solid #4a4a4a;
-    color: #cfcfcf;
+    background: var(--c-gris-2, #0f0f0e);
+    border: 1px solid var(--c-gris-9, #3a3a3a);
+    color: var(--c-gris-14, #d0d0d0);
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 12px;
@@ -296,14 +296,14 @@
 
 .tag-chip:hover
 {
-    border-color: #8a8a8a;
+    border-color: var(--c-gris-12, #9a9a9a);
 }
 
 .tag-chip-active
 {
-    background-color: rgb(219, 205, 0);
-    border-color: rgb(219, 205, 0);
-    color: #141313;
+    background-color: var(--accent, #d9cd00);
+    border-color: var(--accent, #d9cd00);
+    color: var(--c-gris-3, #121211);
     font-weight: 700;
 }
 
@@ -311,8 +311,8 @@
 {
     margin-top: 8px;
     background: transparent;
-    border: 1px solid #4a4a4a;
-    color: #cfcfcf;
+    border: 1px solid var(--c-gris-9, #3a3a3a);
+    color: var(--c-gris-14, #d0d0d0);
     font-size: 13px;
     padding: 7px;
     cursor: pointer;
@@ -322,8 +322,8 @@
 
 .filter-clear:hover
 {
-    border-color: #cfcfcf;
-    color: #ffffff;
+    border-color: var(--c-gris-14, #d0d0d0);
+    color: var(--c-gris-17, #ffffff);
 }
 
 .filter-button img

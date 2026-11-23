@@ -8,7 +8,7 @@ function StudioCard({ name, logo, cover, accentcolor, modCount, onClick, tokens 
     const coverSource = cover || testCrop;
 
     return (
-        <div className={styles["studio-card"]} style={{ "--accent-color": accentcolor || "#3a2b25" }} onClick={onClick}>
+        <div className={styles["studio-card"]} style={accentcolor ? { "--accent": accentcolor } : undefined} onClick={onClick}>
             <div className={styles["cover-layer"]} style={{ backgroundImage: `url("${coverSource}")` }}></div>
             <div className={styles["gradient-layer"]}></div>
             <div className={styles["content-layer"]}>

@@ -1,3 +1,58 @@
+/* ============================================================
+   Paleta del Launcher (Customización de colores)
+   Cada token --c-* se puede sobreescribir desde Configuration →
+   Apariencia; los overrides viven en localStorage y se inyectan
+   como variables inline en .container (App.jsx).
+   ============================================================ */
+:root {
+  /* Color 1 [Gris] — superficies, bordes y textos */
+  --c-gris-1: #080807;   /* Superficie base: sidebar, navegación y footer */
+  --c-gris-2: #0f0f0e;   /* Superficie activa: pestaña y botón activo */
+  --c-gris-3: #121211;   /* Tarjeta: Store y barras de búsqueda */
+  --c-gris-4: #1e1e1e;   /* Panel: fondo principal, paneles y modales */
+  --c-gris-5: #24221e;   /* Caja de usuario en la sidebar */
+  --c-gris-6: #2a2a2a;   /* Superficie elevada: inputs, switches y cabeceras */
+  --c-gris-7: #2b2b3a;   /* Botón secundario (gear, riel) */
+  --c-gris-8: #33333f;   /* Hover de botones secundarios */
+  --c-gris-9: #3a3a3a;   /* Borde tenue: divisores */
+  --c-gris-10: #555555;  /* Borde de paneles y controles */
+  --c-gris-11: #777777;  /* Borde fuerte: inputs y selects */
+  --c-gris-12: #9a9a9a;  /* Texto terciario: etiquetas */
+  --c-gris-13: #b8b8b8;  /* Texto secundario: subtítulos */
+  --c-gris-14: #d0d0d0;  /* Texto general: labels */
+  --c-gris-15: #e8e8e8;  /* Texto claro: tarjetas y paneles */
+  --c-gris-16: #f0f0f0;  /* Texto brillante: títulos y botones */
+  --c-gris-17: #ffffff;  /* Blanco puro: títulos e iconos */
+
+  /* Color 2 [Negro] */
+  --c-negro-1: #000000;  /* Botones, cabeceras y fondos de modal */
+  --c-negro-2: #111111;  /* Bordes oscuros y texto sobre color */
+
+  /* Color 3 [Amarillo] */
+  --accent: #d9cd00;             /* Color de acento general */
+  --c-accent-claro: #f0e033;     /* Hover de botones con acento */
+
+  /* Color 4 [Dorado] */
+  --c-gold-1: #f5d000;   /* Badges de cuenta regresiva y estrellas */
+  --c-gold-2: #c99600;   /* Final del gradiente de badges */
+  --c-gold-3: #d8cd7a;   /* Rating y bordes dorados */
+
+  /* Color 5 [Verde] */
+  --c-green-1: #16a316;  /* Botón JUGAR */
+  --c-green-2: #1dbd1d;  /* Hover de JUGAR */
+  --c-green-3: #8fc98f;  /* JUGAR deshabilitado */
+  --c-green-4: #a8d08a;  /* Avisos de éxito y chips */
+  --c-green-5: #3d9a44;  /* Badges de estado positivo */
+  --c-green-6: #2d5a2d;  /* Fondo de badges de lanzamiento */
+
+  /* Color 6 [Rojo] */
+  --c-red-1: #b32d2d;    /* Badge de descargas y peligro */
+  --c-red-2: #e07878;    /* Mensajes de error */
+  --c-red-3: #ff5a5a;    /* Acciones destructivas */
+  --c-red-4: #8b0015;    /* Badge de instalado */
+  --c-red-5: #7a2020;    /* Fondo de badges rojos */
+}
+
 /* Fondo general y reset */
 * {
   margin: 0;
@@ -22,7 +77,7 @@
   flex-direction: column;
   /*align-items: center;*/
   padding: 20px 0;
-  background-color: rgb(8, 8, 7);   /* gris oscuro */
+  background-color: var(--c-gris-1, #080807);   /* gris oscuro */
 }
 
 /* ---- Recuadro de usuario ---- */
@@ -32,7 +87,7 @@
   flex-direction: row;         /* horizontal: imagen + texto */
   align-items: center;         /* centra la imagen en el recuadro */
   padding: 15px 12px;
-  background-color: rgb(36, 34, 30);   /* gris claro (sin borde visible) */
+  background-color: var(--c-gris-5, #24221e);   /* gris claro (sin borde visible) */
   margin-bottom: 40px;
 }
 
@@ -64,7 +119,7 @@
 .user-box p {
   font-weight: 100;            /* Thin */
   font-size: 11px;
-  color: #d9d9d9;
+  color: var(--c-gris-14, #d0d0d0);
   margin-top: 4px;
 }
 
@@ -81,21 +136,21 @@
   margin-bottom: 16px;         /* separación entre botones */
   font-weight: 400;            /* Regular */
   font-size: 15px;
-  color: #ffffff;
-  background-color: rgb(8, 8, 7);
+  color: var(--c-gris-17, #ffffff);
+  background-color: var(--c-gris-1, #080807);
   border: none;
   cursor: pointer;
 }
 
 .nav-btn:hover {
-  background-color: rgb(8, 8, 7);
+  background-color: var(--c-gris-1, #080807);
   border-color: antiquewhite;
   border: 2px solid;
 }
 
 .nav-btn.active {
-  border-color: var(--accent, rgb(219, 205, 0));     /* color cuando está seleccionado */
-  background-color: rgb(15, 15, 14);
+  border-color: var(--accent, #d9cd00);     /* color cuando está seleccionado */
+  background-color: var(--c-gris-2, #0f0f0e);
   /* u otras propiedades */
 }
 
@@ -114,8 +169,8 @@
   height: 35px;
   font-weight: 400;
   font-size: 15px;
-  color: #ffffff;
-  background-color: rgb(8, 8, 7);
+  color: var(--c-gris-17, #ffffff);
+  background-color: var(--c-gris-1, #080807);
   border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
@@ -130,15 +185,15 @@
 }
 
 .creator-btn.active {
-  border-color: var(--accent, rgb(219, 205, 0));
-  background-color: rgb(15, 15, 14);
+  border-color: var(--accent, #d9cd00);
+  background-color: var(--c-gris-2, #0f0f0e);
 }
 
 /* ---- Área principal (fondo con imagen, se agrega luego) ---- */
 .main-content {
   flex: 1;
   height: 100vh;
-  background-color: #1e1e1e;   /* placeholder hasta definir la imagen */
+  background-color: var(--c-gris-4, #1e1e1e);   /* placeholder hasta definir la imagen */
   background-size: cover;
   background-position: center;
   overflow-x: hidden;
@@ -153,16 +208,16 @@
     width: 20px;
     height: 20px;
     margin-left: 8px;
-    background-color: #b32d2d;
+    background-color: var(--c-red-1, #b32d2d);
     border-radius: 50%;
     font-size: 12px;
     font-weight: 700;
-    color: #fff;
+    color: var(--c-gris-17, #ffffff);
 }
 
 /*------ TESTING ------*/
 .tab-title {
-  color: #ffffff;
+  color: var(--c-gris-17, #ffffff);
   text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
 }
 
@@ -183,24 +238,24 @@ mark {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background-color: rgb(8, 8, 7);
-  color: #d8d8d8;
+  background-color: var(--c-gris-1, #080807);
+  color: var(--c-gris-14, #d0d0d0);
   font-size: 16px;
 }
 
 .boot-error {
   max-width: 520px;
-  color: #e07878;
+  color: var(--c-red-2, #e07878);
   font-size: 13px;
   text-align: center;
 }
 
 .boot-screen button {
   padding: 9px 20px;
-  background-color: #d9cd00;
+  background-color: var(--accent, #d9cd00);
   border: none;
   border-radius: 4px;
-  color: #141414;
+  color: var(--c-gris-3, #121211);
   font-family: "Bahnschrift", sans-serif;
   font-weight: 700;
   cursor: pointer;
