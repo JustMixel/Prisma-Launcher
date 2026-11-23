@@ -161,6 +161,7 @@ Store, Library, Downloads, Configuration.
 - Tipografía del sistema **Bahnschrift** con distintos pesos según el label.
 - El área principal usará **`src/assets/app-base.png`** como imagen de fondo por defecto (configurable desde Configuration).
 - Navegación por pestañas gestionada mediante **estado de React** (`useState`) en `App.jsx`.
+- **Escritorio = pantalla principal** (pedido del usuario): nuevo tab `home` (**"Escritorio"**, `src/components/Home.jsx`) — botón con **ícono de casa** arriba en la sidebar (`.nav-btn.home-btn`), primera posición del nav. Es la **pestaña inicial por defecto** (`startupTab`/`lastTab` default `"home"`). Muestra los mods instalados en **grid tipo accesos directos** (cover o inicial, nombre y estado: Listo / Enlace / Sin ejecutable / Ejecutando…); **hacer clic ejecuta el mod directamente** (igual que el botón JUGAR de ModPlayView: `launch_executable` con `executablePath`, si no `openUrl(mod.link)`, si no mensaje de error) — **no** abre ModPlayView. Merge `library` (DownloadsContext) + `get_installed_mods`, mismo patrón que Library. Estado vacío con mark + "Tu escritorio está vacío". **Aquí se generarán los ejecutables de los mods** (pendiente: accesos directos/shortcut, ver Pendientes). Etiqueta "Escritorio" añadida a `TAB_LABELS` (Configuration → pestaña inicial).
 - **Secciones separadas** en modo Desarrollador: Studios arriba, Productores abajo, cada uno con su título.
 - Flujo de búsqueda por desarrollador: **texto → cartas de perfil → clic → mods del perfil** (no muestra mods directamente al escribir).
 - **Publisher**: el uploader elige studio o su nombre propio; un solo campo (`m_producername`).
@@ -180,6 +181,7 @@ Store, Library, Downloads, Configuration.
 ## Pendientes globales (fuera del Store)
 1. Resolver solapamiento texto/imagen de fondo en `.main-content`.
 2. Comandos Tauri restantes: descarga real de archivos y shortcut (registro/lectura/ejecución ya implementados).
+2b. **Escritorio: generar los ejecutables/atajos de los mods** (el usuario indicó que ahí se generarán); hoy solo lanza `executablePath` registrado en el `mod.json`.
 3. Modelado de datos para Videos/Reviews antes de implementar su UI.
 4. Migración de endpoints mock a SQL Server real.
 5. Assets de ModPlayView: `Mock/Main Screens/SC1.png` (1920×1080) como fondo temporal y `STEL3.png` (1280×720, fondo blanco) como logo de prueba; faltan PNG con alfa del logo del proyecto y del logo real del mod.
