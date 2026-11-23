@@ -9,13 +9,6 @@ import styles from "./Configuration.module.css";
 
 const PICTURE_KEY = "prisma-profile-picture";
 
-const ACCENTS = [
-    { label: "Amarillo", value: "#d9cd00" },
-    { label: "Azul", value: "#6fa8dc" },
-    { label: "Verde", value: "#7fb069" },
-    { label: "Rojo", value: "#d96565" }
-];
-
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 function HexColorInput({ value, onChange })
@@ -147,7 +140,9 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
     function handleColorChange(entry, value)
     {
         if (entry.accent) {
-            applyAccent(value);
+            // El acento es libre: App.jsx recalcula en vivo sus colores derivados
+            // (Sub-color 2 = Sub-color 1 aclarado), así que acá solo se guarda.
+            onSettingChange(SETTINGS_KEYS.accentColor, value);
             return;
         }
         if (entry.deriveFrom) {
@@ -157,13 +152,6 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
             SETTINGS_KEYS.colorOverrides,
             JSON.stringify({ ...colorOverrides, [entry.cssVar]: value })
         );
-    }
-
-    // El acento manda: App.jsx recalcula en vivo sus colores derivados
-    // (Sub-color 2 = Sub-color 1 aclarado), así que acá solo se guarda.
-    function applyAccent(value)
-    {
-        onSettingChange(SETTINGS_KEYS.accentColor, value);
     }
 
     function resolveEntryValue(entry)
@@ -497,21 +485,6 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                                                 <span className={styles["color-entry-label"]}>{entry.label}</span>
                                                 <span className={styles["color-entry-where"]}>{entry.where}</span>
                                             </div>
-                                            {entry.accent && (
-                                                <div className={styles["accent-presets"]}>
-                                                    {ACCENTS.map((accent) => (
-                                                        <button
-                                                            key={accent.value}
-                                                            className={`${styles["swatch"]} ${value === accent.value ? styles["active"] : ""}`}
-                                                            style={{ backgroundColor: accent.value }}
-                                                            type="button"
-                                                            title={`Acento ${accent.label}`}
-                                                            aria-label={`Acento ${accent.label}`}
-                                                            onClick={() => applyAccent(accent.value)}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
                                             <span className={styles["color-entry-hex"]}>{value.toUpperCase()}</span>
                                         </div>
                                     );
