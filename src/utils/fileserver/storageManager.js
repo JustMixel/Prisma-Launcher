@@ -22,6 +22,7 @@ import {
     listRegions,
     listAccessKeys,
     createAccessKey,
+    getS3Overview,
     extractVerifyToken
 } from "./yeapcloud.js";
 import {
@@ -120,7 +121,10 @@ export async function provisionAccount({ onStep = () => {} } = {})
     const yeapPassword = randomPassword();
     let registration;
     try {
-        registration = await registerAccount({ email: mailbox.address, password: yeapPassword });
+        // El formulario de registro del console pide username, email y password.
+        // Usamos el local-part del buzón como username (sin caracteres raros).
+        const username = String(mailbox.address || "").split("@")[0].replace(/[^A-Za-z0-9_.-]/g, "") || "prismaUser";
+        registration = await registerAccount({ email: mailbox.address, password: yeapPassword, username });
     } catch (error) {
         if (/captcha|required|verify|human/i.test(String(error.message))) {
             fail(
@@ -296,17 +300,10 @@ async function fetchUsedBytes(credentials)
         return Number(credentials.usedBytes || 0);
     }
     try {
-        const response = await fetch("https://api.yeap.cloud/api/user/s3/usage", {
-            headers: {
-                Accept: "application/json",
-                Authorization: `Bearer ${credentials.yeapToken}`,
-                "X-Device-Id": localStorage.getItem("yeap-device-id") || "prisma-launcher"
-            }
-        });
-        if (!response.ok) {
+        const data = await getS3Overview(credentials.yeapToken);
+        if (!data) {
             return Number(credentials.usedBytes || 0);
         }
-        const data = await response.json();
         const value =
             data?.bytes ??
             data?.data?.bytes ??
