@@ -16,6 +16,40 @@ const ACCENTS = [
     { label: "Rojo", value: "#d96565" }
 ];
 
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+function HexColorInput({ value, onChange })
+{
+    const [draft, setDraft] = useState(value);
+
+    useEffect(() => {
+        setDraft(value);
+    }, [value]);
+
+    function handleChange(event)
+    {
+        const raw = event.target.value;
+        setDraft(raw);
+        const normalized = raw.startsWith("#") ? raw : `#${raw}`;
+        if (HEX_RE.test(normalized)) {
+            onChange(normalized.toLowerCase());
+        }
+    }
+
+    return (
+        <input
+            className={styles["hex-input"]}
+            type="text"
+            value={draft}
+            onChange={handleChange}
+            onBlur={() => setDraft(value)}
+            spellCheck={false}
+            maxLength={7}
+            aria-label="Color en hexadecimal"
+        />
+    );
+}
+
 const TAB_LABELS = {
     store: "Tienda",
     library: "Biblioteca",
@@ -43,6 +77,7 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
     const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
     const [folderDialogOpen, setFolderDialogOpen] = useState(false);
     const [modsPath, setModsPath] = useState(settings.modsPath || "");
+    const [aparienciaTab, setAparienciaTab] = useState("fondo");
     const colorOverrides = settings.colorOverrides || {};
 
     const valid = isValidName(name);
@@ -118,6 +153,18 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
             SETTINGS_KEYS.colorOverrides,
             JSON.stringify({ ...colorOverrides, [entry.cssVar]: value })
         );
+    }
+
+    function handleGradientChange(part, value)
+    {
+        const current = settings.customGradient || {};
+        const next = {
+            from: current.from || "#080807",
+            to: current.to || "#2b2b3a",
+            angle: current.angle ?? 135,
+            [part]: part === "angle" ? Number(value) : value
+        };
+        onSettingChange(SETTINGS_KEYS.customGradient, JSON.stringify(next));
     }
 
     function handleResetGroup(group)
@@ -232,112 +279,230 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
             <section className={styles["card"]}>
                 <h2>Apariencia</h2>
 
-                <div className={styles["setting-block"]}>
-                    <label className={styles["label"]} htmlFor="custom-background">Imagen de fondo</label>
-                    <div className={styles["name-row"]}>
-                        <input
-                            id="custom-background"
-                            className={styles["input"]}
-                            type="text"
-                            value={settings.customBackgroundImage || ""}
-                            readOnly
-                            placeholder="Ninguna imagen seleccionada"
-                        />
+                <div className={styles["tabs"]}>
+                    <button
+                        className={`${styles["tab"]} ${aparienciaTab === "fondo" ? styles["active"] : ""}`}
+                        type="button"
+                        onClick={() => setAparienciaTab("fondo")}
+                    >
+                        Imagen de fondo
+                    </button>
+                    <button
+                        className={`${styles["tab"]} ${aparienciaTab === "colores" ? styles["active"] : ""}`}
+                        type="button"
+                        onClick={() => setAparienciaTab("colores")}
+                    >
+                        Colores
+                    </button>
+                </div>
+
+                {aparienciaTab === "fondo" ? (
+                    <div className={styles["tab-panel"]}>
+                        <div className={styles["setting-block"]}>
+                            <span className={styles["label"]}>Tipo de fondo</span>
+                            <div className={styles["segmented"]}>
+                                {[
+                                    { value: "solid", label: "Color sólido" },
+                                    { value: "gradient", label: "Gradiente" },
+                                    { value: "image", label: "Imagen" }
+                                ].map((option) => (
+                                    <button
+                                        key={option.value}
+                                        className={`${styles["segment"]} ${settings.backgroundType === option.value ? styles["active"] : ""}`}
+                                        type="button"
+                                        onClick={() => onSettingChange(SETTINGS_KEYS.backgroundType, option.value)}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {settings.backgroundType === "solid" && (
+                            <div className={styles["setting-block"]}>
+                                <span className={styles["label"]}>Color de fondo</span>
+                                <div className={styles["color-row"]}>
+                                    <input
+                                        className={styles["color-picker"]}
+                                        type="color"
+                                        value={settings.customBackgroundColor || "#121212"}
+                                        onChange={(event) => onSettingChange(SETTINGS_KEYS.customBackgroundColor, event.target.value)}
+                                        aria-label="Elegir color de fondo"
+                                    />
+                                    <HexColorInput
+                                        value={settings.customBackgroundColor || "#121212"}
+                                        onChange={(hex) => onSettingChange(SETTINGS_KEYS.customBackgroundColor, hex)}
+                                    />
+                                </div>
+                                <p className={styles["hint"]}>Color plano que cubre el área principal del launcher.</p>
+                            </div>
+                        )}
+
+                        {settings.backgroundType === "gradient" && (
+                            <div className={styles["setting-block"]}>
+                                <span className={styles["label"]}>Gradiente</span>
+                                <div
+                                    className={styles["gradient-preview"]}
+                                    style={{ backgroundImage: `linear-gradient(${settings.customGradient.angle}deg, ${settings.customGradient.from}, ${settings.customGradient.to})` }}
+                                ></div>
+                                <div className={styles["gradient-row"]}>
+                                    <div className={styles["gradient-stop"]}>
+                                        <span>Desde</span>
+                                        <input
+                                            className={styles["color-picker"]}
+                                            type="color"
+                                            value={settings.customGradient.from}
+                                            onChange={(event) => handleGradientChange("from", event.target.value)}
+                                            aria-label="Color inicial del gradiente"
+                                        />
+                                        <HexColorInput
+                                            value={settings.customGradient.from}
+                                            onChange={(hex) => handleGradientChange("from", hex)}
+                                        />
+                                    </div>
+                                    <div className={styles["gradient-stop"]}>
+                                        <span>Hasta</span>
+                                        <input
+                                            className={styles["color-picker"]}
+                                            type="color"
+                                            value={settings.customGradient.to}
+                                            onChange={(event) => handleGradientChange("to", event.target.value)}
+                                            aria-label="Color final del gradiente"
+                                        />
+                                        <HexColorInput
+                                            value={settings.customGradient.to}
+                                            onChange={(hex) => handleGradientChange("to", hex)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className={styles["angle-row"]}>
+                                    <label htmlFor="gradient-angle">Ángulo</label>
+                                    <input
+                                        id="gradient-angle"
+                                        type="range"
+                                        min="0"
+                                        max="360"
+                                        value={settings.customGradient.angle}
+                                        onChange={(event) => handleGradientChange("angle", event.target.value)}
+                                        style={{
+                                            "--track": "linear-gradient(to right, hsl(0 100% 50%), hsl(60 100% 50%), hsl(120 100% 50%), hsl(180 100% 50%), hsl(240 100% 50%), hsl(300 100% 50%), hsl(360 100% 50%))"
+                                        }}
+                                    />
+                                    <span className={styles["angle-value"]}>{settings.customGradient.angle}°</span>
+                                </div>
+                                <p className={styles["hint"]}>Mezcla dos colores en la dirección indicada por el ángulo (0° = hacia arriba).</p>
+                            </div>
+                        )}
+
+                        {settings.backgroundType === "image" && (
+                            <div className={styles["setting-block"]}>
+                                <label className={styles["label"]} htmlFor="custom-background">Imagen de fondo</label>
+                                <div className={styles["name-row"]}>
+                                    <input
+                                        id="custom-background"
+                                        className={styles["input"]}
+                                        type="text"
+                                        value={settings.customBackgroundImage || ""}
+                                        readOnly
+                                        placeholder="Ninguna imagen seleccionada"
+                                    />
+                                    <button
+                                        className={styles["btn"]}
+                                        type="button"
+                                        onClick={() => setBackgroundDialogOpen(true)}
+                                    >
+                                        {settings.customBackgroundImage ? "Cambiar" : "Examinar"}
+                                    </button>
+                                    {settings.customBackgroundImage && (
+                                        <button
+                                            className={styles["btn secondary"]}
+                                            type="button"
+                                            onClick={() => onSettingChange(SETTINGS_KEYS.customBackgroundImage, "")}
+                                        >
+                                            Quitar
+                                        </button>
+                                    )}
+                                </div>
+                                <p className={styles["hint"]}>
+                                    Medidas recomendadas: 1920×1080 px (16:9). Formatos: PNG, JPG, JPEG, WEBP, BMP y
+                                    GIF (con animación soportada). Sin imagen se usa el fondo por defecto del launcher.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className={styles["tab-panel"]}>
+                        <div className={styles["setting-block"]}>
+                            <span className={styles["label"]}>Color de acento</span>
+                            <div className={styles["swatches"]}>
+                                {ACCENTS.map((accent) => (
+                                    <button
+                                        key={accent.value}
+                                        className={`${styles["swatch"]} ${settings.accentColor === accent.value ? styles["active"] : ""}`}
+                                        style={{ backgroundColor: accent.value }}
+                                        type="button"
+                                        title={accent.label}
+                                        aria-label={accent.label}
+                                        onClick={() => onSettingChange(SETTINGS_KEYS.accentColor, accent.value)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <p className={styles["hint"]}>
+                            Inventario completo de colores del launcher, agrupado por familia. Cada color se usa en
+                            todos los módulos indicados.
+                        </p>
+
+                        {COLOR_GROUPS.map((group) => (
+                            <div key={group.id} className={styles["color-group"]}>
+                                <div className={styles["color-group-head"]}>
+                                    <span className={styles["color-group-title"]}>{group.label}</span>
+                                    <button
+                                        className={`${styles["btn"]} ${styles["btn-ghost"]}`}
+                                        type="button"
+                                        onClick={() => handleResetGroup(group)}
+                                    >
+                                        Restablecer
+                                    </button>
+                                </div>
+
+                                {group.entries.map((entry) => {
+                                    const value = entry.accent
+                                        ? settings.accentColor
+                                        : colorOverrides[entry.cssVar] || entry.value;
+                                    return (
+                                        <div key={entry.id} className={styles["color-entry"]}>
+                                            <input
+                                                className={styles["color-entry-preview"]}
+                                                type="color"
+                                                value={value}
+                                                onChange={(event) => handleColorChange(entry, event.target.value)}
+                                                aria-label={entry.label}
+                                                title={entry.label}
+                                            />
+                                            <div className={styles["color-entry-info"]}>
+                                                <span className={styles["color-entry-label"]}>{entry.label}</span>
+                                                <span className={styles["color-entry-where"]}>{entry.where}</span>
+                                            </div>
+                                            <span className={styles["color-entry-hex"]}>{value.toUpperCase()}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+
                         <button
                             className={styles["btn"]}
                             type="button"
-                            onClick={() => setBackgroundDialogOpen(true)}
+                            onClick={handleResetAllColors}
                         >
-                            {settings.customBackgroundImage ? "Cambiar" : "Examinar"}
+                            Restablecer todos los colores
                         </button>
-                        {settings.customBackgroundImage && (
-                            <button
-                                className={styles["btn secondary"]}
-                                type="button"
-                                onClick={() => onSettingChange(SETTINGS_KEYS.customBackgroundImage, "")}
-                            >
-                                Quitar
-                            </button>
-                        )}
                     </div>
-                    <p className={styles["hint"]}>
-                        Medidas recomendadas: 1920×1080 px (16:9). Formatos: PNG, JPG, JPEG, WEBP, BMP y
-                        GIF (con animación soportada). Sin imagen se usa el fondo por defecto del launcher.
-                    </p>
-                </div>
-
-                <div className={styles["setting-block"]}>
-                    <span className={styles["label"]}>Color de acento</span>
-                    <div className={styles["swatches"]}>
-                        {ACCENTS.map((accent) => (
-                            <button
-                                key={accent.value}
-                                className={`${styles["swatch"]} ${settings.accentColor === accent.value ? styles["active"] : ""}`}
-                                style={{ backgroundColor: accent.value }}
-                                type="button"
-                                title={accent.label}
-                                aria-label={accent.label}
-                                onClick={() => onSettingChange(SETTINGS_KEYS.accentColor, accent.value)}
-                            />
-                        ))}
-                    </div>
-                </div>
+                )}
 
                 <p className={styles["hint"]}>Los cambios se aplican al instante.</p>
-            </section>
-
-            <section className={styles["card"]}>
-                <h2>Customización</h2>
-                <p className={styles["hint"]}>
-                    Inventario completo de colores del launcher, agrupado por familia. Cada color se usa en
-                    todos los módulos indicados; los cambios se aplican al instante.
-                </p>
-
-                {COLOR_GROUPS.map((group) => (
-                    <div key={group.id} className={styles["color-group"]}>
-                        <div className={styles["color-group-head"]}>
-                            <span className={styles["color-group-title"]}>{group.label}</span>
-                            <button
-                                className={`${styles["btn"]} ${styles["btn-ghost"]}`}
-                                type="button"
-                                onClick={() => handleResetGroup(group)}
-                            >
-                                Restablecer
-                            </button>
-                        </div>
-
-                        {group.entries.map((entry) => {
-                            const value = entry.accent
-                                ? settings.accentColor
-                                : colorOverrides[entry.cssVar] || entry.value;
-                            return (
-                                <div key={entry.id} className={styles["color-entry"]}>
-                                    <input
-                                        className={styles["color-entry-preview"]}
-                                        type="color"
-                                        value={value}
-                                        onChange={(event) => handleColorChange(entry, event.target.value)}
-                                        aria-label={entry.label}
-                                        title={entry.label}
-                                    />
-                                    <div className={styles["color-entry-info"]}>
-                                        <span className={styles["color-entry-label"]}>{entry.label}</span>
-                                        <span className={styles["color-entry-where"]}>{entry.where}</span>
-                                    </div>
-                                    <span className={styles["color-entry-hex"]}>{value.toUpperCase()}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ))}
-
-                <button
-                    className={styles["btn"]}
-                    type="button"
-                    onClick={handleResetAllColors}
-                >
-                    Restablecer todos los colores
-                </button>
             </section>
 
             <section className={styles["card"]}>

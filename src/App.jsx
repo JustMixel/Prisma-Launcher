@@ -12,12 +12,15 @@ import Configuration, { readStoredPicture } from "./components/Configuration.jsx
 import Creator from "./components/Creator.jsx";
 import FirstRunSetup from "./components/FirstRunSetup.jsx";
 import { SETTINGS_KEYS, TABS, readSetting, writeSetting } from "./utils/settings.js";
-import { parseColorOverrides } from "./utils/colors.js";
+import { parseColorOverrides, parseGradient } from "./utils/colors.js";
 import "./App.css";
 
 const SETTINGS_STATE_KEYS = {
+  [SETTINGS_KEYS.backgroundType]: "backgroundType",
   [SETTINGS_KEYS.accentColor]: "accentColor",
+  [SETTINGS_KEYS.customBackgroundColor]: "customBackgroundColor",
   [SETTINGS_KEYS.customBackgroundImage]: "customBackgroundImage",
+  [SETTINGS_KEYS.customGradient]: "customGradient",
   [SETTINGS_KEYS.colorOverrides]: "colorOverrides",
   [SETTINGS_KEYS.modsPath]: "modsPath",
   [SETTINGS_KEYS.rememberTab]: "rememberTab",
@@ -27,8 +30,11 @@ const SETTINGS_STATE_KEYS = {
 function AppContent({ userName, onNameChange })
 {
   const [settings, setSettings] = useState(() => ({
+    backgroundType: readSetting(SETTINGS_KEYS.backgroundType),
     accentColor: readSetting(SETTINGS_KEYS.accentColor),
+    customBackgroundColor: readSetting(SETTINGS_KEYS.customBackgroundColor),
     customBackgroundImage: readSetting(SETTINGS_KEYS.customBackgroundImage),
+    customGradient: parseGradient(readSetting(SETTINGS_KEYS.customGradient)),
     colorOverrides: parseColorOverrides(readSetting(SETTINGS_KEYS.colorOverrides)),
     modsPath: readSetting(SETTINGS_KEYS.modsPath),
     rememberTab: readSetting(SETTINGS_KEYS.rememberTab) === "true",
@@ -50,7 +56,12 @@ function AppContent({ userName, onNameChange })
   {
     writeSetting(key, typeof value === "boolean" ? String(value) : value);
     const stateKey = SETTINGS_STATE_KEYS[key] ?? key;
-    const stateValue = key === SETTINGS_KEYS.colorOverrides ? parseColorOverrides(value) : value;
+    let stateValue = value;
+    if (key === SETTINGS_KEYS.colorOverrides) {
+      stateValue = parseColorOverrides(value);
+    } else if (key === SETTINGS_KEYS.customGradient) {
+      stateValue = parseGradient(value);
+    }
     setSettings((current) => ({ ...current, [stateKey]: stateValue }));
 
     if (key === SETTINGS_KEYS.rememberTab) {
@@ -64,17 +75,29 @@ function AppContent({ userName, onNameChange })
   }
 
   const storedBackground = settings.customBackgroundImage || "";
-  const backgroundStyle = storedBackground
-    ? {
-        backgroundImage: `url("${storedBackground.startsWith("data:") ? storedBackground : convertFileSrc(storedBackground)}")`,
-        backgroundColor: "var(--c-gris-4, #1e1e1e)",
-        backgroundSize: "cover",
-        backgroundPosition: "center"
-      }
-    : {
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url(${appBase})`,
-        backgroundColor: "var(--c-gris-4, #1e1e1e)"
-      };
+  const gradient = settings.customGradient;
+  const backgroundStyle =
+    settings.backgroundType === "solid"
+      ? {
+          backgroundColor: settings.customBackgroundColor || "#121212",
+          backgroundImage: "none"
+        }
+      : settings.backgroundType === "gradient"
+        ? {
+            backgroundImage: `linear-gradient(${gradient.angle}deg, ${gradient.from}, ${gradient.to})`,
+            backgroundColor: gradient.from
+          }
+        : storedBackground
+          ? {
+              backgroundImage: `url("${storedBackground.startsWith("data:") ? storedBackground : convertFileSrc(storedBackground)}")`,
+              backgroundColor: "var(--c-gris-4, #1e1e1e)",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }
+          : {
+              backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url(${appBase})`,
+              backgroundColor: "var(--c-gris-4, #1e1e1e)"
+            };
 
   return(
     <div className="container" style={{ "--accent": settings.accentColor, ...settings.colorOverrides }}>

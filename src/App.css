@@ -1,5 +1,5 @@
 /* ============================================================
-   Paleta del Launcher (Customización de colores)
+   Paleta del Launcher (Apariencia → Colores)
    Cada token --c-* se puede sobreescribir desde Configuration →
    Apariencia; los overrides viven en localStorage y se inyectan
    como variables inline en .container (App.jsx).

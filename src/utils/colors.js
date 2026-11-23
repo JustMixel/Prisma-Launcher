@@ -93,4 +93,16 @@ function parseColorOverrides(raw)
     }
 }
 
-export { COLOR_GROUPS, COLOR_DEFAULTS, parseColorOverrides };
+const GRADIENT_DEFAULT = { from: "#080807", to: "#2b2b3a", angle: 135 };
+
+function parseGradient(raw)
+{
+    const parsed = parseColorOverrides(raw);
+    return {
+        from: typeof parsed.from === "string" ? parsed.from : GRADIENT_DEFAULT.from,
+        to: typeof parsed.to === "string" ? parsed.to : GRADIENT_DEFAULT.to,
+        angle: Number.isFinite(Number(parsed.angle)) ? Number(parsed.angle) : GRADIENT_DEFAULT.angle
+    };
+}
+
+export { COLOR_GROUPS, COLOR_DEFAULTS, parseColorOverrides, parseGradient, GRADIENT_DEFAULT };
