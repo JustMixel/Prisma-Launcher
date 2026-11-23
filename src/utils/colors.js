@@ -38,7 +38,7 @@ const COLOR_GROUPS = [
         id: "amarillo",
         label: "Color 3 [Amarillo]",
         entries: [
-            { id: "acento", cssVar: "--accent", label: "Sub-color 1 [Acento]", value: "#d9cd00", where: "Color de acento (también en los swatches)", accent: true },
+            { id: "acento", cssVar: "--accent", label: "Sub-color 1 [Acento]", value: "#d9cd00", where: "Color de acento general (tabs, bordes y botones)", accent: true },
             { id: "acento-claro", cssVar: "--c-accent-claro", label: "Sub-color 2 [Acento claro]", value: "#f0e033", where: "Hover de botones con acento" }
         ]
     },

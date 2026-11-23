@@ -433,23 +433,6 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                     </div>
                 ) : (
                     <div className={styles["tab-panel"]}>
-                        <div className={styles["setting-block"]}>
-                            <span className={styles["label"]}>Color de acento</span>
-                            <div className={styles["swatches"]}>
-                                {ACCENTS.map((accent) => (
-                                    <button
-                                        key={accent.value}
-                                        className={`${styles["swatch"]} ${settings.accentColor === accent.value ? styles["active"] : ""}`}
-                                        style={{ backgroundColor: accent.value }}
-                                        type="button"
-                                        title={accent.label}
-                                        aria-label={accent.label}
-                                        onClick={() => onSettingChange(SETTINGS_KEYS.accentColor, accent.value)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
                         <p className={styles["hint"]}>
                             Inventario completo de colores del launcher, agrupado por familia. Cada color se usa en
                             todos los módulos indicados.
@@ -486,6 +469,21 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
                                                 <span className={styles["color-entry-label"]}>{entry.label}</span>
                                                 <span className={styles["color-entry-where"]}>{entry.where}</span>
                                             </div>
+                                            {entry.accent && (
+                                                <div className={styles["accent-presets"]}>
+                                                    {ACCENTS.map((accent) => (
+                                                        <button
+                                                            key={accent.value}
+                                                            className={`${styles["swatch"]} ${value === accent.value ? styles["active"] : ""}`}
+                                                            style={{ backgroundColor: accent.value }}
+                                                            type="button"
+                                                            title={`Acento ${accent.label}`}
+                                                            aria-label={`Acento ${accent.label}`}
+                                                            onClick={() => onSettingChange(SETTINGS_KEYS.accentColor, accent.value)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                             <span className={styles["color-entry-hex"]}>{value.toUpperCase()}</span>
                                         </div>
                                     );

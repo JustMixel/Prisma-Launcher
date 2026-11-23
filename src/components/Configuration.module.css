@@ -453,9 +453,15 @@
     flex-shrink: 0;
 }
 
-.swatches {
+.accent-presets {
     display: flex;
-    gap: 12px;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.accent-presets .swatch {
+    width: 22px;
+    height: 22px;
 }
 
 .swatch {
