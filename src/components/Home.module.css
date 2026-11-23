@@ -38,8 +38,8 @@
 /* ---- Grid tipo escritorio ---- */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-    gap: 26px 20px;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 22px 16px;
     max-width: 900px;
 }
 
@@ -70,14 +70,14 @@
 
 .icon-art {
     position: relative;
-    width: 84px;
-    height: 84px;
+    width: 64px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: var(--c-gris-3, #121211);
     border: 1px solid var(--c-gris-9, #3a3a3a);
-    border-radius: 8px;
+    border-radius: 7px;
     overflow: hidden;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -94,7 +94,7 @@
 }
 
 .icon-fallback {
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--c-gris-12, #9a9a9a);
 }
