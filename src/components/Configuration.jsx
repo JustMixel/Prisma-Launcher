@@ -77,7 +77,7 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
     const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
     const [folderDialogOpen, setFolderDialogOpen] = useState(false);
     const [modsPath, setModsPath] = useState(settings.modsPath || "");
-    const [aparienciaTab, setAparienciaTab] = useState("fondo");
+    const [aparienciaTab, setAparienciaTab] = useState("colores");
     const colorOverrides = settings.colorOverrides || {};
 
     const valid = isValidName(name);
@@ -281,18 +281,18 @@ function Configuration({ userName, onNameChange, profilePicture, onPictureChange
 
                 <div className={styles["tabs"]}>
                     <button
-                        className={`${styles["tab"]} ${aparienciaTab === "fondo" ? styles["active"] : ""}`}
-                        type="button"
-                        onClick={() => setAparienciaTab("fondo")}
-                    >
-                        Imagen de fondo
-                    </button>
-                    <button
                         className={`${styles["tab"]} ${aparienciaTab === "colores" ? styles["active"] : ""}`}
                         type="button"
                         onClick={() => setAparienciaTab("colores")}
                     >
                         Colores
+                    </button>
+                    <button
+                        className={`${styles["tab"]} ${aparienciaTab === "fondo" ? styles["active"] : ""}`}
+                        type="button"
+                        onClick={() => setAparienciaTab("fondo")}
+                    >
+                        Imagen de fondo
                     </button>
                 </div>
 
