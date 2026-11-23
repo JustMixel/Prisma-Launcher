@@ -8,7 +8,7 @@ import { CATEGORIES } from "./AddLocalMod.jsx";
 import { clearSession, getSession, saveSession } from "../utils/session.js";
 import {
     loadCredentials,
-    provisionAccount,
+    checkStorageUsage,
     saveManualCredentials,
     uploadPackage
 } from "../utils/fileserver/storageManager.js";
@@ -184,8 +184,15 @@ function Creator({ onNavigate })
     const [fsPercent, setFsPercent] = useState(0);
     const [fsCreds, setFsCreds] = useState(null);
     const [fsManual, setFsManual] = useState(false);
+    const [fsBucket, setFsBucket] = useState("prisma-mods");
+    const [fsUsage, setFsUsage] = useState(null);
     const [manualKeyId, setManualKeyId] = useState("");
     const [manualKeySecret, setManualKeySecret] = useState("");
+    const fsConnected = Boolean(
+        fsCreds?.provider === "tigris" &&
+        fsCreds?.accessKeyId?.startsWith("tid_") &&
+        fsCreds?.secretAccessKey?.startsWith("tsec_")
+    );
 
     useEffect(() => {
         if (!isDeveloper) {
@@ -230,10 +237,16 @@ function Creator({ onNavigate })
             return;
         }
         let cancelled = false;
-        loadCredentials().then((credentials) => {
+        loadCredentials().then(async (credentials) => {
             if (!cancelled) {
                 setFsCreds(credentials);
-                setFsManual(Boolean(credentials?.manualKeyNeeded));
+                setFsBucket(credentials?.bucket || "prisma-mods");
+                if (credentials?.accessKeyId && credentials?.secretAccessKey) {
+                    const usage = await checkStorageUsage();
+                    if (!cancelled) {
+                        setFsUsage(usage);
+                    }
+                }
             }
         });
         return () => { cancelled = true; };
@@ -245,26 +258,20 @@ function Creator({ onNavigate })
         setError(message ? `File Server${step ? ` (${step})` : ""}: ${message}` : "");
     }
 
-    async function handleCreateFileServer() {
+    async function handleRefreshUsage() {
         if (fsBusy) {
             return;
         }
         setFsBusy(true);
         setError("");
-        setFsPercent(0);
         try {
-            const credentials = await provisionAccount({ onStep: setFsStep });
-            setFsCreds(credentials);
-            setFsManual(false);
-        } catch (fsError) {
-            if (fsError.manualKey && fsError.credentials) {
-                setFsCreds(fsError.credentials);
-                setFsManual(true);
-                setFsStep("");
-                setError(fsError.message);
-            } else {
-                fsFail(fsError.message, fsError.step);
+            const usage = await checkStorageUsage();
+            setFsUsage(usage);
+            if (!usage) {
+                setError("File Server: guardá primero las credenciales de Tigris.");
             }
+        } catch (fsError) {
+            fsFail(fsError.message, fsError.step);
         } finally {
             setFsBusy(false);
         }
@@ -280,12 +287,15 @@ function Creator({ onNavigate })
         try {
             const credentials = await saveManualCredentials({
                 accessKeyId: manualKeyId,
-                secretAccessKey: manualKeySecret
+                secretAccessKey: manualKeySecret,
+                bucket: fsBucket
             });
             setFsCreds(credentials);
+            setFsBucket(credentials.bucket);
             setFsManual(false);
             setManualKeyId("");
             setManualKeySecret("");
+            setFsUsage(await checkStorageUsage());
         } catch (fsError) {
             fsFail(fsError.message, "credenciales");
         } finally {
@@ -1156,48 +1166,57 @@ function Creator({ onNavigate })
                         <div className={styles["fileserver-box"]}>
                             <div className={styles["fileserver-head"]}>
                                 <span className={styles["fileserver-status"]}>
-                                    {fsCreds && fsCreds.accessKeyId && !fsCreds.manualKeyNeeded
-                                        ? "● Conectado a Yeap Cloud"
-                                        : fsCreds
-                                            ? "● Cuenta creada · falta la Secret Key"
-                                            : "● Sin cuenta de fileServer"}
+                                    {fsConnected
+                                        ? `● Conectado a Tigris · ${fsCreds.bucket}`
+                                        : "● Sin credenciales de Tigris"}
                                 </span>
-                                {!fsCreds && !fsBusy && (
-                                    <button
-                                        type="button"
-                                        className={styles["browse-btn"]}
-                                        onClick={handleCreateFileServer}
-                                    >
-                                        Crear cuenta
-                                    </button>
-                                )}
                             </div>
 
                             <p className={styles["field-hint"]}>
-                                Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket <code>modsforme</code> y
-                                usa la URL generada como «Descarga principal».
+                                Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket público de Tigris y usa
+                                la URL generada como «Descarga principal». Límite operativo: <b>4.5 GB de 5 GB</b>.
                             </p>
 
-                            {fsManual && (
+                            {!fsConnected && (
+                                <p className={styles["field-hint"]}>
+                                    Pasos: creá una cuenta en <code>https://storage.new</code> (MFA obligatorio) ·
+                                    creá un bucket público <code>public-read</code> sin puntos, p. ej.{" "}
+                                    <code>prisma-mods</code> · en <b>Console → Access keys</b> generá un par y pegalo
+                                    acá. Tigris pide verificar método de pago para buckets públicos (sin cargo dentro
+                                    del free tier).
+                                </p>
+                            )}
+
+                            {(!fsConnected || fsManual) && (
                                 <form className={styles["fileserver-manual"]} onSubmit={handleSaveManualKey}>
                                     <label className={styles["label"]}>
-                                        Access Key
+                                        Bucket
                                         <input
                                             className={styles["input"]}
-                                            value={manualKeyId}
-                                            onChange={(event) => setManualKeyId(event.target.value)}
-                                            placeholder="Access Key del console"
+                                            value={fsBucket}
+                                            onChange={(event) => setFsBucket(event.target.value)}
+                                            placeholder="prisma-mods"
                                             autoComplete="off"
                                         />
                                     </label>
                                     <label className={styles["label"]}>
-                                        Secret Key
+                                        Access Key (tid_...)
+                                        <input
+                                            className={styles["input"]}
+                                            value={manualKeyId}
+                                            onChange={(event) => setManualKeyId(event.target.value)}
+                                            placeholder="tid_..."
+                                            autoComplete="off"
+                                        />
+                                    </label>
+                                    <label className={styles["label"]}>
+                                        Secret Key (tsec_...)
                                         <input
                                             className={styles["input"]}
                                             type="password"
                                             value={manualKeySecret}
                                             onChange={(event) => setManualKeySecret(event.target.value)}
-                                            placeholder="Secret Key (solo se muestra una vez)"
+                                            placeholder="tsec_... (solo se muestra una vez)"
                                             autoComplete="new-password"
                                         />
                                     </label>
@@ -1211,21 +1230,37 @@ function Creator({ onNavigate })
                                 </form>
                             )}
 
+                            {fsUsage && (
+                                <p className={styles["field-hint"]}>
+                                    Espacio usado: {(fsUsage.bytes / (1024 ** 3)).toFixed(2)} GB de 4.5 GB
+                                    {" · "}{fsUsage.objects} archivos
+                                    {fsUsage.error ? ` · ${fsUsage.error}` : ""}
+                                </p>
+                            )}
+
                             <div className={styles["fileserver-actions"]}>
                                 <button
                                     type="button"
                                     className={styles["browse-btn"]}
-                                    disabled={fsBusy || !fsCreds || Boolean(fsCreds.manualKeyNeeded)}
+                                    disabled={fsBusy || !fsConnected}
                                     onClick={() => setPackageDialog(true)}
                                 >
                                     {fsBusy ? "Trabajando…" : "Subir paquete"}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles["browse-btn"]}
+                                    disabled={fsBusy || !fsConnected}
+                                    onClick={handleRefreshUsage}
+                                >
+                                    Actualizar uso
                                 </button>
                                 {fsCreds && (
                                     <button
                                         type="button"
                                         className={styles["clear-btn"]}
-                                        title="Volver a crear la cuenta"
-                                        onClick={handleCreateFileServer}
+                                        title="Cambiar credenciales"
+                                        onClick={() => setFsManual(true)}
                                         disabled={fsBusy}
                                     >
                                         ↻

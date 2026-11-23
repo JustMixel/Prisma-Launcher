@@ -1,4 +1,4 @@
-// Cliente S3 compatible con Yeap Cloud (endpoint https://slc1.s3.yeapcloud.com, región slc1).
+// Cliente S3 genérico (Tigris: https://t3.storage.dev, región "auto").
 // Firma AWS Signature V4 usando WebCrypto (HMAC-SHA256), sin dependencias externas.
 // Los Access/Secret Key NUNCA se escriben en logs ni viajan por el frontend más allá
 // de cada petición firmada; se cargan desde el almacén cifrado de Tauri.
@@ -73,13 +73,13 @@ function timestampNow()
  *
  * @param {object} options
  * @param {string} options.method      HTTP method (GET, PUT, POST, DELETE, HEAD)
- * @param {string} options.endpoint    https://slc1.s3.yeapcloud.com
- * @param {string} options.bucket      modsforme
+ * @param {string} options.endpoint    https://t3.storage.dev
+ * @param {string} options.bucket      prisma-mods
  * @param {string} [options.key]       clave del objeto (sin bucket)
  * @param {Record<string,string>} [options.query]
  * @param {Record<string,string>} [options.headers]  cabeceras extra (content-type, etc.)
  * @param {Uint8Array|string|null} [options.body]
- * @param {string} options.region      slc1
+ * @param {string} options.region      auto
  * @param {string} options.accessKeyId
  * @param {string} options.secretAccessKey
  */
@@ -236,7 +236,42 @@ export async function putObject(config, key, bytes, contentType = "application/o
 
 export function objectKeyToUrl(config, key)
 {
+    // Los buckets públicos de Tigris se sirven desde dominios propios, no desde
+    // el endpoint autenticado. Si el proveedor define publicBase, lo usamos.
+    if (config.publicBase) {
+        return `${config.publicBase.replace(/\/+$/, "")}/${encodeUri(key, false)}`;
+    }
     return `${config.endpoint.replace(/\/+$/, "")}/${config.bucket}/${encodeUri(key)}`;
+}
+
+/** Suma el tamaño de todos los objetos del bucket usando ListObjectsV2. */
+export async function getBucketUsage(config)
+{
+    let continuationToken = "";
+    let bytes = 0;
+    let objects = 0;
+
+    do {
+        const query = { "list-type": "2", "max-keys": "1000" };
+        if (continuationToken) {
+            query["continuation-token"] = continuationToken;
+        }
+        const response = await s3Fetch(config, { method: "GET", query });
+        const xml = await response.text();
+
+        for (const match of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
+            bytes += Number(parseTag(match[1], "Size") || 0);
+            objects += 1;
+        }
+
+        const truncated = parseTag(xml, "IsTruncated") === "true";
+        continuationToken = truncated ? parseTag(xml, "NextContinuationToken") || "" : "";
+        if (truncated && !continuationToken) {
+            break;
+        }
+    } while (continuationToken);
+
+    return { bytes, objects };
 }
 
 // ---------- Multipart (archivos grandes) ----------

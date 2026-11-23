@@ -1,30 +1,13 @@
-// Storage Manager: orquesta el alta de la cuenta de fileServer y la subida de paquetes.
+// Storage Manager: credenciales de Tigris y subida de paquetes del mod.
 //
-// Flujo completo (Fase 3):
-//   Mail.tm (buzón) → Yeap /auth/register → correo de verificación → /auth/verify-email
-//   → /auth/login → bucket "modsforme" → access key → credenciales cifradas en Tauri
-//   → subida del .zip/.rar por S3 (SigV4) → URL pública para el mod.json
+// Tigris es S3-compatible (endpoint https://t3.storage.dev, región "auto").
+// La cuenta se crea fuera del launcher (requiere MFA y, para buckets públicos,
+// verificación de método de pago). Acá sólo guardamos las access keys en
+// Stronghold y subimos el .zip/.rar con SigV4.
 //
-// Autorización del uso de Mail.tm con Yeap Cloud: prompt_requests/note.md (Igor Gadovich).
+// Límite operativo: 4.5 GB de los 5 GB gratuitos del plan free.
 
 import { invoke } from "@tauri-apps/api/core";
-import {
-    createMailbox,
-    getToken,
-    waitForVerificationMessage
-} from "./mailtm.js";
-import {
-    registerAccount,
-    verifyEmail,
-    login,
-    listBuckets,
-    createBucket,
-    listRegions,
-    listAccessKeys,
-    createAccessKey,
-    getS3Overview,
-    extractVerifyToken
-} from "./yeapcloud.js";
 import {
     getLocalFileSize,
     readLocalChunk,
@@ -34,21 +17,26 @@ import {
     uploadPart,
     completeMultipartUpload,
     abortMultipartUpload,
-    objectKeyToUrl
+    objectKeyToUrl,
+    getBucketUsage
 } from "./s3.js";
 
 const SECRET_KEY = "fileserver";
-const BUCKET_NAME = "modsforme";
-const PREFERRED_REGION = "slc1";
+const PROVIDER = "tigris";
+const ENDPOINT = "https://t3.storage.dev";
+const REGION = "auto";
+const DEFAULT_BUCKET = "prisma-mods";
+const PUBLIC_DOMAIN = "t3.tigrisbucket.io";
 const PART_SIZE = 8 * 1024 * 1024; // 8 MiB
 const SINGLE_PUT_LIMIT = PART_SIZE;
-// Límite operativo del bucket (de 10 GB): no subir más de esto.
-const OPERATIONAL_LIMIT = 9.5 * 1024 * 1024 * 1024;
+const OPERATIONAL_LIMIT = 4.5 * 1024 * 1024 * 1024; // 4.5 GB
 
 const DEFAULT_CONFIG = {
-    endpoint: "https://slc1.s3.yeapcloud.com",
-    region: PREFERRED_REGION,
-    bucket: BUCKET_NAME
+    provider: PROVIDER,
+    endpoint: ENDPOINT,
+    region: REGION,
+    bucket: DEFAULT_BUCKET,
+    publicBase: `https://${DEFAULT_BUCKET}.${PUBLIC_DOMAIN}`
 };
 
 // ---------- Almacenamiento cifrado de credenciales ----------
@@ -73,30 +61,36 @@ export async function clearCredentials()
     await invoke("delete_secret", { key: SECRET_KEY });
 }
 
-// Configuración mínima para hablar con S3 (no requiere cuenta nueva)
+function sanitizeBucket(value)
+{
+    const cleaned = String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-") // Tigris no admite puntos en buckets públicos
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 63)
+        .replace(/-+$/g, "");
+    return cleaned || DEFAULT_BUCKET;
+}
+
+function publicBaseFor(bucket)
+{
+    return `https://${bucket}.${PUBLIC_DOMAIN}`;
+}
+
+/** Configura el cliente S3. Sólo el bucket y las keys vienen del cofre. */
 export function storageConfig(credentials = null)
 {
+    const bucket = sanitizeBucket(credentials?.bucket);
     return {
         ...DEFAULT_CONFIG,
-        ...(credentials || {}),
+        bucket,
+        publicBase: credentials?.publicBase || publicBaseFor(bucket),
         accessKeyId: credentials?.accessKeyId || "",
         secretAccessKey: credentials?.secretAccessKey || ""
     };
 }
 
-// ---------- Altas y consultas de la cuenta ----------
-
-function randomPassword()
-{
-    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-    const bytes = new Uint8Array(24);
-    crypto.getRandomValues(bytes);
-    let out = "Px";
-    for (const byte of bytes) {
-        out += alphabet[byte % alphabet.length];
-    }
-    return `${out}-7!`;
-}
+// ---------- Conexión manual (Tigris no permite alta automática) ----------
 
 function fail(message, step)
 {
@@ -106,211 +100,78 @@ function fail(message, step)
 }
 
 /**
- * Da de alta la cuenta completa en Yeap Cloud con temp-mail de Mail.tm.
- * onStep(texto) recibe el avance de cada etapa para mostrarlo en la UI.
+ * Guarda las access keys creadas en el console de Tigris.
+ * Access Key ID:   tid_...
+ * Secret Key:      tsec_...
  */
-export async function provisionAccount({ onStep = () => {} } = {})
+export async function saveManualCredentials({ accessKeyId, secretAccessKey, bucket })
 {
-    // 1. Buzón temporal
-    onStep("Creando buzón temporal en Mail.tm...");
-    const mailbox = await createMailbox("prisma");
-    const mailToken = await getToken(mailbox);
+    const id = String(accessKeyId || "").trim();
+    const secret = String(secretAccessKey || "").trim();
+    const safeBucket = sanitizeBucket(bucket);
 
-    // 2. Registro en Yeap Cloud
-    onStep("Creando la cuenta en Yeap Cloud...");
-    const yeapPassword = randomPassword();
-    let registration;
-    try {
-        // El formulario de registro del console pide username, email y password.
-        // Usamos el local-part del buzón como username (sin caracteres raros).
-        const username = String(mailbox.address || "").split("@")[0].replace(/[^A-Za-z0-9_.-]/g, "") || "prismaUser";
-        registration = await registerAccount({ email: mailbox.address, password: yeapPassword, username });
-    } catch (error) {
-        if (/captcha|required|verify|human/i.test(String(error.message))) {
-            fail(
-                `Yeap pidió verificación humana en el registro (${error.message}). ` +
-                "Completá esa verificación una vez en https://console.yeap.cloud/register y reintentá.",
-                "registro"
-            );
-        }
-        fail(`No se pudo registrar en Yeap Cloud: ${error.message}`, "registro");
+    if (!id || !secret) {
+        fail("Faltan la Access Key o la Secret Key.", "credenciales");
+    }
+    if (!id.startsWith("tid_") || !secret.startsWith("tsec_")) {
+        fail(
+            "Las claves parecen incorrectas: en Tigris la Access Key empieza con «tid_» " +
+            "y la Secret Key con «tsec_». Copialas desde Console → Access keys.",
+            "credenciales"
+        );
     }
 
-    // 3. Correo de verificación
-    if (registration.verificationSent) {
-        onStep("Esperando el correo de verificación...");
-        const message = await waitForVerificationMessage(mailToken);
-        const link = requireVerificationLink(message);
-        const verifyToken = extractVerifyToken(link);
-        if (!verifyToken) {
-            fail("El correo de verificación no traía un token reconocible.", "verificacion");
-        }
-
-        onStep("Confirmando el correo...");
-        try {
-            await verifyEmail(verifyToken);
-        } catch (error) {
-            if (!/already|expir|used/i.test(String(error.message))) {
-                fallBackVerify(error);
-            }
-        }
-    }
-
-    // 4. Login
-    onStep("Iniciando sesión en Yeap Cloud...");
-    let session;
-    try {
-        session = await login({ username: mailbox.address, password: yeapPassword });
-    } catch (error) {
-        if (error.requires2fa) {
-            fail("La cuenta pidió 2FA; creala/manualizá una vez desde el console y reintentá.", "login");
-        }
-        fail(`No se pudo iniciar sesión en Yeap Cloud: ${error.message}`, "login");
-    }
-
-    // 5. Bucket
-    onStep("Preparando el bucket de almacenamiento...");
-    const token = session.token;
-    const buckets = await listBuckets(token);
-    let bucket = buckets.find((entry) => String(entry.name || entry.bucket || "").toLowerCase() === BUCKET_NAME);
-
-    if (!bucket) {
-        const regions = await listRegions(token);
-        const preferred = regions.find((entry) => String(entry.name || entry.id || entry.region || "") === PREFERRED_REGION)
-            || regions[0];
-        const regionId = preferred
-            ? String(preferred.id || preferred.name || preferred.region || PREFERRED_REGION)
-            : PREFERRED_REGION;
-
-        try {
-            bucket = await createBucket(token, { regionId, name: BUCKET_NAME });
-        } catch (error) {
-            if (!/exist|already|409/i.test(String(error.message))) {
-                fail(`No se pudo crear el bucket "${BUCKET_NAME}": ${error.message}`, "bucket");
-            }
-            bucket = (await listBuckets(token)).find(
-                (entry) => String(entry.name || entry.bucket || "").toLowerCase() === BUCKET_NAME
-            );
-        }
-    }
-
-    // 6. Access key (el secreto suele mostrarse solo una vez: lo capturamos acá)
-    onStep("Generando credenciales de acceso...");
-    const keys = await listAccessKeys(token);
-    let accessKey = keys.find((entry) => /prisma/i.test(String(entry.name || entry.id || "")));
-    let secretAccessKey = "";
-    let manualKeyNeeded = false;
-
-    if (!accessKey) {
-        const created = await createAccessKey(token, { name: "prisma-launcher", permission: "readwrite" });
-        accessKey = created;
-        secretAccessKey =
-            created?.secret_access_key ||
-            created?.secretKey ||
-            created?.secret ||
-            "";
-        if (!secretAccessKey) {
-            manualKeyNeeded = true;
-        }
-    } else {
-        manualKeyNeeded = true;
-    }
-
+    const previous = (await loadCredentials()) || {};
+    const sameBucket = previous.bucket === safeBucket;
     const credentials = {
         ...DEFAULT_CONFIG,
-        accessKeyId: accessKey ? createdKeyId(accessKey) : "",
-        secretAccessKey,
-        yeapToken: token,
-        mailbox: mailbox.address,
-        manualKeyNeeded,
-        createdAt: new Date().toISOString()
+        bucket: safeBucket,
+        publicBase: publicBaseFor(safeBucket),
+        accessKeyId: id,
+        secretAccessKey: secret,
+        usedBytes: sameBucket ? Number(previous.usedBytes || 0) : 0,
+        objectCount: sameBucket ? Number(previous.objectCount || 0) : 0,
+        createdAt: previous.createdAt || new Date().toISOString()
     };
 
-    onStep("Guardando credenciales cifradas...");
-    await saveCredentials(credentials);
-
-    if (manualKeyNeeded) {
-        const error = new Error(
-            accessKey
-                ? `Ya existe la access key "${accessKey.name || accessKey.id}". Copiá su secreto desde el console (Object Storage → Access keys) y pegalo para terminar.`
-                : "Yeap creó la access key pero no devolvió el secreto. Copialo desde el console y pegalo para terminar."
-        );
-        error.step = "access-key";
-        error.manualKey = true;
-        error.credentials = credentials;
-        throw error;
-    }
-
-    onStep("Cuenta de fileServer lista.");
-    return credentials;
-}
-
-/** Guarda a mano las credenciales S3 copiadas desde el console de Yeap. */
-export async function saveManualCredentials({ accessKeyId, secretAccessKey })
-{
-    const current = (await loadCredentials()) || { ...DEFAULT_CONFIG, mailbox: null };
-    const credentials = {
-        ...current,
-        accessKeyId: String(accessKeyId || "").trim(),
-        secretAccessKey: String(secretAccessKey || "").trim(),
-        manualKeyNeeded: false,
-        createdAt: current.createdAt || new Date().toISOString()
-    };
-    if (!credentials.accessKeyId || !credentials.secretAccessKey) {
-        throw new Error("Faltan la Access Key o la Secret Key.");
-    }
     await saveCredentials(credentials);
     return credentials;
-}
-
-function createdKeyId(accessKey)
-{
-    return String(
-        accessKey.access_key_id ||
-        accessKey.accessKeyId ||
-        accessKey.id ||
-        accessKey.key ||
-        ""
-    );
-}
-
-function requireVerificationLink(message)
-{
-    const content = [message.html, message.text].flat().filter(Boolean).join("\n");
-    const urls = content.match(/https?:\/\/[^\s"'<>\\)]+/g) || [];
-    const link = urls.find((url) => /yeap\.cloud/i.test(url) && /verif/i.test(url));
-    if (!link) {
-        fail("No llegó el correo de verificación de Yeap Cloud.", "verificacion");
-    }
-    return link.replace(/&amp;/g, "&");
-}
-
-function fallBackVerify(error)
-{
-    fail(`No se pudo confirmar el correo: ${error.message}`, "verificacion");
 }
 
 // ---------- Espacio y subida ----------
 
-// Consulta el uso real del bucket en el console (best effort: si falla, se usa
-// el contador local y el corte duro de 9.5 GB).
+/** Consulta el uso real del bucket. Si falla, devuelve el último valor local. */
+export async function checkStorageUsage()
+{
+    const credentials = await loadCredentials();
+    if (!credentials?.accessKeyId || !credentials?.secretAccessKey) {
+        return null;
+    }
+
+    const config = storageConfig(credentials);
+    try {
+        const usage = await getBucketUsage(config);
+        credentials.usedBytes = usage.bytes;
+        credentials.objectCount = usage.objects;
+        await saveCredentials(credentials);
+        return { ...usage, limit: OPERATIONAL_LIMIT };
+    } catch (error) {
+        return {
+            bytes: Number(credentials.usedBytes || 0),
+            objects: Number(credentials.objectCount || 0),
+            limit: OPERATIONAL_LIMIT,
+            error: error.message
+        };
+    }
+}
+
 async function fetchUsedBytes(credentials)
 {
-    if (!credentials.yeapToken) {
-        return Number(credentials.usedBytes || 0);
-    }
     try {
-        const data = await getS3Overview(credentials.yeapToken);
-        if (!data) {
-            return Number(credentials.usedBytes || 0);
-        }
-        const value =
-            data?.bytes ??
-            data?.data?.bytes ??
-            data?.used ??
-            data?.data?.used ??
-            null;
-        return value === null ? Number(credentials.usedBytes || 0) : Number(value);
+        const usage = await getBucketUsage(storageConfig(credentials));
+        credentials.usedBytes = usage.bytes;
+        credentials.objectCount = usage.objects;
+        return usage.bytes;
     } catch {
         return Number(credentials.usedBytes || 0);
     }
@@ -322,7 +183,7 @@ async function ensureSpace(credentials, bytes)
     const projected = used + bytes;
     if (projected > OPERATIONAL_LIMIT) {
         fail(
-            `El bucket está en el límite operativo (9.5 GB de 10 GB). ` +
+            `El bucket está en el límite operativo (4.5 GB de 5 GB). ` +
             `Esta subida lo llevaría a ${(projected / (1024 ** 3)).toFixed(2)} GB.`,
             "espacio"
         );
@@ -330,7 +191,7 @@ async function ensureSpace(credentials, bytes)
 }
 
 /**
- * Sube un archivo local al bucket y devuelve la URL pública.
+ * Sube un archivo local al bucket y devuelve su URL pública.
  *
  * @param {string} localPath ruta del .zip/.rar
  * @param {object} options
@@ -348,7 +209,7 @@ export async function uploadPackage(localPath, {
 {
     const credentials = await loadCredentials();
     if (!credentials?.accessKeyId || !credentials?.secretAccessKey) {
-        fail("No hay credenciales de fileServer. Creá la cuenta primero.", "credenciales");
+        fail("No hay credenciales de Tigris. Pegá las access keys del console.", "credenciales");
     }
 
     const config = storageConfig(credentials);
@@ -402,12 +263,13 @@ export async function uploadPackage(localPath, {
     }
 
     credentials.usedBytes = Number(credentials.usedBytes || 0) + total;
+    credentials.objectCount = Number(credentials.objectCount || 0) + 1;
     await saveCredentials(credentials);
     onStep(`Paquete subido: ${url}`);
     return url;
 }
 
-/** Verifica que una URL del bucket responda (para confirmar lectura pública). */
+/** Verifica que una URL pública responda (para confirmar lectura pública). */
 export async function verifyPublicUrl(url)
 {
     try {

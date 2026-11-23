@@ -178,8 +178,10 @@ Store, Library, Downloads, Configuration.
 6. Videos/Reviews en ModView → requiere **modelado de datos** previo (ver Decisiones Registradas).
 7. [x] Limpiar CSS huérfano: eliminados `.releasedate` (Card) y `.filter-disabled` (Store); `.studio`, `.stats`, `.stat` sí están en uso.
 
-## File Server (Storage Manager: Mail.tm + Yeap Cloud)
-Sistema para que la PCN suba los `.zip`/`.rar` de los mods (y eventualmente assets) a un fileServer propio. **Decisión del usuario**: no S3 propio genérico, sino **cuentas de Yeap Cloud creadas con temp-mail de Mail.tm**, subiendo al bucket **`modsforme`**.
+## File Server (Storage Manager: Tigris)
+Sistema para que la PCN suba los `.zip`/`.rar` de los mods (y eventualmente assets) a un fileServer propio. **Decisión actual del usuario (23/11)**: migrar de Yeap Cloud a **Tigris** (S3-compatible), con bucket público **`prisma-mods`** y **límite operativo de 4.5 GB de 5 GB**. Las access keys se pegan en la PCN y se guardan en **Tauri Stronghold**; no se crea cuenta ni se sube nada con Mail.tm.
+
+> Historical: el diseño original usaba Mail.tm + Yeap Cloud (`modsforme`, 9.5 GB de 10 GB). La API de Yeap sigue en 502, así que ese flujo quedó como legado (`mailtm.js` / `yeapcloud.js` ya no se importan desde `storageManager.js`).
 
 - **Autorización**: carta oficial de **Igor Gadovich** (Senior Cloud Engineer de Yeap Cloud) en `prompt_requests/note.md` + `yeap_cloud_igor_note.webp` autorizando el uso de Mail.tm para registro/verificación en su plataforma. La carpeta `prompt_requests/` está en `.gitignore` (commit `cb8449c`, notas locales, no versionadas). Nota: me equivoqué al citarla al principio — son **3 condiciones** (uso técnico/experimental, sin datos confidenciales, responsabilidad del colaborador), no 5.
 - **Límites asumidos**: se automatiza el flujo **legítimo** de verificación (correo → link oficial → `verify-email`); **no** se automatiza salto de CAPTCHA/checks anti-bot — si el server pide `captcha_required`, se hace backoff y se avisa.
@@ -192,6 +194,9 @@ Sistema para que la PCN suba los `.zip`/`.rar` de los mods (y eventualmente asse
 - **Fase 4 — subida S3 (hecha, `c5ac56a`)**: `src/utils/fileserver/s3.js` (firma SigV4 con WebCrypto, PUT simple + multipart), `src/utils/fileserver/storageManager.js` (orquestador Mail.tm → Yeap → bucket → access key → upload) e integración en la PCN (`Creator.jsx` / `Creator.module.css`) con campos para pegar la Secret Key si Yeap no la devuelve.
 - **Fase 5 — regresión SigV4 (hecha, `cd810c1`)**: `tests/sigv4.test.mjs` con los vectores oficiales de `aws4`; `npm test` pasa. Corrección real: la firma debe usar el valor final de `x-amz-content-sha256` cuando el llamador lo sobrescribe.
 - **Fase 6 — auth alineada al console (hecha, `b6efffc`)**: `registerAccount()` envía `username`, `login()` usa `cfkey: null` por defecto, `X-Device-Id` es una huella SHA-256 local guardada en `yc_did` y `request()` detecta `success:false`/`captcha_required` (sin automatizar CAPTCHA).
+- **Fase 7 — migración a Tigris (en curso)**: `storageManager.js` ya no depende de Mail.tm/Yeap. Config fija: endpoint `https://t3.storage.dev`, región `auto`, bucket `prisma-mods` (sin puntos), URL pública `https://<bucket>.t3.tigrisbucket.io/<clave>`. `saveManualCredentials()` valida prefijos `tid_` / `tsec_`. `s3.js` acepta `publicBase` para la URL pública y agregó `getBucketUsage()` (ListObjectsV2 paginado) para mostrar el espacio real y frenar subidas por encima de 4.5 GB. La PCN muestra pasos de alta, campos de bucket/keys, uso actual y botón «Actualizar uso».
+  - ⚠️ Tigris exige MFA al crear cuenta y, para **buckets públicos**, verificación de método de pago (organizaciones creadas después del 18/05/2026). El free tier son 5 GB/mes + 10k Class A + 100k Class B requests y egress gratis; no hay cargo dentro del límite.
+  - ⚠️ MediaFire fue evaluado y descartado: la app de ejemplo de su API (`application_id=41629`) está deshabilitada (`error 145`) y el portal de Developers no aparece en cuentas nuevas, así que no hay forma confiable de subir por API.
 - **Decisión del usuario**: prueba en vivo = **sí, completa**; credenciales del fileServer = **Tauri Stronghold** (implementado en Fase 3).
 
 ## Pendientes globales (fuera del Store)
