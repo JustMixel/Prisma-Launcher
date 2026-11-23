@@ -6,12 +6,23 @@ import testCrop from "../assets/modRender.png";
 import CustomFileDialog, { IMAGE_FILTERS } from "./CustomFileDialog.jsx";
 import { CATEGORIES } from "./AddLocalMod.jsx";
 import { clearSession, getSession, saveSession } from "../utils/session.js";
+import {
+    loadCredentials,
+    provisionAccount,
+    saveManualCredentials,
+    uploadPackage
+} from "../utils/fileserver/storageManager.js";
 import styles from "./Creator.module.css";
 
 const API = "http://localhost:3000/api";
 
 const AUDIO_FILTERS = [
     { label: "Audio (*.mp3, *.ogg, *.wav)", extensions: ["mp3", "ogg", "wav"] },
+    { label: "Todos los archivos (*.*)", extensions: [] }
+];
+
+const PACKAGE_FILTERS = [
+    { label: "Paquetes de mod (*.zip, *.rar, *.7z)", extensions: ["zip", "rar", "7z"] },
     { label: "Todos los archivos (*.*)", extensions: [] }
 ];
 
@@ -167,6 +178,14 @@ function Creator({ onNavigate })
     const [accountUser, setAccountUser] = useState("");
     const [accountPass, setAccountPass] = useState("");
     const [accountBusy, setAccountBusy] = useState(false);
+    const [packageDialog, setPackageDialog] = useState(false);
+    const [fsBusy, setFsBusy] = useState(false);
+    const [fsStep, setFsStep] = useState("");
+    const [fsPercent, setFsPercent] = useState(0);
+    const [fsCreds, setFsCreds] = useState(null);
+    const [fsManual, setFsManual] = useState(false);
+    const [manualKeyId, setManualKeyId] = useState("");
+    const [manualKeySecret, setManualKeySecret] = useState("");
 
     useEffect(() => {
         if (!isDeveloper) {
@@ -203,6 +222,98 @@ function Creator({ onNavigate })
 
     function reload() {
         setReloadKey((key) => key + 1);
+    }
+
+    // File Server: comprobar si ya hay credenciales guardadas al abrir el formulario
+    useEffect(() => {
+        if (view !== "form") {
+            return;
+        }
+        let cancelled = false;
+        loadCredentials().then((credentials) => {
+            if (!cancelled) {
+                setFsCreds(credentials);
+                setFsManual(Boolean(credentials?.manualKeyNeeded));
+            }
+        });
+        return () => { cancelled = true; };
+    }, [view]);
+
+    function fsFail(message, step) {
+        setFsStep("");
+        setFsPercent(0);
+        setError(message ? `File Server${step ? ` (${step})` : ""}: ${message}` : "");
+    }
+
+    async function handleCreateFileServer() {
+        if (fsBusy) {
+            return;
+        }
+        setFsBusy(true);
+        setError("");
+        setFsPercent(0);
+        try {
+            const credentials = await provisionAccount({ onStep: setFsStep });
+            setFsCreds(credentials);
+            setFsManual(false);
+        } catch (fsError) {
+            if (fsError.manualKey && fsError.credentials) {
+                setFsCreds(fsError.credentials);
+                setFsManual(true);
+                setFsStep("");
+                setError(fsError.message);
+            } else {
+                fsFail(fsError.message, fsError.step);
+            }
+        } finally {
+            setFsBusy(false);
+        }
+    }
+
+    async function handleSaveManualKey(event) {
+        event.preventDefault();
+        if (fsBusy) {
+            return;
+        }
+        setFsBusy(true);
+        setError("");
+        try {
+            const credentials = await saveManualCredentials({
+                accessKeyId: manualKeyId,
+                secretAccessKey: manualKeySecret
+            });
+            setFsCreds(credentials);
+            setFsManual(false);
+            setManualKeyId("");
+            setManualKeySecret("");
+        } catch (fsError) {
+            fsFail(fsError.message, "credenciales");
+        } finally {
+            setFsBusy(false);
+        }
+    }
+
+    async function handleSelectPackage(path) {
+        setPackageDialog(false);
+        if (fsBusy) {
+            return;
+        }
+        setFsBusy(true);
+        setError("");
+        setFsPercent(0);
+        setFsStep("Preparando la subida...");
+        try {
+            const url = await uploadPackage(path, {
+                onStep: setFsStep,
+                onProgress: (percent) => setFsPercent(percent)
+            });
+            setForm((previous) => ({ ...previous, downloadMain: url }));
+            setFsStep("Listo. La URL se copió en «Descarga principal».");
+        } catch (fsError) {
+            fsFail(fsError.message, fsError.step);
+        } finally {
+            setFsBusy(false);
+        }
     }
 
     async function handleLogin(event) {
@@ -1040,6 +1151,100 @@ function Creator({ onNavigate })
                             </p>
                         </div>
 
+                        <span className={styles["group-title"]}>File Server</span>
+
+                        <div className={styles["fileserver-box"]}>
+                            <div className={styles["fileserver-head"]}>
+                                <span className={styles["fileserver-status"]}>
+                                    {fsCreds && fsCreds.accessKeyId && !fsCreds.manualKeyNeeded
+                                        ? "● Conectado a Yeap Cloud"
+                                        : fsCreds
+                                            ? "● Cuenta creada · falta la Secret Key"
+                                            : "● Sin cuenta de fileServer"}
+                                </span>
+                                {!fsCreds && !fsBusy && (
+                                    <button
+                                        type="button"
+                                        className={styles["browse-btn"]}
+                                        onClick={handleCreateFileServer}
+                                    >
+                                        Crear cuenta
+                                    </button>
+                                )}
+                            </div>
+
+                            <p className={styles["field-hint"]}>
+                                Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket <code>modsforme</code> y
+                                usa la URL generada como «Descarga principal».
+                            </p>
+
+                            {fsManual && (
+                                <form className={styles["fileserver-manual"]} onSubmit={handleSaveManualKey}>
+                                    <label className={styles["label"]}>
+                                        Access Key
+                                        <input
+                                            className={styles["input"]}
+                                            value={manualKeyId}
+                                            onChange={(event) => setManualKeyId(event.target.value)}
+                                            placeholder="Access Key del console"
+                                            autoComplete="off"
+                                        />
+                                    </label>
+                                    <label className={styles["label"]}>
+                                        Secret Key
+                                        <input
+                                            className={styles["input"]}
+                                            type="password"
+                                            value={manualKeySecret}
+                                            onChange={(event) => setManualKeySecret(event.target.value)}
+                                            placeholder="Secret Key (solo se muestra una vez)"
+                                            autoComplete="new-password"
+                                        />
+                                    </label>
+                                    <button
+                                        type="submit"
+                                        className={styles["browse-btn"]}
+                                        disabled={fsBusy || !manualKeyId.trim() || !manualKeySecret.trim()}
+                                    >
+                                        Guardar credenciales
+                                    </button>
+                                </form>
+                            )}
+
+                            <div className={styles["fileserver-actions"]}>
+                                <button
+                                    type="button"
+                                    className={styles["browse-btn"]}
+                                    disabled={fsBusy || !fsCreds || Boolean(fsCreds.manualKeyNeeded)}
+                                    onClick={() => setPackageDialog(true)}
+                                >
+                                    {fsBusy ? "Trabajando…" : "Subir paquete"}
+                                </button>
+                                {fsCreds && (
+                                    <button
+                                        type="button"
+                                        className={styles["clear-btn"]}
+                                        title="Volver a crear la cuenta"
+                                        onClick={handleCreateFileServer}
+                                        disabled={fsBusy}
+                                    >
+                                        ↻
+                                    </button>
+                                )}
+                            </div>
+
+                            {fsStep && <p className={styles["field-hint"]}>{fsStep}</p>}
+                            {fsBusy && fsPercent > 0 && (
+                                <div className={styles["fileserver-progress"]}>
+                                    <div
+                                        className={styles["fileserver-progress-bar"]}
+                                        style={{ width: `${fsPercent}%` }}
+                                    />
+                                    <span>{fsPercent}%</span>
+                                </div>
+                            )}
+                        </div>
+
                         <span className={styles["group-title"]}>Assets</span>
 
                         {ASSET_FIELDS.map((asset) => (
@@ -1189,6 +1394,15 @@ function Creator({ onNavigate })
                         filters={assetDialog === "hoverMusic" ? AUDIO_FILTERS : IMAGE_FILTERS}
                         onSelect={handleSelectAsset}
                         onCancel={() => setAssetDialog(null)}
+                    />
+                )}
+
+                {packageDialog && (
+                    <CustomFileDialog
+                        title="Selecciona el paquete del mod (.zip / .rar)"
+                        filters={PACKAGE_FILTERS}
+                        onSelect={handleSelectPackage}
+                        onCancel={() => setPackageDialog(false)}
                     />
                 )}
 

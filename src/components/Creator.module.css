@@ -1108,3 +1108,69 @@
     opacity: 0.55;
     cursor: default;
 }
+
+/* ---------- File Server (subida de paquetes a Yeap Cloud) ---------- */
+
+.fileserver-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.fileserver-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fileserver-status {
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.fileserver-manual {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.16);
+}
+
+.fileserver-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fileserver-progress {
+    position: relative;
+    height: 22px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.fileserver-progress-bar {
+    height: 100%;
+    background-color: var(--accent, #d9cd00);
+    transition: width 0.2s ease;
+}
+
+.fileserver-progress span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--c-gris-1, #080807);
+}

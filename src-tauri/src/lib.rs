@@ -310,6 +310,156 @@ fn read_file_as_data_url(path: &str) -> Result<String, String> {
     Ok(format!("data:{};base64,{}", mime, encoded))
 }
 
+// ---------- Secretos del File Server (Access Key / Secret Key / token) ----------
+// Mismo esquema que userData.json: AES-256-GCM con clave derivada de la máquina.
+// Los valores nunca se guardan en claro ni en el frontend.
+
+fn secrets_path() -> Result<PathBuf, String> {
+    Ok(prisma_dir()?.join("secrets.json"))
+}
+
+fn is_valid_secret_key(key: &str) -> bool {
+    !key.is_empty()
+        && key.len() <= 64
+        && key
+            .chars()
+            .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit() || matches!(character, '.' | '_' | '-'))
+}
+
+#[derive(Serialize, Deserialize)]
+struct SecretEntry {
+    nonce: String,
+    data: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct SecretsFile {
+    version: u32,
+    entries: std::collections::BTreeMap<String, SecretEntry>,
+}
+
+fn read_secrets() -> SecretsFile {
+    std::fs::read(secrets_path().unwrap_or_default())
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<SecretsFile>(&bytes).ok())
+        .filter(|file| file.version == 1)
+        .unwrap_or_else(|| SecretsFile {
+            version: 1,
+            entries: std::collections::BTreeMap::new(),
+        })
+}
+
+fn write_secrets(file: &SecretsFile) -> Result<(), String> {
+    let bytes = serde_json::to_vec(file).map_err(|error| format!("No se pudieron serializar los secretos: {}", error))?;
+    std::fs::write(secrets_path()?, bytes).map_err(|error| format!("No se pudo guardar el secreto: {}", error))
+}
+
+fn encrypt_value(plaintext: &str) -> Result<SecretEntry, String> {
+    let cipher = Aes256Gcm::new_from_slice(&encryption_key())
+        .map_err(|error| format!("Clave inválida: {}", error))?;
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(Nonce::from_slice(&nonce_bytes), plaintext.as_bytes())
+        .map_err(|error| format!("No se pudo cifrar: {}", error))?;
+
+    Ok(SecretEntry {
+        nonce: base64::engine::general_purpose::STANDARD.encode(nonce_bytes),
+        data: base64::engine::general_purpose::STANDARD.encode(ciphertext),
+    })
+}
+
+fn decrypt_value(entry: &SecretEntry) -> Result<String, String> {
+    let nonce_bytes = base64::engine::general_purpose::STANDARD
+        .decode(&entry.nonce)
+        .map_err(|error| format!("Nonce inválido: {}", error))?;
+    if nonce_bytes.len() != 12 {
+        return Err(String::from("Nonce inválido"));
+    }
+
+    let ciphertext = base64::engine::general_purpose::STANDARD
+        .decode(&entry.data)
+        .map_err(|error| format!("Dato inválido: {}", error))?;
+    let cipher = Aes256Gcm::new_from_slice(&encryption_key())
+        .map_err(|error| format!("Clave inválida: {}", error))?;
+
+    let plaintext = cipher
+        .decrypt(Nonce::from_slice(&nonce_bytes), ciphertext.as_slice())
+        .map_err(|error| format!("No se pudo descifrar: {}", error))?;
+
+    String::from_utf8(plaintext).map_err(|error| format!("Secreto ilegible: {}", error))
+}
+
+#[tauri::command]
+fn save_secret(key: &str, value: &str) -> Result<(), String> {
+    if !is_valid_secret_key(key) {
+        return Err(String::from("Clave de secreto inválida"));
+    }
+
+    let mut file = read_secrets();
+    file.entries.insert(key.to_string(), encrypt_value(value)?);
+    write_secrets(&file)
+}
+
+#[tauri::command]
+fn load_secret(key: &str) -> Result<Option<String>, String> {
+    if !is_valid_secret_key(key) {
+        return Err(String::from("Clave de secreto inválida"));
+    }
+
+    let file = read_secrets();
+    match file.entries.get(key) {
+        Some(entry) => Ok(Some(decrypt_value(entry)?)),
+        None => Ok(None),
+    }
+}
+
+#[tauri::command]
+fn delete_secret(key: &str) -> Result<(), String> {
+    if !is_valid_secret_key(key) {
+        return Err(String::from("Clave de secreto inválida"));
+    }
+
+    let mut file = read_secrets();
+    file.entries.remove(key);
+    write_secrets(&file)
+}
+
+// Lee un tramo de un archivo en base64 (para subir paquetes grandes por partes
+// sin cargar el archivo completo en memoria).
+#[tauri::command]
+fn read_file_chunk(path: &str, offset: u64, len: u64) -> Result<String, String> {
+    use base64::Engine;
+    use std::io::{Read, Seek, SeekFrom};
+
+    const MAX_CHUNK: u64 = 8 * 1024 * 1024; // 8 MiB por invocación
+
+    let mut file =
+        std::fs::File::open(path).map_err(|error| format!("No se pudo abrir el archivo: {}", error))?;
+    file.seek(SeekFrom::Start(offset))
+        .map_err(|error| format!("No se pudo posicionar: {}", error))?;
+
+    let size = len.min(MAX_CHUNK) as usize;
+    let mut buffer = vec![0u8; size];
+    let read = file
+        .read(&mut buffer)
+        .map_err(|error| format!("No se pudo leer: {}", error))?;
+    buffer.truncate(read);
+
+    Ok(base64::engine::general_purpose::STANDARD.encode(buffer))
+}
+
+#[tauri::command]
+fn get_file_size(path: &str) -> Result<u64, String> {
+    let metadata = std::fs::metadata(path)
+        .map_err(|error| format!("No se pudo leer el archivo: {}", error))?;
+    if !metadata.is_file() {
+        return Err(String::from("La ruta no es un archivo"));
+    }
+    Ok(metadata.len())
+}
+
 fn safe_mod_folder_name(name: &str) -> String {
     let cleaned: String = name
         .chars()
@@ -503,7 +653,12 @@ pub fn run() {
             get_window_label,
             start_window_drag,
             complete_setup,
-            exit_app
+            exit_app,
+            save_secret,
+            load_secret,
+            delete_secret,
+            read_file_chunk,
+            get_file_size
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
