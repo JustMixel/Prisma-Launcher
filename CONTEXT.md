@@ -178,6 +178,19 @@ Store, Library, Downloads, Configuration.
 6. Videos/Reviews en ModView → requiere **modelado de datos** previo (ver Decisiones Registradas).
 7. [x] Limpiar CSS huérfano: eliminados `.releasedate` (Card) y `.filter-disabled` (Store); `.studio`, `.stats`, `.stat` sí están en uso.
 
+## File Server (Storage Manager: Mail.tm + Yeap Cloud)
+Sistema para que la PCN suba los `.zip`/`.rar` de los mods (y eventualmente assets) a un fileServer propio. **Decisión del usuario**: no S3 propio genérico, sino **cuentas de Yeap Cloud creadas con temp-mail de Mail.tm**, subiendo al bucket **`modsforme`**.
+
+- **Autorización**: carta oficial de **Igor Gadovich** (Senior Cloud Engineer de Yeap Cloud) en `prompt_requests/note.md` + `yeap_cloud_igor_note.webp` autorizando el uso de Mail.tm para registro/verificación en su plataforma. La carpeta `prompt_requests/` está en `.gitignore` (commit `cb8449c`, notas locales, no versionadas). Nota: me equivoqué al citarla al principio — son **3 condiciones** (uso técnico/experimental, sin datos confidenciales, responsabilidad del colaborador), no 5.
+- **Límites asumidos**: se automatiza el flujo **legítimo** de verificación (correo → link oficial → `verify-email`); **no** se automatiza salto de CAPTCHA/checks anti-bot — si el server pide `captcha_required`, se hace backoff y se avisa.
+- **Fase 1 — investigación (hecha)**:
+  - Mail.tm: `GET /domains` (exige User-Agent, si no 403), `POST /accounts`, `POST /token`, `GET /messages`, `GET /messages/{id}`. 8 QPS por IP; rate-limit intermitente 403 con cuerpo vacío (Caddy) → esperar y reintentar. Dominio activo real: `euploading.com`.
+  - Yeap Cloud: API base **`https://api.yeap.cloud`** (Bearer + header `X-Device-Id`). Auth: `POST /auth/register` (`{email,password}` → `verification_sent`), `POST /auth/verify-email` (`{token}`), `POST /auth/login` (`{username,password,cfkey,remember}` → `token`+`refresh_token`; `cfkey` = token de verificación de humanness del console, y hay rate-limit con `captcha_required`), `POST /auth/resend-verification`. S3 admin bajo **`/api/user/s3`**: `GET/POST /buckets` (`{region_id,name}` 3–63 minúsculas/guiones, sin `yc-`), `GET /regions`, `GET/POST /keys` (`read`/`readwrite`/`admin`), `/overview`, `/usage`. Endpoint S3 `https://slc1.s3.yeapcloud.com`, región `slc1`. Extraído del bundle de `console.yeap.cloud` (24 MB).
+  - ⚠️ **Estado de la prueba en vivo**: Mail.tm validado al 100% (buzón creado: `prisma473035@euploading.com`, token y `/messages` OK). La API de Yeap está **caída (502 en todas las rutas)** desde el 23/11 — el registro real queda pendiente de que vuelva.
+- **Fase 2 — código (hecha, `e3352f5`)**: `src/utils/fileserver/mailtm.js` (dominios, buzón, token, mensajes, `extractVerificationLink`, `waitForVerificationMessage` con polling) y `src/utils/fileserver/yeapcloud.js` (`registerAccount`, `verifyEmail`, `login`, S3 buckets/regions/keys/overview, `extractVerifyToken`). HTTP con `fetch` nativo (CSP `null`, ya se usa en Creator/Store).
+- **Fase 3 — pendiente**: orquestador (buzón → registro → verify → login → bucket → access key → subir zip vía S3 SigV4), integración con la PCN al publicar, URL pública en el `mod.json`.
+- **Decisión del usuario (2 preguntas)**: prueba en vivo = **sí, completa**; credenciales del fileServer = **Tauri Stronghold** (cifrado en reposo; implica tocar Rust, pendiente).
+
 ## Pendientes globales (fuera del Store)
 1. Resolver solapamiento texto/imagen de fondo en `.main-content`.
 2. Comandos Tauri restantes: descarga real de archivos y shortcut (registro/lectura/ejecución ya implementados).
