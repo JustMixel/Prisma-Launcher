@@ -15,7 +15,7 @@ function PlayIcon()
 
 function Home()
 {
-    const { library } = useDownloads();
+    const { library, removeFromLibrary } = useDownloads();
     const [installedMods, setInstalledMods] = useState([]);
     const [runningId, setRunningId] = useState(null);
     const [notice, setNotice] = useState("");
@@ -76,6 +76,39 @@ function Home()
         }
     }
 
+    async function handleShortcut(mod)
+    {
+        setError("");
+        setNotice("");
+
+        try {
+            const path = await invoke("create_mod_shortcut", { installedMod: mod });
+            setNotice(`Acceso directo creado: ${path}`);
+        } catch (shortcutError) {
+            setError(String(shortcutError));
+        }
+    }
+
+    async function handleUninstall(mod)
+    {
+        const name = mod.name || "este mod";
+        if (!window.confirm(`¿Desinstalar ${name}? Se borrarán sus archivos locales.`)) {
+            return;
+        }
+
+        setError("");
+        setNotice("");
+
+        try {
+            await invoke("uninstall_mod", { modId: String(mod.id) });
+            removeFromLibrary(mod.id);
+            setInstalledMods((current) => current.filter((entry) => String(entry.id) !== String(mod.id)));
+            setNotice(`${name} se desinstaló.`);
+        } catch (uninstallError) {
+            setError(String(uninstallError));
+        }
+    }
+
     return (
         <div className={styles["home"]}>
             <header className={styles["header"]}>
@@ -93,35 +126,54 @@ function Home()
                         const running = runningId === key;
                         const runnable = Boolean(mod.executablePath || mod.link);
                         return (
-                            <button
-                                key={key}
-                                className={`${styles["icon"]} ${running ? styles["running"] : ""}`}
-                                type="button"
-                                disabled={running}
-                                title={runnable ? `Ejecutar ${mod.name}` : `${mod.name} sin ejecutable`}
-                                onClick={() => handleRun(mod)}
-                            >
-                                <span className={styles["icon-art"]}>
-                                    {mod.cover ? (
-                                        <img src={mod.cover} alt="" />
-                                    ) : (
-                                        <span className={styles["icon-fallback"]}>{(mod.name || "?").slice(0, 1).toUpperCase()}</span>
-                                    )}
-                                    <span className={styles["icon-play"]}>
-                                        <PlayIcon />
+                            <div key={key} className={styles["tile"]}>
+                                <button
+                                    className={`${styles["icon"]} ${running ? styles["running"] : ""}`}
+                                    type="button"
+                                    disabled={running}
+                                    title={runnable ? `Ejecutar ${mod.name}` : `${mod.name} sin ejecutable`}
+                                    onClick={() => handleRun(mod)}
+                                >
+                                    <span className={styles["icon-art"]}>
+                                        {mod.cover ? (
+                                            <img src={mod.cover} alt="" />
+                                        ) : (
+                                            <span className={styles["icon-fallback"]}>{(mod.name || "?").slice(0, 1).toUpperCase()}</span>
+                                        )}
+                                        <span className={styles["icon-play"]}>
+                                            <PlayIcon />
+                                        </span>
                                     </span>
-                                </span>
-                                <span className={styles["icon-label"]}>{mod.name}</span>
-                                <span className={styles["icon-status"]}>
-                                    {running
-                                        ? "Ejecutando…"
-                                        : mod.executablePath
-                                            ? "Listo"
-                                            : mod.link
-                                                ? "Enlace"
-                                                : "Sin ejecutable"}
-                                </span>
-                            </button>
+                                    <span className={styles["icon-label"]}>{mod.name}</span>
+                                    <span className={styles["icon-status"]}>
+                                        {running
+                                            ? "Ejecutando…"
+                                            : mod.executablePath
+                                                ? "Listo"
+                                                : mod.link
+                                                    ? "Enlace"
+                                                    : "Sin ejecutable"}
+                                    </span>
+                                </button>
+                                <div className={styles["tile-actions"]}>
+                                    <button
+                                        type="button"
+                                        className={styles["tile-action"]}
+                                        onClick={() => handleShortcut(mod)}
+                                        title="Crear un acceso directo del mod"
+                                    >
+                                        Atajo
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`${styles["tile-action"]} ${styles["tile-action-danger"]}`}
+                                        onClick={() => handleUninstall(mod)}
+                                        title="Desinstalar el mod y borrar sus archivos locales"
+                                    >
+                                        Quitar
+                                    </button>
+                                </div>
+                            </div>
                         );
                     })}
                 </div>

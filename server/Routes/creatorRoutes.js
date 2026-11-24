@@ -37,6 +37,41 @@ const projects = [
     }
 ];
 
+// Grupos de desarrollo (mock en memoria). Cualquier cuenta puede crear uno.
+const groups = [
+    {
+        id: 'grp-1',
+        name: 'Prisma Studios',
+        handle: 'prisma-studios',
+        ownerId: 1,
+        members: [1, 4],
+        inviteCode: 'GRP-PRISMA01',
+        createdAt: '2026-11-20T12:00:00.000Z'
+    },
+    {
+        id: 'grp-2',
+        name: 'Nebula Works',
+        handle: 'nebula-works',
+        ownerId: 4,
+        members: [4, 2],
+        inviteCode: 'GRP-NEBULA01',
+        createdAt: '2026-11-21T12:00:00.000Z'
+    }
+];
+
+// Invitaciones pendientes (por ahora sólo a grupos de desarrollo).
+const requests = [
+    {
+        id: 'req-1',
+        type: 'group_invite',
+        groupId: 'grp-2',
+        userId: 1,
+        invitedBy: 4,
+        status: 'pending',
+        createdAt: '2026-11-21T12:00:00.000Z'
+    }
+];
+
 const VISIBILITIES = ['draft', 'hidden', 'published'];
 
 // Lista curada de idiomas para el form (el usuario solo elige, no escribe)
@@ -60,6 +95,87 @@ function publicUser(user) {
 function creatorName(project) {
     const creator = users.find((user) => user.id === project.creatorId);
     return creator ? creator.displayName : null;
+}
+
+function findGroup(id) {
+    return groups.find((group) => group.id === id);
+}
+
+function isGroupMember(group, userId) {
+    return Boolean(group) && (group.ownerId === userId || group.members.includes(userId));
+}
+
+function publisherName(project) {
+    if (project.publishAs && project.publishAs !== 'self') {
+        const group = findGroup(project.publishAs);
+        if (group) {
+            return group.name;
+        }
+    }
+    return creatorName(project);
+}
+
+function mapGroup(group) {
+    return {
+        id: group.id,
+        name: group.name,
+        handle: group.handle,
+        inviteCode: group.inviteCode,
+        ownerId: group.ownerId,
+        owner: publicUser(users.find((user) => user.id === group.ownerId) || {}),
+        members: group.members
+            .map((id) => users.find((user) => user.id === id))
+            .filter(Boolean)
+            .map(publicUser),
+        memberCount: group.members.length,
+        createdAt: group.createdAt
+    };
+}
+
+function mapRequest(request) {
+    const group = findGroup(request.groupId);
+    const invitedBy = users.find((user) => user.id === request.invitedBy);
+
+    return {
+        id: request.id,
+        type: request.type,
+        status: request.status,
+        groupId: request.groupId,
+        groupName: group ? group.name : null,
+        invitedBy: invitedBy ? publicUser(invitedBy) : null,
+        memberCount: group ? group.members.length : 0,
+        createdAt: request.createdAt
+    };
+}
+
+function slugify(value) {
+    return String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48);
+}
+
+function uniqueHandle(name) {
+    const base = slugify(name) || 'grupo';
+    let handle = base;
+    let suffix = 2;
+    while (groups.some((group) => group.handle === handle)) {
+        handle = `${base}-${suffix}`;
+        suffix += 1;
+    }
+    return handle;
+}
+
+function generateGroupCode() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let token = '';
+    for (let i = 0; i < 8; i += 1) {
+        token += alphabet[Math.floor(Math.random() * alphabet.length)];
+    }
+    return `GRP-${token}`;
 }
 
 function findProject(id) {
@@ -108,6 +224,8 @@ function mapProject(project) {
         screenshots: normalizeScreenshots(project.screenshots),
         visibility: project.visibility,
         creatorName: creatorName(project),
+        publishAs: project.publishAs || 'self',
+        publisherName: publisherName(project),
         testers: project.testers
             .map((id) => users.find((user) => user.id === id))
             .filter(Boolean)
@@ -319,6 +437,7 @@ router.post('/creator/projects', (req, res) => {
         assets: normalizeAssets(body.assets),
         screenshots: normalizeScreenshots(body.screenshots),
         visibility: 'hidden', // los proyectos siempre nacen ocultos
+        publishAs: 'self',
         testers: [],
         codes: [],
         createdAt: now,
@@ -328,6 +447,16 @@ router.post('/creator/projects', (req, res) => {
     const maxUses = Number(body.generateCodeMaxUses);
     if (Number.isFinite(maxUses) && maxUses >= 1) {
         project.codes.push(generateCode(Math.floor(maxUses)));
+    }
+
+    if (body.publishAs !== undefined && body.publishAs !== null) {
+        if (body.publishAs !== 'self') {
+            const group = findGroup(body.publishAs);
+            if (!group || !isGroupMember(group, user.id)) {
+                return res.status(400).json({ error: 'invalid_publish_as' });
+            }
+            project.publishAs = group.id;
+        }
     }
 
     projects.push(project);
@@ -370,6 +499,17 @@ router.patch('/creator/projects/:id', (req, res) => {
     }
     if (body.assets !== undefined) {
         project.assets = normalizeAssets(body.assets);
+    }
+    if (body.publishAs !== undefined && body.publishAs !== null) {
+        if (body.publishAs === 'self') {
+            project.publishAs = 'self';
+        } else {
+            const group = findGroup(body.publishAs);
+            if (!group || !isGroupMember(group, project.creatorId)) {
+                return res.status(400).json({ error: 'invalid_publish_as' });
+            }
+            project.publishAs = group.id;
+        }
     }
     if (typeof project.name === 'string') {
         project.name = project.name.trim();
@@ -442,6 +582,202 @@ router.post('/creator/projects/:id/testers', (req, res) => {
 
     touch(project);
     res.json({ project: mapProject(project) });
+});
+
+// ---------------------------------------------------------------------------
+// Grupos de desarrollo
+// ---------------------------------------------------------------------------
+
+// GET /api/creator/groups?creator=username — grupos del usuario
+router.get('/creator/groups', (req, res) => {
+    const { creator } = req.query;
+    const user = users.find((entry) => entry.username === creator);
+
+    if (!user) {
+        return res.json([]);
+    }
+
+    res.json(
+        groups
+            .filter((group) => isGroupMember(group, user.id))
+            .map(mapGroup)
+    );
+});
+
+// POST /api/creator/groups — crear grupo (el creador queda como dueño y miembro)
+router.post('/creator/groups', (req, res) => {
+    const body = req.body || {};
+
+    if (typeof body.creator !== 'string' || typeof body.name !== 'string' || !body.name.trim()) {
+        return res.status(400).json({ error: 'missing_fields' });
+    }
+
+    const user = users.find((entry) => entry.username === body.creator.trim());
+    if (!user) {
+        return res.status(401).json({ error: 'unknown_creator' });
+    }
+
+    const name = body.name.trim().slice(0, 80);
+    const group = {
+        id: `grp-${Date.now()}`,
+        name,
+        handle: uniqueHandle(name),
+        ownerId: user.id,
+        members: [user.id],
+        inviteCode: generateGroupCode(),
+        createdAt: new Date().toISOString()
+    };
+
+    groups.push(group);
+    res.status(201).json({ group: mapGroup(group) });
+});
+
+// POST /api/creator/groups/join — unirse con el código de invitación
+router.post('/creator/groups/join', (req, res) => {
+    const { creator, code } = req.body || {};
+
+    if (typeof creator !== 'string' || typeof code !== 'string' || !code.trim()) {
+        return res.status(400).json({ error: 'missing_fields' });
+    }
+
+    const user = users.find((entry) => entry.username === creator.trim());
+    if (!user) {
+        return res.status(401).json({ error: 'unknown_creator' });
+    }
+
+    const normalized = code.trim().toUpperCase();
+    const group = groups.find((entry) => entry.inviteCode === normalized);
+
+    if (!group) {
+        return res.status(404).json({ error: 'invalid_group_code' });
+    }
+
+    if (group.members.includes(user.id)) {
+        return res.status(400).json({ error: 'already_member' });
+    }
+
+    group.members.push(user.id);
+    res.json({ group: mapGroup(group) });
+});
+
+// POST /api/creator/groups/:id/invite — invitar a un usuario (sólo el dueño)
+router.post('/creator/groups/:id/invite', (req, res) => {
+    const group = findGroup(req.params.id);
+    if (!group) {
+        return res.status(404).json({ error: 'group_not_found' });
+    }
+
+    const { creator, userId } = req.body || {};
+    const sender = users.find((entry) => entry.username === creator);
+
+    if (!sender || sender.id !== group.ownerId) {
+        return res.status(403).json({ error: 'forbidden' });
+    }
+
+    const target = users.find((entry) => entry.id === Number(userId));
+    if (!target) {
+        return res.status(404).json({ error: 'user_not_found' });
+    }
+
+    if (group.members.includes(target.id)) {
+        return res.status(400).json({ error: 'already_member' });
+    }
+
+    const existing = requests.find(
+        (entry) => entry.status === 'pending' && entry.groupId === group.id && entry.userId === target.id
+    );
+    if (existing) {
+        return res.status(400).json({ error: 'already_invited' });
+    }
+
+    const request = {
+        id: `req-${Date.now()}`,
+        type: 'group_invite',
+        groupId: group.id,
+        userId: target.id,
+        invitedBy: sender.id,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+
+    requests.push(request);
+    res.status(201).json({ request: mapRequest(request) });
+});
+
+// POST /api/creator/groups/:id/leave — salir del grupo (el dueño no puede)
+router.post('/creator/groups/:id/leave', (req, res) => {
+    const group = findGroup(req.params.id);
+    if (!group) {
+        return res.status(404).json({ error: 'group_not_found' });
+    }
+
+    const user = users.find((entry) => entry.username === (req.body || {}).creator);
+    if (!user || !group.members.includes(user.id)) {
+        return res.status(404).json({ error: 'not_a_member' });
+    }
+
+    if (group.ownerId === user.id) {
+        return res.status(400).json({ error: 'owner_cannot_leave' });
+    }
+
+    group.members = group.members.filter((id) => id !== user.id);
+    res.json({ ok: true });
+});
+
+// ---------------------------------------------------------------------------
+// Requests / invitaciones
+// ---------------------------------------------------------------------------
+
+// GET /api/creator/requests?creator=username — invitaciones pendientes
+router.get('/creator/requests', (req, res) => {
+    const { creator } = req.query;
+    const user = users.find((entry) => entry.username === creator);
+
+    if (!user) {
+        return res.json([]);
+    }
+
+    res.json(
+        requests
+            .filter((entry) => entry.userId === user.id && entry.status === 'pending')
+            .map(mapRequest)
+    );
+});
+
+// POST /api/creator/requests/:id/respond — aceptar o rechazar una invitación
+router.post('/creator/requests/:id/respond', (req, res) => {
+    const request = requests.find((entry) => entry.id === req.params.id);
+    if (!request || request.status !== 'pending') {
+        return res.status(404).json({ error: 'request_not_found' });
+    }
+
+    const { creator, action } = req.body || {};
+    const user = users.find((entry) => entry.username === creator);
+
+    if (!user || user.id !== request.userId) {
+        return res.status(403).json({ error: 'forbidden' });
+    }
+
+    if (action === 'accept') {
+        const group = findGroup(request.groupId);
+        if (!group) {
+            return res.status(404).json({ error: 'group_not_found' });
+        }
+        if (!group.members.includes(user.id)) {
+            group.members.push(user.id);
+        }
+        request.status = 'accepted';
+        requests.splice(requests.indexOf(request), 1);
+        return res.json({ group: mapGroup(group) });
+    }
+
+    if (action === 'decline') {
+        request.status = 'declined';
+        requests.splice(requests.indexOf(request), 1);
+        return res.json({ ok: true });
+    }
+
+    res.status(400).json({ error: 'invalid_action' });
 });
 
 export default router;

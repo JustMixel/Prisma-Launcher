@@ -40,14 +40,6 @@ const ROLE_LABELS = {
 };
 
 // Mock local de invitaciones (flujo real pendiente — ver CONTEXT.md)
-const MOCK_REQUESTS = [
-    {
-        id: "req-1",
-        title: "¡Has sido invitado!",
-        project: 'Proyecto Prisma – “devgroupname/producername”',
-        meta: "Total Conversion · v0.1 · 18 tester(s)"
-    }
-];
 
 const API_ERRORS = {
     missing_fields: "Faltan campos obligatorios.",
@@ -57,7 +49,16 @@ const API_ERRORS = {
     invalid_max_uses: "Cantidad de usos inválida.",
     user_not_found: "Usuario no encontrado.",
     not_activated: "Ese usuario no está activado.",
-    invalid_action: "Acción inválida."
+    invalid_action: "Acción inválida.",
+    group_not_found: "Grupo no encontrado.",
+    invalid_group_code: "Código de grupo inválido.",
+    already_member: "Ese usuario ya pertenece al grupo.",
+    already_invited: "Ya hay una invitación pendiente para ese usuario.",
+    owner_cannot_leave: "El dueño no puede salir del grupo.",
+    not_a_member: "No pertenecés a ese grupo.",
+    forbidden: "No tenés permiso para esta acción.",
+    request_not_found: "La invitación ya no está disponible.",
+    invalid_publish_as: "No podés publicar con ese grupo."
 };
 
 const EMPTY_FORM = {
@@ -78,7 +79,8 @@ const EMPTY_FORM = {
     changelog: "",
     languages: [],
     downloadMain: "",
-    downloadUpdate: ""
+    downloadUpdate: "",
+    publishAs: "self"
 };
 
 const EMPTY_ASSETS = {
@@ -188,6 +190,11 @@ function Creator({ onNavigate })
     const [fsUsage, setFsUsage] = useState(null);
     const [manualKeyId, setManualKeyId] = useState("");
     const [manualKeySecret, setManualKeySecret] = useState("");
+    const [groups, setGroups] = useState([]);
+    const [requests, setRequests] = useState([]);
+    const [groupName, setGroupName] = useState("");
+    const [groupCode, setGroupCode] = useState("");
+    const [inviteDrafts, setInviteDrafts] = useState({});
     const fsConnected = Boolean(
         fsCreds?.provider === "backblaze-b2" &&
         fsCreds?.accessKeyId &&
@@ -204,10 +211,12 @@ function Creator({ onNavigate })
 
         (async () => {
             try {
-                const [projectData, userData, languageData] = await Promise.all([
+                const [projectData, userData, languageData, groupData, requestData] = await Promise.all([
                     fetchJson(`${API}/creator/projects?creator=${encodeURIComponent(session.username)}`),
                     fetchJson(`${API}/users`),
-                    fetchJson(`${API}/languages`).catch(() => [])
+                    fetchJson(`${API}/languages`).catch(() => []),
+                    fetchJson(`${API}/creator/groups?creator=${encodeURIComponent(session.username)}`).catch(() => []),
+                    fetchJson(`${API}/creator/requests?creator=${encodeURIComponent(session.username)}`).catch(() => [])
                 ]);
                 if (cancelled) {
                     return;
@@ -215,6 +224,8 @@ function Creator({ onNavigate })
                 setProjects(Array.isArray(projectData) ? projectData : []);
                 setUsers(Array.isArray(userData) ? userData : []);
                 setLanguageOptions(Array.isArray(languageData) ? languageData : []);
+                setGroups(Array.isArray(groupData) ? groupData : []);
+                setRequests(Array.isArray(requestData) ? requestData : []);
                 setStatus("ready");
             } catch (loadError) {
                 if (!cancelled) {
@@ -478,7 +489,8 @@ function Creator({ onNavigate })
                     ? project.languages.split(",").map((lang) => lang.trim()).filter(Boolean)
                     : []),
             downloadMain: project.downloadMain || "",
-            downloadUpdate: project.downloadUpdate || ""
+            downloadUpdate: project.downloadUpdate || "",
+            publishAs: project.publishAs || "self"
         });
         setCoverDataUrl(typeof project.cover === "string" && project.cover.startsWith("data:") ? project.cover : "");
         setCoverPath("");
@@ -575,6 +587,7 @@ function Creator({ onNavigate })
             languages: form.languages,
             downloadMain: form.downloadMain.trim() || null,
             downloadUpdate: form.downloadUpdate.trim() || null,
+            publishAs: form.publishAs || "self",
             assets: {
                 banner: assets.banner || null,
                 icon: assets.icon || null,
@@ -684,6 +697,111 @@ function Creator({ onNavigate })
             await navigator.clipboard.writeText(code);
         } catch {
             // portapapeles no disponible
+        }
+    }
+
+    async function handleCreateGroup(event) {
+        event.preventDefault();
+        if (actionBusy || !groupName.trim()) {
+            return;
+        }
+
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/groups`, jsonOptions("POST", {
+                creator: session.username,
+                name: groupName.trim()
+            }));
+            setGroupName("");
+            reload();
+        } catch (groupError) {
+            setError(mapError(groupError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleJoinGroup(event) {
+        event.preventDefault();
+        if (actionBusy || !groupCode.trim()) {
+            return;
+        }
+
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/groups/join`, jsonOptions("POST", {
+                creator: session.username,
+                code: groupCode.trim()
+            }));
+            setGroupCode("");
+            reload();
+        } catch (joinError) {
+            setError(mapError(joinError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleInviteMember(groupId) {
+        const userId = inviteDrafts[groupId];
+        if (actionBusy || !userId) {
+            return;
+        }
+
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/groups/${groupId}/invite`, jsonOptions("POST", {
+                creator: session.username,
+                userId: Number(userId)
+            }));
+            setInviteDrafts((previous) => ({ ...previous, [groupId]: "" }));
+            reload();
+        } catch (inviteError) {
+            setError(mapError(inviteError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleLeaveGroup(groupId) {
+        if (actionBusy) {
+            return;
+        }
+
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/groups/${groupId}/leave`, jsonOptions("POST", {
+                creator: session.username
+            }));
+            reload();
+        } catch (leaveError) {
+            setError(mapError(leaveError));
+        } finally {
+            setActionBusy(false);
+        }
+    }
+
+    async function handleRespondRequest(requestId, action) {
+        if (actionBusy) {
+            return;
+        }
+
+        setActionBusy(true);
+        setError("");
+        try {
+            await fetchJson(`${API}/creator/requests/${requestId}/respond`, jsonOptions("POST", {
+                creator: session.username,
+                action
+            }));
+            reload();
+        } catch (requestError) {
+            setError(mapError(requestError));
+        } finally {
+            setActionBusy(false);
         }
     }
 
@@ -1038,6 +1156,19 @@ function Creator({ onNavigate })
                         )}
 
                         <span className={styles["group-title"]}>Detalles</span>
+
+                        <label className={styles["label"]}>
+                            Publicar como
+                            <select className={styles["input"]} name="publishAs" value={form.publishAs} onChange={handleFormChange}>
+                                <option value="self">{session.displayName} (mi nombre)</option>
+                                {groups.map((group) => (
+                                    <option key={group.id} value={group.id}>{group.name} (grupo)</option>
+                                ))}
+                            </select>
+                            <p className={styles["field-hint"]}>
+                                Si pertenecés a un grupo de desarrollo, podés publicar el proyecto con su nombre.
+                            </p>
+                        </label>
 
                         <label className={styles["label"]}>
                             Créditos (equipo / colaboradores)
@@ -1501,7 +1632,7 @@ function Creator({ onNavigate })
                                     {VISIBILITY_OPTIONS.find((option) => option.value === project.visibility)?.label || project.visibility}
                                 </span>
                             </div>
-                            <p className={styles["detail-creator"]}>{project.creatorName || session.displayName}</p>
+                            <p className={styles["detail-creator"]}>{project.publisherName || project.creatorName || session.displayName}</p>
                             <p className={styles["detail-meta"]}>
                                 {project.category} · v{project.version || "—"} · actualizado {new Date(project.updatedAt).toLocaleDateString()}
                             </p>
@@ -1643,10 +1774,136 @@ function Creator({ onNavigate })
                         </button>
                         <h1 className={styles["title"]}>GRUPOS DE DESARROLLO</h1>
                     </div>
-                    <p className={styles["subtitle"]}>Organizá tus estudios y productores.</p>
-                    <div className={styles["state-block"]}>
-                        <p className={styles["state-text"]}>Vista próximamente — aún no está diseñada.</p>
+                    <p className={styles["subtitle"]}>
+                        Organizá tus estudios y productores. Invitá miembros y publicá proyectos con el nombre del grupo.
+                    </p>
+
+                    {error && <p className={styles["error"]}>{error}</p>}
+
+                    <div className={styles["form-grid"]}>
+                        <form onSubmit={handleCreateGroup}>
+                            <label className={styles["label"]}>
+                                Crear grupo
+                                <input
+                                    className={styles["input"]}
+                                    type="text"
+                                    value={groupName}
+                                    onChange={(event) => setGroupName(event.target.value)}
+                                    placeholder="Nombre del estudio"
+                                    maxLength={80}
+                                />
+                            </label>
+                            <button type="submit" className={styles["submit-btn"]} disabled={actionBusy || !groupName.trim()}>
+                                Crear grupo
+                            </button>
+                        </form>
+
+                        <form onSubmit={handleJoinGroup}>
+                            <label className={styles["label"]}>
+                                Unirse con código de invitación
+                                <input
+                                    className={styles["input"]}
+                                    type="text"
+                                    value={groupCode}
+                                    onChange={(event) => setGroupCode(event.target.value)}
+                                    placeholder="GRP-XXXXXXXX"
+                                />
+                            </label>
+                            <button type="submit" className={styles["browse-btn"]} disabled={actionBusy || !groupCode.trim()}>
+                                Unirme
+                            </button>
+                        </form>
                     </div>
+
+                    <section className={styles["section"]}>
+                        <h2 className={styles["section-title"]}>Mis grupos</h2>
+                        {groups.length > 0 ? (
+                            <div className={styles["devgroup-list"]}>
+                                {groups.map((group) => {
+                                    const isOwner = group.ownerId === session.id;
+                                    const candidates = users.filter(
+                                        (user) => !group.members.some((member) => member.id === user.id)
+                                    );
+                                    return (
+                                        <article key={group.id} className={styles["devgroup-card"]}>
+                                            <div className={styles["devgroup-head"]}>
+                                                <div>
+                                                    <h3 className={styles["devgroup-name"]}>{group.name}</h3>
+                                                    <p className={styles["devgroup-meta"]}>
+                                                        @{group.handle} · {group.memberCount} miembro(s) · dueño: {group.owner?.displayName || "—"}
+                                                    </p>
+                                                </div>
+                                                <span className={styles["devgroup-role"]}>{isOwner ? "Dueño" : "Miembro"}</span>
+                                            </div>
+
+                                            <div className={styles["tester-chips"]}>
+                                                {group.members.map((member) => (
+                                                    <span key={member.id} className={styles["tester-chip"]}>
+                                                        {member.displayName} ({member.username})
+                                                    </span>
+                                                ))}
+                                            </div>
+
+                                            <div className={styles["generate-row"]}>
+                                                <input
+                                                    className={styles["input"]}
+                                                    type="text"
+                                                    value={group.inviteCode}
+                                                    readOnly
+                                                    aria-label={`Código de invitación de ${group.name}`}
+                                                />
+                                                <button type="button" className={styles["copy-btn"]} onClick={() => handleCopyCode(group.inviteCode)}>
+                                                    Copiar código
+                                                </button>
+                                            </div>
+
+                                            {isOwner ? (
+                                                <div className={styles["generate-row"]}>
+                                                    <select
+                                                        className={styles["input"]}
+                                                        value={inviteDrafts[group.id] || ""}
+                                                        onChange={(event) => setInviteDrafts((previous) => ({
+                                                            ...previous,
+                                                            [group.id]: event.target.value
+                                                        }))}
+                                                        aria-label={`Invitar miembro a ${group.name}`}
+                                                    >
+                                                        <option value="">Invitar miembro…</option>
+                                                        {candidates.map((user) => (
+                                                            <option key={user.id} value={user.id}>
+                                                                {user.displayName} ({user.username})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <button
+                                                        type="button"
+                                                        className={styles["browse-btn"]}
+                                                        disabled={actionBusy || !inviteDrafts[group.id]}
+                                                        onClick={() => handleInviteMember(group.id)}
+                                                    >
+                                                        Invitar
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className={styles["generate-row"]}>
+                                                    <button
+                                                        type="button"
+                                                        className={styles["cancel-btn"]}
+                                                        disabled={actionBusy}
+                                                        onClick={() => handleLeaveGroup(group.id)}
+                                                    >
+                                                        Salir del grupo
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className={styles["hint"]}>Todavía no pertenecés a ningún grupo. Creá uno o unite con un código.</p>
+                        )}
+                    </section>
                 </div>
             </div>
         );
@@ -1658,20 +1915,44 @@ function Creator({ onNavigate })
 
             <section className={styles["pcn-section"]}>
                 <h2 className={styles["section-heading"]}>Tus requests</h2>
-                {MOCK_REQUESTS.map((request) => (
-                    <div key={request.id} className={styles["request-card"]}>
-                        <div className={styles["request-icon"]}>
-                            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
-                                <path d="M12 2 22 12 12 22 2 12Z" />
-                            </svg>
+                {requests.length > 0 ? (
+                    requests.map((request) => (
+                        <div key={request.id} className={styles["request-card"]}>
+                            <div className={styles["request-icon"]}>
+                                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+                                    <path d="M12 2 22 12 12 22 2 12Z" />
+                                </svg>
+                            </div>
+                            <div className={styles["request-info"]}>
+                                <p className={styles["request-title"]}>Invitación a grupo de desarrollo</p>
+                                <p className={styles["request-sub"]}>{request.groupName}</p>
+                                <p className={styles["request-meta"]}>
+                                    Te invitó {request.invitedBy?.displayName || "—"} · {request.memberCount} miembro(s)
+                                </p>
+                            </div>
+                            <div className={styles["request-actions"]}>
+                                <button
+                                    type="button"
+                                    className={styles["browse-btn"]}
+                                    disabled={actionBusy}
+                                    onClick={() => handleRespondRequest(request.id, "accept")}
+                                >
+                                    Aceptar
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles["cancel-btn"]}
+                                    disabled={actionBusy}
+                                    onClick={() => handleRespondRequest(request.id, "decline")}
+                                >
+                                    Rechazar
+                                </button>
+                            </div>
                         </div>
-                        <div className={styles["request-info"]}>
-                            <p className={styles["request-title"]}>{request.title}</p>
-                            <p className={styles["request-sub"]}>{request.project}</p>
-                            <p className={styles["request-meta"]}>{request.meta}</p>
-                        </div>
-                    </div>
-                ))}
+                    ))
+                ) : (
+                    <p className={styles["hint"]}>No tenés invitaciones pendientes.</p>
+                )}
             </section>
 
             <section className={styles["pcn-section"]}>

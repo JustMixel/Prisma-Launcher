@@ -89,8 +89,11 @@ function DownloadsProvider({ children })
             });
     }, []);
 
-    const startTimer = useCallback((id) => {
-        stopTimer(id);
+    const removeFromLibrary = useCallback((id) => {
+        setLibrary((current) => current.filter((entry) => String(entry.id) !== String(id)));
+    }, []);
+
+    const startTimer = useCallback((id) => {        stopTimer(id);
 
         const timer = setInterval(() => {
             setDownloads((previous) => previous.map((item) => {
@@ -207,8 +210,9 @@ function DownloadsProvider({ children })
         getDownload,
         isInLibrary,
         markDownloadsSeen,
-        addToLibrary
-    }), [downloads, library, unseenCount, startDownload, pauseDownload, resumeDownload, cancelDownload, clearCompleted, getDownload, isInLibrary, markDownloadsSeen, addToLibrary]);
+        addToLibrary,
+        removeFromLibrary
+    }), [downloads, library, unseenCount, startDownload, pauseDownload, resumeDownload, cancelDownload, clearCompleted, getDownload, isInLibrary, markDownloadsSeen, addToLibrary, removeFromLibrary]);
 
     return (
         <DownloadsContext.Provider value={value}>

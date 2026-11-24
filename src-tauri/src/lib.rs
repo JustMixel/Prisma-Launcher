@@ -697,6 +697,150 @@ fn launch_executable(path: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn create_mod_shortcut(installed_mod: Value) -> Result<String, String> {
+    let name = installed_mod
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("mod");
+    let executable = installed_mod
+        .get("executablePath")
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty());
+    let link = installed_mod
+        .get("link")
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty());
+
+    let shortcuts_dir = prisma_dir()?.join("shortcuts");
+    std::fs::create_dir_all(&shortcuts_dir)
+        .map_err(|error| format!("No se pudo crear la carpeta de accesos directos: {}", error))?;
+
+    let base_name = safe_mod_folder_name(name);
+
+    if let Some(target) = executable {
+        let target_path = PathBuf::from(target);
+        if !target_path.exists() {
+            return Err(String::from(
+                "El ejecutable del mod no existe; no se puede crear el acceso directo",
+            ));
+        }
+
+        let shortcut = shortcuts_dir.join(format!("{}.lnk", base_name));
+        let working_directory = target_path
+            .parent()
+            .map(|parent| parent.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        let script = format!(
+            "$shell = New-Object -ComObject WScript.Shell; \
+             $shortcut = $shell.CreateShortcut({}); \
+             $shortcut.TargetPath = {}; \
+             $shortcut.WorkingDirectory = {}; \
+             $shortcut.Save()",
+            powershell_quote(&shortcut.to_string_lossy()),
+            powershell_quote(&target_path.to_string_lossy()),
+            powershell_quote(&working_directory)
+        );
+
+        let output = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+            .output()
+            .map_err(|error| format!("No se pudo ejecutar PowerShell: {}", error))?;
+
+        if !output.status.success() || !shortcut.exists() {
+            let detail = String::from_utf8_lossy(&output.stderr);
+            return Err(format!(
+                "No se pudo crear el acceso directo: {}",
+                detail.trim()
+            ));
+        }
+
+        return Ok(shortcut.to_string_lossy().to_string());
+    }
+
+    if let Some(url) = link {
+        let shortcut = shortcuts_dir.join(format!("{}.url", base_name));
+        let content = format!("[InternetShortcut]\r\nURL={}\r\n", url.trim());
+        std::fs::write(&shortcut, content)
+            .map_err(|error| format!("No se pudo crear el acceso al enlace: {}", error))?;
+        return Ok(shortcut.to_string_lossy().to_string());
+    }
+
+    Err(String::from("El mod no tiene ejecutable ni enlace para crear un acceso directo"))
+}
+
+fn powershell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "''"))
+}
+
+#[tauri::command]
+fn uninstall_mod(mod_id: String) -> Result<String, String> {
+    if mod_id.trim().is_empty() {
+        return Err(String::from("El mod no tiene identificador"));
+    }
+
+    let assets_dir = prisma_dir()?.join("assets");
+    let entries = std::fs::read_dir(&assets_dir)
+        .map_err(|error| format!("No se pudo leer la carpeta de assets: {}", error))?;
+
+    let mut target_folder: Option<PathBuf> = None;
+    let mut mod_name: Option<String> = None;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        let manifest_path = path.join("mod.json");
+        let content = match std::fs::read_to_string(&manifest_path) {
+            Ok(content) => content,
+            Err(_) => continue,
+        };
+
+        let value: Value = match serde_json::from_str(&content) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+
+        let stored_id = match value.get("id") {
+            Some(Value::String(text)) => text.clone(),
+            Some(other) => other.to_string(),
+            None => continue,
+        };
+
+        if stored_id != mod_id {
+            continue;
+        }
+
+        mod_name = value
+            .get("name")
+            .and_then(Value::as_str)
+            .map(|name| name.to_string());
+        target_folder = Some(path);
+        break;
+    }
+
+    let folder = target_folder.ok_or_else(|| String::from("No se encontró el mod instalado"))?;
+    std::fs::remove_dir_all(&folder)
+        .map_err(|error| format!("No se pudo borrar la carpeta del mod: {}", error))?;
+
+    if let Some(name) = mod_name {
+        let base_name = safe_mod_folder_name(&name);
+        if let Ok(shortcuts_dir) = prisma_dir().map(|dir| dir.join("shortcuts")) {
+            for extension in ["lnk", "url"] {
+                let shortcut = shortcuts_dir.join(format!("{}.{}", base_name, extension));
+                if shortcut.exists() {
+                    let _ = std::fs::remove_file(shortcut);
+                }
+            }
+        }
+    }
+
+    Ok(folder.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
@@ -750,6 +894,8 @@ pub fn run() {
             save_installed_mod,
             get_installed_mods,
             launch_executable,
+            create_mod_shortcut,
+            uninstall_mod,
             initialize_launcher,
             save_user_name,
             save_background_image,
