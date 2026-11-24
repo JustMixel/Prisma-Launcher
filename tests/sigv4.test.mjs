@@ -61,14 +61,14 @@ for (const vector of VECTORS) {
     }
 }
 
-// Regla de tamaño del File Server: 5 GB por archivo y 5 GB por bucket.
+// Regla de tamaño del File Server: 10 GB por archivo y 10 GB por bucket.
 const GB = 1024 ** 3;
 const SIZE_CASES = [
-    { name: "archivo de exactamente 5 GB con bucket vacío", fileBytes: 5 * GB, usedBytes: 0, expected: true },
-    { name: "archivo de 5 GB + 1 byte se rechaza siempre", fileBytes: 5 * GB + 1, usedBytes: 0, expectedReason: "file" },
-    { name: "archivo de 5 GB con 1 byte usado se rechaza", fileBytes: 5 * GB, usedBytes: 1, expectedReason: "bucket" },
-    { name: "4 GB + 1 GB usado = 5 GB exactos", fileBytes: 4 * GB, usedBytes: 1 * GB, expected: true },
-    { name: "4 GB + 1 GB + 1 byte usado se rechaza", fileBytes: 4 * GB, usedBytes: 1 * GB + 1, expectedReason: "bucket" },
+    { name: "archivo de exactamente 10 GB con bucket vacío", fileBytes: 10 * GB, usedBytes: 0, expected: true },
+    { name: "archivo de 10 GB + 1 byte se rechaza siempre", fileBytes: 10 * GB + 1, usedBytes: 0, expectedReason: "file" },
+    { name: "archivo de 10 GB con 1 byte usado se rechaza", fileBytes: 10 * GB, usedBytes: 1, expectedReason: "bucket" },
+    { name: "8 GB + 2 GB usado = 10 GB exactos", fileBytes: 8 * GB, usedBytes: 2 * GB, expected: true },
+    { name: "8 GB + 2 GB + 1 byte usado se rechaza", fileBytes: 8 * GB, usedBytes: 2 * GB + 1, expectedReason: "bucket" },
     { name: "archivo vacío se rechaza", fileBytes: 0, usedBytes: 0, expectedReason: "empty" }
 ];
 

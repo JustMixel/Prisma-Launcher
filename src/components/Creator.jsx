@@ -189,9 +189,9 @@ function Creator({ onNavigate })
     const [manualKeyId, setManualKeyId] = useState("");
     const [manualKeySecret, setManualKeySecret] = useState("");
     const fsConnected = Boolean(
-        fsCreds?.provider === "tigris" &&
-        fsCreds?.accessKeyId?.startsWith("tid_") &&
-        fsCreds?.secretAccessKey?.startsWith("tsec_")
+        fsCreds?.provider === "backblaze-b2" &&
+        fsCreds?.accessKeyId &&
+        fsCreds?.secretAccessKey
     );
 
     useEffect(() => {
@@ -268,7 +268,7 @@ function Creator({ onNavigate })
             const usage = await checkStorageUsage();
             setFsUsage(usage);
             if (!usage) {
-                setError("File Server: guardá primero las credenciales de Tigris.");
+                setError("File Server: guardá primero la keyID y la applicationKey de B2.");
             }
         } catch (fsError) {
             fsFail(fsError.message, fsError.step);
@@ -1167,23 +1167,23 @@ function Creator({ onNavigate })
                             <div className={styles["fileserver-head"]}>
                                 <span className={styles["fileserver-status"]}>
                                     {fsConnected
-                                        ? `● Conectado a Tigris · ${fsCreds.bucket}`
-                                        : "● Sin credenciales de Tigris"}
+                                        ? `● Conectado a Backblaze B2 · ${fsCreds.bucket}`
+                                        : "● Sin credenciales de Backblaze B2"}
                                 </span>
                             </div>
 
                             <p className={styles["field-hint"]}>
-                                Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket público de Tigris y usa
-                                la URL generada como «Descarga principal». Límite duro: <b>5 GB por archivo y 5 GB en total</b>.
+                                Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket público de B2 y usa
+                                la URL generada como «Descarga principal». Límite duro: <b>10 GB por archivo y 10 GB en total</b>.
                             </p>
 
                             {!fsConnected && (
                                 <p className={styles["field-hint"]}>
-                                    Pasos: creá una cuenta en <code>https://storage.new</code> (MFA obligatorio) ·
-                                    creá un bucket público <code>public-read</code> sin puntos, p. ej.{" "}
-                                    <code>prisma-mods</code> · en <b>Console → Access keys</b> generá un par y pegalo
-                                    acá. Tigris pide verificar método de pago para buckets públicos (sin cargo dentro
-                                    del free tier).
+                                    Pasos: creá cuenta en <code>https://www.backblaze.com/sign-up/cloud-storage</code>{" "}
+                                    (sin tarjeta) y verificá el email · creá un bucket <b>Public</b> con nombre único
+                                    global, p. ej. <code>prisma-mods</code> · en <b>Application Keys</b> generá una key
+                                    con <code>readObjects</code> + <code>writeObjects</code> limitada a ese bucket y
+                                    pegala acá.
                                 </p>
                             )}
 
@@ -1200,23 +1200,23 @@ function Creator({ onNavigate })
                                         />
                                     </label>
                                     <label className={styles["label"]}>
-                                        Access Key (tid_...)
+                                        keyID
                                         <input
                                             className={styles["input"]}
                                             value={manualKeyId}
                                             onChange={(event) => setManualKeyId(event.target.value)}
-                                            placeholder="tid_..."
+                                            placeholder="keyID de B2"
                                             autoComplete="off"
                                         />
                                     </label>
                                     <label className={styles["label"]}>
-                                        Secret Key (tsec_...)
+                                        applicationKey
                                         <input
                                             className={styles["input"]}
                                             type="password"
                                             value={manualKeySecret}
                                             onChange={(event) => setManualKeySecret(event.target.value)}
-                                            placeholder="tsec_... (solo se muestra una vez)"
+                                            placeholder="applicationKey (solo se muestra una vez)"
                                             autoComplete="new-password"
                                         />
                                     </label>
@@ -1232,7 +1232,7 @@ function Creator({ onNavigate })
 
                             {fsUsage && (
                                 <p className={styles["field-hint"]}>
-                                    Espacio usado: {(fsUsage.bytes / (1024 ** 3)).toFixed(2)} GB de 5 GB
+                                    Espacio usado: {(fsUsage.bytes / (1024 ** 3)).toFixed(2)} GB de 10 GB
                                     {" · "}{fsUsage.objects} archivos
                                     {fsUsage.error ? ` · ${fsUsage.error}` : ""}
                                 </p>

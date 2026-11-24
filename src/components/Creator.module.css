@@ -1109,7 +1109,7 @@
     cursor: default;
 }
 
-/* ---------- File Server (subida de paquetes a Tigris) ---------- */
+/* ---------- File Server (subida de paquetes a Backblaze B2) ---------- */
 
 .fileserver-box {
     display: flex;

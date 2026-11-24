@@ -1,11 +1,11 @@
-// Storage Manager: credenciales de Tigris y subida de paquetes del mod.
+// Storage Manager: credenciales de Backblaze B2 y subida de paquetes del mod.
 //
-// Tigris es S3-compatible (endpoint https://t3.storage.dev, región "auto").
-// La cuenta se crea fuera del launcher (requiere MFA y, para buckets públicos,
-// verificación de método de pago). Acá sólo guardamos las access keys en
-// Stronghold y subimos el .zip/.rar con SigV4.
+// B2 es S3-compatible (endpoint https://s3.us-west-004.backblazeb2.com,
+// región us-west-004). La cuenta y el bucket se crean fuera del launcher;
+// acá sólo guardamos la keyID / applicationKey en Stronghold y subimos el
+// .zip/.rar con SigV4.
 //
-// Límite duro del free tier de Tigris: 5 GB. Se controla por archivo y por total del bucket.
+// Límite duro del usuario: 10 GB por archivo y 10 GB en total en el bucket.
 
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -22,22 +22,20 @@ import {
 } from "./s3.js";
 
 const SECRET_KEY = "fileserver";
-const PROVIDER = "tigris";
-const ENDPOINT = "https://t3.storage.dev";
-const REGION = "auto";
+const PROVIDER = "backblaze-b2";
+const ENDPOINT = "https://s3.us-west-004.backblazeb2.com";
+const REGION = "us-west-004";
 const DEFAULT_BUCKET = "prisma-mods";
-const PUBLIC_DOMAIN = "t3.tigrisbucket.io";
-const PART_SIZE = 8 * 1024 * 1024; // 8 MiB
+const PART_SIZE = 8 * 1024 * 1024; // 8 MiB (B2 pide >= 5 MiB por parte)
 const SINGLE_PUT_LIMIT = PART_SIZE;
-const OPERATIONAL_LIMIT = 5 * 1024 * 1024 * 1024; // 5 GB (tope del free tier)
-const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // Ningún archivo puede superar 5 GB, nunca.
+const OPERATIONAL_LIMIT = 10 * 1024 * 1024 * 1024; // 10 GB (tope duro)
+const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // Ningún archivo puede superar 10 GB, nunca.
 
 const DEFAULT_CONFIG = {
     provider: PROVIDER,
     endpoint: ENDPOINT,
     region: REGION,
-    bucket: DEFAULT_BUCKET,
-    publicBase: `https://${DEFAULT_BUCKET}.${PUBLIC_DOMAIN}`
+    bucket: DEFAULT_BUCKET
 };
 
 // ---------- Almacenamiento cifrado de credenciales ----------
@@ -64,18 +62,20 @@ export async function clearCredentials()
 
 function sanitizeBucket(value)
 {
+    // B2: 3-63 caracteres, minúsculas, dígitos y guiones; nombre globalmente único.
     const cleaned = String(value || "")
         .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-") // Tigris no admite puntos en buckets públicos
+        .replace(/[^a-z0-9-]/g, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 63)
         .replace(/-+$/g, "");
-    return cleaned || DEFAULT_BUCKET;
+    return cleaned.length >= 3 ? cleaned : DEFAULT_BUCKET;
 }
 
 function publicBaseFor(bucket)
 {
-    return `https://${bucket}.${PUBLIC_DOMAIN}`;
+    // Bucket público de B2 sirve las claves por host virtual.
+    return `https://${bucket}.s3.${REGION}.backblazeb2.com`;
 }
 
 /** Configura el cliente S3. Sólo el bucket y las keys vienen del cofre. */
@@ -86,12 +86,12 @@ export function storageConfig(credentials = null)
         ...DEFAULT_CONFIG,
         bucket,
         publicBase: credentials?.publicBase || publicBaseFor(bucket),
-        accessKeyId: credentials?.accessKeyId || "",
-        secretAccessKey: credentials?.secretAccessKey || ""
+        accessKeyId: credentials?.accessKeyId || "", // B2 keyID
+        secretAccessKey: credentials?.secretAccessKey || "" // B2 applicationKey
     };
 }
 
-// ---------- Conexión manual (Tigris no permite alta automática) ----------
+// ---------- Conexión manual (la cuenta y las keys se crean en el dashboard de B2) ----------
 
 function fail(message, step)
 {
@@ -101,9 +101,8 @@ function fail(message, step)
 }
 
 /**
- * Guarda las access keys creadas en el console de Tigris.
- * Access Key ID:   tid_...
- * Secret Key:      tsec_...
+ * Guarda la application key creada en B2 (Capabilities: readObjects + writeObjects,
+ * limitada al bucket elegido).
  */
 export async function saveManualCredentials({ accessKeyId, secretAccessKey, bucket })
 {
@@ -112,12 +111,12 @@ export async function saveManualCredentials({ accessKeyId, secretAccessKey, buck
     const safeBucket = sanitizeBucket(bucket);
 
     if (!id || !secret) {
-        fail("Faltan la Access Key o la Secret Key.", "credenciales");
+        fail("Faltan la keyID o la applicationKey.", "credenciales");
     }
-    if (!id.startsWith("tid_") || !secret.startsWith("tsec_")) {
+    if (id.startsWith("tid_") || secret.startsWith("tsec_")) {
         fail(
-            "Las claves parecen incorrectas: en Tigris la Access Key empieza con «tid_» " +
-            "y la Secret Key con «tsec_». Copialas desde Console → Access keys.",
+            "Esas claves son de Tigris. En Backblaze B2 usá la keyID y la applicationKey " +
+            "de Application Keys en el dashboard.",
             "credenciales"
         );
     }
@@ -180,8 +179,8 @@ async function fetchUsedBytes(credentials)
 
 /**
  * Regla central de tamaño. Se exporta para poder probarla sin Tauri.
- * - Ningún archivo individual puede superar 5 GB, nunca.
- * - El total del bucket tampoco puede superar 5 GB.
+ * - Ningún archivo individual puede superar 10 GB, nunca.
+ * - El total del bucket tampoco puede superar 10 GB.
  */
 export function checkUploadSize(fileBytes, usedBytes = 0)
 {
@@ -201,13 +200,13 @@ function failSize(check)
 {
     if (check.reason === "file") {
         fail(
-            `El archivo pesa ${(check.fileBytes / (1024 ** 3)).toFixed(2)} GB y supera el límite duro de 5 GB. ` +
+            `El archivo pesa ${(check.fileBytes / (1024 ** 3)).toFixed(2)} GB y supera el límite duro de 10 GB. ` +
             "No se va a subir bajo ningún concepto.",
             "tamaño"
         );
     }
     fail(
-        `El bucket alcanzaría ${((check.usedBytes + check.fileBytes) / (1024 ** 3)).toFixed(2)} GB y superaría el tope de 5 GB. ` +
+        `El bucket alcanzaría ${((check.usedBytes + check.fileBytes) / (1024 ** 3)).toFixed(2)} GB y superaría el tope de 10 GB. ` +
         `Espacio usado actualmente: ${(check.usedBytes / (1024 ** 3)).toFixed(2)} GB.`,
         "espacio"
     );
@@ -241,7 +240,7 @@ export async function uploadPackage(localPath, {
 {
     const credentials = await loadCredentials();
     if (!credentials?.accessKeyId || !credentials?.secretAccessKey) {
-        fail("No hay credenciales de Tigris. Pegá las access keys del console.", "credenciales");
+        fail("No hay credenciales de Backblaze B2. Pegá la keyID y la applicationKey del dashboard.", "credenciales");
     }
 
     const config = storageConfig(credentials);
