@@ -909,10 +909,13 @@
 }
 
 .test-btn {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--accent, #d9cd00);
     background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    cursor: default;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.test-btn:hover {
+    border-color: var(--accent, #d9cd00);
 }
 
 .detail-desc {
@@ -1109,7 +1112,7 @@
     cursor: default;
 }
 
-/* ---------- File Server (subida de paquetes a Backblaze B2) ---------- */
+/* ---------- File Server (subida de paquetes a Yeap Cloud) ---------- */
 
 .fileserver-box {
     display: flex;
@@ -1234,3 +1237,194 @@
     max-width: 300px;
 }
 
+
+/* ---- M�dulo de testeo (F3) ---- */
+.check-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.check-ok {
+    border-color: rgba(94, 216, 138, 0.35);
+}
+
+.check-fail {
+    background-color: rgba(220, 80, 80, 0.06);
+    border-color: rgba(220, 80, 80, 0.45);
+}
+
+.check-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.check-ok .check-icon {
+    color: var(--c-green-4, #5ed88a);
+}
+
+.check-fail .check-icon {
+    color: var(--c-red-3, #ff6b6b);
+}
+
+.check-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.check-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.check-detail {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    word-break: break-all;
+}
+
+.test-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.test-run-btn,
+.test-stop-btn {
+    height: 40px;
+    padding: 0 22px;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+}
+
+.test-run-btn {
+    color: var(--c-gris-1, #080807);
+    background-color: var(--accent, #d9cd00);
+    border: 1px solid var(--accent, #d9cd00);
+}
+
+.test-run-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.test-run-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.test-stop-btn {
+    color: var(--c-red-3, #ff5a5a);
+    background-color: transparent;
+    border: 1px solid rgba(255, 90, 90, 0.5);
+}
+
+.test-stop-btn:hover:not(:disabled) {
+    border-color: var(--c-red-3, #ff5a5a);
+}
+
+.test-stop-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.log-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.log-head .section-title {
+    margin: 0;
+}
+
+.log-clear-btn {
+    height: 32px;
+    padding: 0 14px;
+    font-family: Bahnschrift, "Segoe UI", sans-serif;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+}
+
+.log-clear-btn:hover:not(:disabled) {
+    border-color: antiquewhite;
+}
+
+.log-clear-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.log-console {
+    margin-top: 12px;
+    height: 280px;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-color: var(--c-negro-1, #0b0b0d);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.log-line {
+    display: flex;
+    gap: 10px;
+}
+
+.log-time {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.log-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.log-stderr .log-text {
+    color: var(--c-red-3, #ff8a8a);
+}
+
+.log-info .log-text {
+    color: #8fc9ff;
+}
+
+.log-warn .log-text {
+    color: #ffd479;
+}
+
+.log-empty {
+    color: rgba(255, 255, 255, 0.3);
+}

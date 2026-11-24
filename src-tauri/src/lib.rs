@@ -840,6 +840,310 @@ fn uninstall_mod(mod_id: String) -> Result<String, String> {
     Ok(folder.to_string_lossy().to_string())
 }
 
+#[derive(Serialize)]
+pub struct TestCheck {
+    pub id: String,
+    pub label: String,
+    pub ok: bool,
+    pub detail: String,
+}
+
+#[derive(Serialize)]
+pub struct TestValidation {
+    pub ok: bool,
+    pub checks: Vec<TestCheck>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TestLogPayload {
+    session_id: String,
+    stream: String,
+    line: String,
+    timestamp: u64,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TestExitPayload {
+    session_id: String,
+    code: Option<i32>,
+}
+
+fn now_millis() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+fn build_check(checks: &mut Vec<TestCheck>, id: &str, label: &str, ok: bool, detail: String) {
+    checks.push(TestCheck {
+        id: id.to_string(),
+        label: label.to_string(),
+        ok,
+        detail,
+    });
+}
+
+fn validate_project(executable_path: &str, ini_path: &str) -> TestValidation {
+    let mut checks: Vec<TestCheck> = Vec::new();
+    let exe_trimmed = executable_path.trim();
+    let ini_trimmed = ini_path.trim();
+
+    let exe_defined = !exe_trimmed.is_empty();
+    build_check(
+        &mut checks,
+        "exe-defined",
+        "Ruta del ejecutable definida",
+        exe_defined,
+        if exe_defined {
+            exe_trimmed.to_string()
+        } else {
+            String::from("Falta cargar la ruta del ejecutable en el proyecto.")
+        },
+    );
+
+    let exe_path = std::path::Path::new(exe_trimmed);
+    let exe_exists = exe_defined && exe_path.exists();
+    build_check(
+        &mut checks,
+        "exe-exists",
+        "El ejecutable existe en disco",
+        exe_exists,
+        if exe_exists {
+            String::from("Encontrado.")
+        } else if exe_defined {
+            String::from("No se encontró el archivo en la ruta indicada.")
+        } else {
+            String::from("Sin ruta para comprobar.")
+        },
+    );
+
+    let extension = exe_path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let valid_extension = matches!(extension.as_str(), "exe" | "bat" | "cmd" | "com");
+    build_check(
+        &mut checks,
+        "exe-extension",
+        "Extensión ejecutable válida (.exe / .bat / .cmd / .com)",
+        exe_exists && exe_path.is_file() && valid_extension,
+        if extension.is_empty() {
+            String::from("El archivo no tiene extensión.")
+        } else {
+            format!(".{}", extension)
+        },
+    );
+
+    let working_dir_ok = exe_exists
+        && exe_path
+            .parent()
+            .map(|parent| parent.exists())
+            .unwrap_or(false);
+    build_check(
+        &mut checks,
+        "exe-dir",
+        "Carpeta de trabajo accesible",
+        working_dir_ok,
+        match exe_path.parent() {
+            Some(parent) if working_dir_ok => parent.to_string_lossy().to_string(),
+            _ => String::from("No se pudo resolver la carpeta del ejecutable."),
+        },
+    );
+
+    if ini_trimmed.is_empty() {
+        build_check(
+            &mut checks,
+            "ini",
+            "Archivo .ini de estadísticas (opcional)",
+            true,
+            String::from("No definido; la prueba se ejecuta sin lectura de estadísticas."),
+        );
+    } else {
+        let ini_path = std::path::Path::new(ini_trimmed);
+        let ini_extension = ini_path
+            .extension()
+            .and_then(|value| value.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+        let ini_exists = ini_path.exists() && ini_path.is_file();
+        let ini_ok = ini_exists && ini_extension == "ini";
+        build_check(
+            &mut checks,
+            "ini",
+            "Archivo .ini de estadísticas válido",
+            ini_ok,
+            if !ini_exists {
+                String::from("No se encontró el archivo .ini indicado.")
+            } else if ini_extension != "ini" {
+                String::from("El archivo debe tener extensión .ini.")
+            } else {
+                String::from("Encontrado.")
+            },
+        );
+    }
+
+    let ok = checks.iter().all(|check| check.ok);
+    TestValidation { ok, checks }
+}
+
+#[tauri::command]
+fn validate_test_project(executable_path: String, ini_path: String) -> TestValidation {
+    validate_project(&executable_path, &ini_path)
+}
+
+fn spawn_output_reader<R: std::io::Read + Send + 'static>(
+    app: tauri::AppHandle,
+    session_id: String,
+    stream: &'static str,
+    reader: R,
+) {
+    std::thread::spawn(move || {
+        use std::io::BufRead;
+
+        let mut reader = std::io::BufReader::new(reader);
+        let mut buffer: Vec<u8> = Vec::new();
+
+        loop {
+            buffer.clear();
+            match reader.read_until(b'\n', &mut buffer) {
+                Ok(0) => break,
+                Ok(_) => {
+                    let line = String::from_utf8_lossy(&buffer)
+                        .trim_end_matches(['\r', '\n'])
+                        .to_string();
+                    if line.is_empty() {
+                        continue;
+                    }
+                    let _ = app.emit(
+                        "prisma-test-log",
+                        TestLogPayload {
+                            session_id: session_id.clone(),
+                            stream: stream.to_string(),
+                            line,
+                            timestamp: now_millis(),
+                        },
+                    );
+                }
+                Err(_) => break,
+            }
+        }
+    });
+}
+
+#[tauri::command]
+fn run_test_session(
+    app: tauri::AppHandle,
+    executable_path: String,
+    ini_path: String,
+    session_id: String,
+) -> Result<u32, String> {
+    let validation = validate_project(&executable_path, &ini_path);
+    if !validation.ok {
+        let failures: Vec<String> = validation
+            .checks
+            .iter()
+            .filter(|check| !check.ok)
+            .map(|check| format!("{} — {}", check.label, check.detail))
+            .collect();
+        return Err(format!("Validación fallida. {}", failures.join(" · ")));
+    }
+
+    let executable = PathBuf::from(executable_path.trim());
+    let working_directory = executable
+        .parent()
+        .map(|parent| parent.to_path_buf())
+        .unwrap_or_else(|| PathBuf::from("C:\\"));
+
+    let mut command = std::process::Command::new(&executable);
+    command
+        .current_dir(working_directory)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("No se pudo iniciar el mod: {}", error))?;
+    let pid = child.id();
+
+    let _ = app.emit(
+        "prisma-test-log",
+        TestLogPayload {
+            session_id: session_id.clone(),
+            stream: String::from("info"),
+            line: format!("Proceso iniciado con PID {}.", pid),
+            timestamp: now_millis(),
+        },
+    );
+
+    if let Some(stdout) = child.stdout.take() {
+        spawn_output_reader(app.clone(), session_id.clone(), "stdout", stdout);
+    }
+    if let Some(stderr) = child.stderr.take() {
+        spawn_output_reader(app.clone(), session_id.clone(), "stderr", stderr);
+    }
+
+    let exit_app = app.clone();
+    let exit_session = session_id;
+    std::thread::spawn(move || {
+        let code = child.wait().ok().and_then(|status| status.code());
+        let _ = exit_app.emit(
+            "prisma-test-exit",
+            TestExitPayload {
+                session_id: exit_session,
+                code,
+            },
+        );
+    });
+
+    Ok(pid)
+}
+
+#[tauri::command]
+fn stop_test_process(pid: u32) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let status = std::process::Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map_err(|error| format!("No se pudo detener el proceso: {}", error))?;
+
+        if !status.success() {
+            return Err(String::from("El proceso ya no está en ejecución."));
+        }
+
+        return Ok(());
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let status = std::process::Command::new("kill")
+            .args(["-TERM", &pid.to_string()])
+            .status()
+            .map_err(|error| format!("No se pudo detener el proceso: {}", error))?;
+
+        if !status.success() {
+            return Err(String::from("El proceso ya no está en ejecución."));
+        }
+
+        Ok(())
+    }
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -894,6 +1198,9 @@ pub fn run() {
             save_installed_mod,
             get_installed_mods,
             launch_executable,
+            validate_test_project,
+            run_test_session,
+            stop_test_process,
             create_mod_shortcut,
             uninstall_mod,
             initialize_launcher,

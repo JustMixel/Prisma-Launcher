@@ -1,4 +1,4 @@
-// Cliente S3 genérico (Backblaze B2: https://s3.us-west-004.backblazeb2.com, región us-west-004).
+// Cliente S3 genérico (Yeap Cloud: https://slc1.s3.yeapcloud.com, región slc1).
 // Firma AWS Signature V4 usando WebCrypto (HMAC-SHA256), sin dependencias externas.
 // Los Access/Secret Key NUNCA se escriben en logs ni viajan por el frontend más allá
 // de cada petición firmada; se cargan desde el almacén cifrado de Tauri.
@@ -73,13 +73,13 @@ function timestampNow()
  *
  * @param {object} options
  * @param {string} options.method      HTTP method (GET, PUT, POST, DELETE, HEAD)
- * @param {string} options.endpoint    https://s3.us-west-004.backblazeb2.com
+ * @param {string} options.endpoint    https://slc1.s3.yeapcloud.com
  * @param {string} options.bucket      prisma-mods
  * @param {string} [options.key]       clave del objeto (sin bucket)
  * @param {Record<string,string>} [options.query]
  * @param {Record<string,string>} [options.headers]  cabeceras extra (content-type, etc.)
  * @param {Uint8Array|string|null} [options.body]
- * @param {string} options.region      us-west-004
+ * @param {string} options.region      slc1
  * @param {string} options.accessKeyId
  * @param {string} options.secretAccessKey
  */

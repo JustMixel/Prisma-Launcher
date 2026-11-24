@@ -1,9 +1,9 @@
-// Storage Manager: credenciales de Backblaze B2 y subida de paquetes del mod.
+// Storage Manager: credenciales de Yeap Cloud y subida de paquetes del mod.
 //
-// B2 es S3-compatible (endpoint https://s3.us-west-004.backblazeb2.com,
-// región us-west-004). La cuenta y el bucket se crean fuera del launcher;
-// acá sólo guardamos la keyID / applicationKey en Stronghold y subimos el
-// .zip/.rar con SigV4.
+// Yeap expone S3-compatible en https://slc1.s3.yeapcloud.com (región slc1).
+// La cuenta, el bucket público y las access keys se crean desde la Console API;
+// acá guardamos Access Key ID / Secret Access Key en Stronghold y subimos el
+// .zip/.rar con SigV4 reutilizando s3.js.
 //
 // Límite duro del usuario: 10 GB por archivo y 10 GB en total en el bucket.
 
@@ -22,11 +22,11 @@ import {
 } from "./s3.js";
 
 const SECRET_KEY = "fileserver";
-const PROVIDER = "backblaze-b2";
-const ENDPOINT = "https://s3.us-west-004.backblazeb2.com";
-const REGION = "us-west-004";
+const PROVIDER = "yeap-cloud";
+const ENDPOINT = "https://slc1.s3.yeapcloud.com";
+const REGION = "slc1";
 const DEFAULT_BUCKET = "prisma-mods";
-const PART_SIZE = 8 * 1024 * 1024; // 8 MiB (B2 pide >= 5 MiB por parte)
+const PART_SIZE = 8 * 1024 * 1024; // 8 MiB (S3 pide >= 5 MiB por parte)
 const SINGLE_PUT_LIMIT = PART_SIZE;
 const OPERATIONAL_LIMIT = 10 * 1024 * 1024 * 1024; // 10 GB (tope duro)
 const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // Ningún archivo puede superar 10 GB, nunca.
@@ -62,20 +62,38 @@ export async function clearCredentials()
 
 function sanitizeBucket(value)
 {
-    // B2: 3-63 caracteres, minúsculas, dígitos y guiones; nombre globalmente único.
+    // Yeap: 3-63 caracteres, minúsculas, dígitos y guiones; no empieza con yc-.
     const cleaned = String(value || "")
         .toLowerCase()
         .replace(/[^a-z0-9-]/g, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 63)
         .replace(/-+$/g, "");
-    return cleaned.length >= 3 ? cleaned : DEFAULT_BUCKET;
+    if (cleaned.length < 3 || cleaned.startsWith("yc-")) {
+        return DEFAULT_BUCKET;
+    }
+    return cleaned;
 }
 
 function publicBaseFor(bucket)
 {
-    // Bucket público de B2 sirve las claves por host virtual.
-    return `https://${bucket}.s3.${REGION}.backblazeb2.com`;
+    // Un bucket público de Yeap sirve los objetos por host virtual. La Console
+    // devuelve public_url; si no está en el cofre, caemos a este patrón.
+    return `https://${bucket}.${REGION}.s3.yeapcloud.com`;
+}
+
+function normalizePublicBase(value, bucket)
+{
+    const candidate = String(value || "").trim().replace(/\/+$/, "");
+    if (!candidate) {
+        return publicBaseFor(bucket);
+    }
+    try {
+        const url = new URL(candidate);
+        return url.protocol === "https:" ? url.toString().replace(/\/+$/, "") : publicBaseFor(bucket);
+    } catch {
+        return publicBaseFor(bucket);
+    }
 }
 
 /** Configura el cliente S3. Sólo el bucket y las keys vienen del cofre. */
@@ -86,12 +104,12 @@ export function storageConfig(credentials = null)
         ...DEFAULT_CONFIG,
         bucket,
         publicBase: credentials?.publicBase || publicBaseFor(bucket),
-        accessKeyId: credentials?.accessKeyId || "", // B2 keyID
-        secretAccessKey: credentials?.secretAccessKey || "" // B2 applicationKey
+        accessKeyId: credentials?.accessKeyId || "", // Access Key ID de Yeap
+        secretAccessKey: credentials?.secretAccessKey || "" // Secret Access Key de Yeap
     };
 }
 
-// ---------- Conexión manual (la cuenta y las keys se crean en el dashboard de B2) ----------
+// ---------- Conexión manual (la cuenta y las keys se crean en la Console de Yeap) ----------
 
 function fail(message, step)
 {
@@ -101,24 +119,16 @@ function fail(message, step)
 }
 
 /**
- * Guarda la application key creada en B2 (Capabilities: readObjects + writeObjects,
- * limitada al bucket elegido).
+ * Guarda una access key de Yeap con permisos de lectura y escritura sobre el bucket.
  */
-export async function saveManualCredentials({ accessKeyId, secretAccessKey, bucket })
+export async function saveManualCredentials({ accessKeyId, secretAccessKey, bucket, publicBase = null })
 {
     const id = String(accessKeyId || "").trim();
     const secret = String(secretAccessKey || "").trim();
     const safeBucket = sanitizeBucket(bucket);
 
     if (!id || !secret) {
-        fail("Faltan la keyID o la applicationKey.", "credenciales");
-    }
-    if (id.startsWith("tid_") || secret.startsWith("tsec_")) {
-        fail(
-            "Esas claves son de Tigris. En Backblaze B2 usá la keyID y la applicationKey " +
-            "de Application Keys en el dashboard.",
-            "credenciales"
-        );
+        fail("Faltan el Access Key ID o el Secret Access Key.", "credenciales");
     }
 
     const previous = (await loadCredentials()) || {};
@@ -126,9 +136,11 @@ export async function saveManualCredentials({ accessKeyId, secretAccessKey, buck
     const credentials = {
         ...DEFAULT_CONFIG,
         bucket: safeBucket,
-        publicBase: publicBaseFor(safeBucket),
+        publicBase: normalizePublicBase(publicBase || previous.publicBase, safeBucket),
         accessKeyId: id,
         secretAccessKey: secret,
+        consoleToken: previous.consoleToken || null,
+        account: previous.account || null,
         usedBytes: sameBucket ? Number(previous.usedBytes || 0) : 0,
         objectCount: sameBucket ? Number(previous.objectCount || 0) : 0,
         createdAt: previous.createdAt || new Date().toISOString()
@@ -240,7 +252,7 @@ export async function uploadPackage(localPath, {
 {
     const credentials = await loadCredentials();
     if (!credentials?.accessKeyId || !credentials?.secretAccessKey) {
-        fail("No hay credenciales de Backblaze B2. Pegá la keyID y la applicationKey del dashboard.", "credenciales");
+        fail("No hay credenciales de Yeap Cloud. Pegá el Access Key ID y el Secret Access Key de la Console.", "credenciales");
     }
 
     const config = storageConfig(credentials);

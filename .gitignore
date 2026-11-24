@@ -29,3 +29,12 @@ dist-ssr
 
 # Notas de diseño locales (no versionar)
 prompt_requests/
+
+# Logs de sondas con datos de cuentas de prueba
+tools/yeap/referencia/
+
+# Archivo local del entorno del agente
+AGENTS.md
+
+# Intento descartado de registro con endpoints imaginarios
+tempMailRegister.ts

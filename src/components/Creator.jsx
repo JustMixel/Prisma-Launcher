@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import testCrop from "../assets/modRender.png";
@@ -102,6 +103,14 @@ const ASSET_FIELDS = [
     { key: "hoverMusic", label: "Hover music (audio)", hint: "Recomendado: MP3/OGG, 30–60 s, máx. ~3 MB" }
 ];
 
+function makeSessionId() {
+    try {
+        return crypto.randomUUID();
+    } catch {
+        return `test-${Date.now()}-${Math.round(Math.random() * 1000000)}`;
+    }
+}
+
 function renderMarkdown(text) {
     try {
         return DOMPurify.sanitize(marked.parse(text || ""));
@@ -187,6 +196,7 @@ function Creator({ onNavigate })
     const [fsCreds, setFsCreds] = useState(null);
     const [fsManual, setFsManual] = useState(false);
     const [fsBucket, setFsBucket] = useState("prisma-mods");
+    const [fsPublicBase, setFsPublicBase] = useState("");
     const [fsUsage, setFsUsage] = useState(null);
     const [manualKeyId, setManualKeyId] = useState("");
     const [manualKeySecret, setManualKeySecret] = useState("");
@@ -195,8 +205,19 @@ function Creator({ onNavigate })
     const [groupName, setGroupName] = useState("");
     const [groupCode, setGroupCode] = useState("");
     const [inviteDrafts, setInviteDrafts] = useState({});
+    const [testState, setTestState] = useState({
+        status: "idle",
+        checks: [],
+        running: false,
+        pid: null,
+        exitCode: null,
+        error: ""
+    });
+    const [testLogs, setTestLogs] = useState([]);
+    const testSessionRef = useRef("");
+    const testLogRef = useRef(null);
     const fsConnected = Boolean(
-        fsCreds?.provider === "backblaze-b2" &&
+        fsCreds?.provider === "yeap-cloud" &&
         fsCreds?.accessKeyId &&
         fsCreds?.secretAccessKey
     );
@@ -242,6 +263,168 @@ function Creator({ onNavigate })
         setReloadKey((key) => key + 1);
     }
 
+    function appendTestLog(stream, line, timestamp) {
+        const time = typeof timestamp === "number" ? new Date(timestamp) : new Date();
+        setTestLogs((previous) => [
+            ...previous,
+            {
+                id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                stream: stream || "stdout",
+                line: String(line ?? ""),
+                time
+            }
+        ]);
+    }
+
+    // Eventos en vivo del proceso de prueba (solo dentro de Tauri).
+    useEffect(() => {
+        if (view !== "test" || !isDeveloper) {
+            return undefined;
+        }
+
+        let disposed = false;
+        const unsubscribers = [];
+
+        (async () => {
+            try {
+                const unlistenLog = await listen("prisma-test-log", (event) => {
+                    const payload = event?.payload || {};
+                    if (payload.sessionId !== testSessionRef.current) {
+                        return;
+                    }
+                    appendTestLog(payload.stream, payload.line, payload.timestamp);
+                });
+
+                const unlistenExit = await listen("prisma-test-exit", (event) => {
+                    const payload = event?.payload || {};
+                    if (payload.sessionId !== testSessionRef.current) {
+                        return;
+                    }
+                    setTestState((previous) => ({
+                        ...previous,
+                        running: false,
+                        pid: null,
+                        exitCode: typeof payload.code === "number" ? payload.code : null
+                    }));
+                    appendTestLog(
+                        "info",
+                        typeof payload.code === "number"
+                            ? `Proceso finalizado con código ${payload.code}.`
+                            : "Proceso finalizado."
+                    );
+                });
+
+                if (disposed) {
+                    unlistenLog();
+                    unlistenExit();
+                    return;
+                }
+
+                unsubscribers.push(unlistenLog, unlistenExit);
+            } catch {
+                // Fuera de Tauri (vista previa en navegador): sin eventos en vivo.
+            }
+        })();
+
+        return () => {
+            disposed = true;
+            unsubscribers.forEach((unsubscribe) => unsubscribe());
+        };
+    }, [view, isDeveloper]);
+
+    useEffect(() => {
+        if (view !== "test") {
+            return;
+        }
+        const node = testLogRef.current;
+        if (node) {
+            node.scrollTop = node.scrollHeight;
+        }
+    }, [testLogs, view]);
+
+    function openTest(project) {
+        if (!project) {
+            return;
+        }
+        testSessionRef.current = makeSessionId();
+        setSelectedId(project.id);
+        setError("");
+        setTestLogs([]);
+        setTestState({
+            status: "validating",
+            checks: [],
+            running: false,
+            pid: null,
+            exitCode: null,
+            error: ""
+        });
+        setView("test");
+        validateTestProject(project);
+    }
+
+    async function validateTestProject(project) {
+        setTestState((previous) => ({ ...previous, status: "validating", error: "" }));
+        try {
+            const result = await invoke("validate_test_project", {
+                executablePath: project?.executablePath || "",
+                iniPath: project?.statsIni || ""
+            });
+            const checks = Array.isArray(result?.checks) ? result.checks : [];
+            const ok = Boolean(result?.ok);
+            setTestState((previous) => ({
+                ...previous,
+                status: ok ? "ready" : "invalid",
+                checks
+            }));
+            appendTestLog("info", ok ? "Validación correcta. Listo para lanzar." : "Validación con errores.");
+        } catch (validationError) {
+            const message = String(validationError);
+            setTestState((previous) => ({
+                ...previous,
+                status: "invalid",
+                checks: [],
+                error: message
+            }));
+            appendTestLog("error", message);
+        }
+    }
+
+    async function handleStartTest(project) {
+        if (!project || testState.running || testState.status !== "ready") {
+            return;
+        }
+
+        const sessionId = makeSessionId();
+        testSessionRef.current = sessionId;
+        setTestState((previous) => ({ ...previous, running: true, pid: null, exitCode: null, error: "" }));
+        appendTestLog("info", `— Sesión de prueba ${sessionId.slice(0, 8)} —`);
+
+        try {
+            const pid = await invoke("run_test_session", {
+                executablePath: project.executablePath || "",
+                iniPath: project.statsIni || "",
+                sessionId
+            });
+            setTestState((previous) => ({ ...previous, pid: typeof pid === "number" ? pid : null }));
+        } catch (runError) {
+            const message = String(runError);
+            setTestState((previous) => ({ ...previous, running: false, pid: null, error: message }));
+            appendTestLog("error", message);
+        }
+    }
+
+    async function handleStopTest() {
+        if (!testState.pid) {
+            return;
+        }
+        try {
+            await invoke("stop_test_process", { pid: testState.pid });
+            appendTestLog("warn", "Solicitud de detención enviada.");
+        } catch (stopError) {
+            appendTestLog("error", String(stopError));
+        }
+    }
+
     // File Server: comprobar si ya hay credenciales guardadas al abrir el formulario
     useEffect(() => {
         if (view !== "form") {
@@ -252,6 +435,7 @@ function Creator({ onNavigate })
             if (!cancelled) {
                 setFsCreds(credentials);
                 setFsBucket(credentials?.bucket || "prisma-mods");
+                setFsPublicBase(credentials?.publicBase || "");
                 if (credentials?.accessKeyId && credentials?.secretAccessKey) {
                     const usage = await checkStorageUsage();
                     if (!cancelled) {
@@ -279,7 +463,7 @@ function Creator({ onNavigate })
             const usage = await checkStorageUsage();
             setFsUsage(usage);
             if (!usage) {
-                setError("File Server: guardá primero la keyID y la applicationKey de B2.");
+                setError("File Server: guardá primero el Access Key ID y el Secret Access Key de Yeap Cloud.");
             }
         } catch (fsError) {
             fsFail(fsError.message, fsError.step);
@@ -299,10 +483,12 @@ function Creator({ onNavigate })
             const credentials = await saveManualCredentials({
                 accessKeyId: manualKeyId,
                 secretAccessKey: manualKeySecret,
-                bucket: fsBucket
+                bucket: fsBucket,
+                publicBase: fsPublicBase
             });
             setFsCreds(credentials);
             setFsBucket(credentials.bucket);
+            setFsPublicBase(credentials.publicBase || "");
             setFsManual(false);
             setManualKeyId("");
             setManualKeySecret("");
@@ -1298,23 +1484,29 @@ function Creator({ onNavigate })
                             <div className={styles["fileserver-head"]}>
                                 <span className={styles["fileserver-status"]}>
                                     {fsConnected
-                                        ? `● Conectado a Backblaze B2 · ${fsCreds.bucket}`
-                                        : "● Sin credenciales de Backblaze B2"}
+                                        ? `● Conectado a Yeap Cloud · ${fsCreds.bucket}`
+                                        : "● Sin credenciales de Yeap Cloud"}
                                 </span>
                             </div>
 
                             <p className={styles["field-hint"]}>
-                                Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket público de B2 y usa
+                                Sube el <code>.zip</code>/<code>.rar</code> del mod al bucket público de Yeap Cloud y usa
                                 la URL generada como «Descarga principal». Límite duro: <b>10 GB por archivo y 10 GB en total</b>.
                             </p>
 
+                            {fsConnected && fsCreds?.publicBase && (
+                                <p className={styles["field-hint"]}>
+                                    URL base pública: <code>{fsCreds.publicBase}</code>
+                                </p>
+                            )}
+
                             {!fsConnected && (
                                 <p className={styles["field-hint"]}>
-                                    Pasos: creá cuenta en <code>https://www.backblaze.com/sign-up/cloud-storage</code>{" "}
-                                    (sin tarjeta) y verificá el email · creá un bucket <b>Public</b> con nombre único
-                                    global, p. ej. <code>prisma-mods</code> · en <b>Application Keys</b> generá una key
-                                    con <code>readObjects</code> + <code>writeObjects</code> limitada a ese bucket y
-                                    pegala acá.
+                                    Pasos: entrá a <code>https://console.yeap.cloud/s3</code> · en <b>Object Storage</b> creá
+                                    un bucket en <code>slc1</code> con nombre p. ej. <code>prisma-mods</code> · activá{" "}
+                                    <b>Public access</b>, configurá cuota de <b>10 GB</b> y CORS{" "}
+                                    <code>GET, HEAD</code> con <code>ETag</code> expuesto · en <b>Access keys</b> generá una
+                                    key con permiso <code>readwrite</code> limitada a ese bucket y pegala acá.
                                 </p>
                             )}
 
@@ -1331,24 +1523,35 @@ function Creator({ onNavigate })
                                         />
                                     </label>
                                     <label className={styles["label"]}>
-                                        keyID
+                                        Access Key ID
                                         <input
                                             className={styles["input"]}
                                             value={manualKeyId}
                                             onChange={(event) => setManualKeyId(event.target.value)}
-                                            placeholder="keyID de B2"
+                                            placeholder="Access Key ID de Yeap"
                                             autoComplete="off"
                                         />
                                     </label>
                                     <label className={styles["label"]}>
-                                        applicationKey
+                                        Secret Access Key
                                         <input
                                             className={styles["input"]}
                                             type="password"
                                             value={manualKeySecret}
                                             onChange={(event) => setManualKeySecret(event.target.value)}
-                                            placeholder="applicationKey (solo se muestra una vez)"
+                                            placeholder="Secret Access Key (solo se muestra una vez)"
                                             autoComplete="new-password"
+                                        />
+                                    </label>
+                                    <label className={styles["label"]}>
+                                        URL base pública (opcional)
+                                        <input
+                                            className={styles["input"]}
+                                            type="url"
+                                            value={fsPublicBase}
+                                            onChange={(event) => setFsPublicBase(event.target.value)}
+                                            placeholder="https://.../prisma-mods"
+                                            autoComplete="off"
                                         />
                                     </label>
                                     <button
@@ -1639,7 +1842,13 @@ function Creator({ onNavigate })
                         </div>
                         <div className={styles["detail-actions"]}>
                             <button type="button" className={styles["edit-btn"]} onClick={() => openEdit(project)}>Editar</button>
-                            <button type="button" className={styles["test-btn"]} disabled title="Próximamente (F3)">Testear</button>
+                            <button
+                                type="button"
+                                className={styles["test-btn"]}
+                                onClick={() => openTest(project)}
+                            >
+                                Testear
+                            </button>
                         </div>
                     </div>
 
@@ -1754,6 +1963,144 @@ function Creator({ onNavigate })
                             </button>
                         </div>
                         <p className={styles["hint"]}>Solo miembros activados pueden ser testers.</p>
+                    </section>
+                </div>
+            </div>
+        );
+    }
+
+    if (view === "test") {
+        const project = projects.find((entry) => entry.id === selectedId);
+
+        if (!project) {
+            return (
+                <div className={styles["creator"]}>
+                    <div className={styles["state-block"]}>
+                        <button className={styles["back-btn"]} onClick={() => setView("list")} aria-label="Volver">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M19 12H5" />
+                                <path d="M12 19l-7-7 7-7" />
+                            </svg>
+                            Volver
+                        </button>
+                        <p className={styles["state-text"]}>Proyecto no encontrado.</p>
+                    </div>
+                </div>
+            );
+        }
+
+        const ready = testState.status === "ready";
+        const validating = testState.status === "validating";
+
+        return (
+            <div className={styles["creator"]}>
+                <div className={styles["form-panel"]}>
+                    <div className={styles["panel-head"]}>
+                        <button
+                            className={styles["back-btn"]}
+                            onClick={() => { setView("detail"); setError(""); }}
+                            aria-label="Volver al detalle"
+                        >
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M19 12H5" />
+                                <path d="M12 19l-7-7 7-7" />
+                            </svg>
+                            Volver
+                        </button>
+                        <h1 className={styles["title"]}>MÓDULO DE TESTEO</h1>
+                    </div>
+                    <p className={styles["subtitle"]}>
+                        {project.name} · v{project.version || "—"} · {project.category}
+                    </p>
+
+                    {testState.error && <p className={styles["error"]}>{testState.error}</p>}
+
+                    <section className={styles["section"]}>
+                        <h2 className={styles["section-title"]}>Validación</h2>
+                        {validating ? (
+                            <p className={styles["hint"]}>Comprobando ejecutable y archivo .ini…</p>
+                        ) : (
+                            <ul className={styles["check-list"]}>
+                                {testState.checks.map((check) => (
+                                    <li
+                                        key={check.id}
+                                        className={`${styles["check-item"]} ${check.ok ? styles["check-ok"] : styles["check-fail"]}`}
+                                    >
+                                        <span className={styles["check-icon"]} aria-hidden="true">{check.ok ? "✓" : "✕"}</span>
+                                        <span className={styles["check-body"]}>
+                                            <span className={styles["check-label"]}>{check.label}</span>
+                                            <span className={styles["check-detail"]}>{check.detail}</span>
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        <div className={styles["test-actions"]}>
+                            <button
+                                type="button"
+                                className={styles["browse-btn"]}
+                                onClick={() => validateTestProject(project)}
+                                disabled={testState.running || validating}
+                            >
+                                Re-validar
+                            </button>
+                            <button
+                                type="button"
+                                className={styles["test-run-btn"]}
+                                onClick={() => handleStartTest(project)}
+                                disabled={!ready || testState.running}
+                            >
+                                {testState.running ? "En ejecución…" : "Lanzar prueba"}
+                            </button>
+                            {testState.running && (
+                                <button
+                                    type="button"
+                                    className={styles["test-stop-btn"]}
+                                    onClick={handleStopTest}
+                                    disabled={!testState.pid}
+                                >
+                                    Detener
+                                </button>
+                            )}
+                        </div>
+
+                        {testState.status === "invalid" && (
+                            <p className={styles["hint"]}>Corregí los puntos marcados en ✕ para habilitar el lanzamiento.</p>
+                        )}
+                    </section>
+
+                    <section className={styles["section"]}>
+                        <div className={styles["log-head"]}>
+                            <h2 className={styles["section-title"]}>Registro de prueba</h2>
+                            <button
+                                type="button"
+                                className={styles["log-clear-btn"]}
+                                onClick={() => setTestLogs([])}
+                                disabled={testState.running || testLogs.length === 0}
+                            >
+                                Limpiar
+                            </button>
+                        </div>
+                        <div className={styles["log-console"]} ref={testLogRef} role="log" aria-live="polite">
+                            {testLogs.length === 0 ? (
+                                <span className={styles["log-empty"]}>
+                                    Sin actividad. Validá y lanzá la prueba para ver el registro.
+                                </span>
+                            ) : (
+                                testLogs.map((entry) => (
+                                    <div key={entry.id} className={`${styles["log-line"]} ${styles[`log-${entry.stream}`] || ""}`}>
+                                        <span className={styles["log-time"]}>{entry.time.toLocaleTimeString()}</span>
+                                        <span className={styles["log-text"]}>{entry.line}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        {testState.exitCode !== null && (
+                            <p className={styles["hint"]}>
+                                Último cierre: {testState.exitCode === 0 ? "correcto (código 0)" : `código ${testState.exitCode}`}.
+                            </p>
+                        )}
                     </section>
                 </div>
             </div>
