@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useDownloads } from "../context/DownloadsContext.jsx";
-import demoHoverImage from "../assets/San Fierro BKG.jpg";
+import strandedHoverImage from "../assets/stranded.png";
 import demoHoverMusic from "../assets/prestart.ogg";
 import styles from "./Home.module.css";
 
 // Tiempo de espera antes de activar la vista previa (estilo PS5).
 const DWELL_MS = 1000;
+const DEFAULT_BOUNDS = { top: 0, left: 0, width: 1280, height: 720 };
 
 function PlayIcon()
 {
@@ -22,14 +23,18 @@ function Home()
 {
     const { library } = useDownloads();
     const [installedMods, setInstalledMods] = useState([]);
+    const [catalog, setCatalog] = useState({});
     const [runningId, setRunningId] = useState(null);
     const [notice, setNotice] = useState("");
     const [error, setError] = useState("");
     const [preview, setPreview] = useState(null);
+    const [previewBounds, setPreviewBounds] = useState(DEFAULT_BOUNDS);
+    const [previewImage, setPreviewImage] = useState(null);
 
     const dwellTimer = useRef(null);
     const audioRef = useRef(null);
     const musicSourceRef = useRef(null);
+    const musicFallbackRef = useRef(false);
     const gridRef = useRef(null);
 
     useEffect(() => {
@@ -50,6 +55,43 @@ function Home()
         return () => { cancelled = true; };
     }, [library.length]);
 
+    // El catálogo completa los datos de hover de mods instalados antes de que
+    // existieran esos campos en el manifiesto local.
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadCatalog()
+        {
+            try {
+                const response = await fetch("http://localhost:3000/api/mods");
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json();
+                if (cancelled || !Array.isArray(data)) {
+                    return;
+                }
+                const byId = {};
+                data.forEach((mod) => {
+                    byId[String(mod.ID)] = {
+                        name: mod.m_name || null,
+                        description: mod.m_desc || null,
+                        cover: mod.m_cover || null,
+                        accentcolor: mod.m_accentcolor || null,
+                        hoverImage: mod.m_hoverimage || null,
+                        hoverMusic: mod.m_hovermusic || null
+                    };
+                });
+                setCatalog(byId);
+            } catch {
+                // Sin servidor: los mods ya instalados siguen funcionando.
+            }
+        }
+
+        loadCatalog();
+        return () => { cancelled = true; };
+    }, []);
+
     useEffect(() => {
         return () => {
             if (dwellTimer.current) {
@@ -62,41 +104,104 @@ function Home()
         };
     }, []);
 
-    const desktopItems = (() => {
+    const desktopItems = useMemo(() => {
         const byId = new Map();
         library.forEach((item) => byId.set(String(item.id), item));
         installedMods.forEach((item) => {
             const key = String(item.id);
             byId.set(key, { ...(byId.get(key) || {}), ...item });
         });
-        return Array.from(byId.values());
-    })();
 
-    const previewItem = preview
-        ? desktopItems.find((item) => String(item.id) === preview.id) || null
-        : null;
+        return Array.from(byId.values()).map((item) => {
+            const remote = catalog[String(item.id)];
+            if (!remote) {
+                return item;
+            }
+            return {
+                ...item,
+                name: item.name || remote.name,
+                description: item.description || remote.description,
+                cover: item.cover || remote.cover,
+                accentcolor: item.accentcolor || remote.accentcolor,
+                hoverImage: item.hoverImage || remote.hoverImage,
+                hoverMusic: item.hoverMusic || remote.hoverMusic
+            };
+        });
+    }, [library, installedMods, catalog]);
 
     useEffect(() => {
-        if (preview && !previewItem) {
-            stopPreview();
+        if (preview) {
+            setPreviewBounds(measurePreviewBounds());
         }
-    }, [preview, previewItem]);
+    }, [preview]);
 
     useEffect(() => {
-        function resumePreviewMusic() {
+        if (!preview) {
+            return undefined;
+        }
+
+        function handleResize()
+        {
+            setPreviewBounds(measurePreviewBounds());
+        }
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [preview]);
+
+    useEffect(() => {
+        if (!preview) {
+            setPreviewImage(null);
+            return undefined;
+        }
+
+        const preferred = preview.item.hoverImage || strandedHoverImage;
+        setPreviewImage(preferred);
+
+        if (!preferred || preferred === strandedHoverImage) {
+            return undefined;
+        }
+
+        let cancelled = false;
+        const probe = new Image();
+        probe.onerror = () => {
+            if (!cancelled) {
+                setPreviewImage(strandedHoverImage);
+            }
+        };
+        probe.src = preferred;
+
+        return () => {
+            cancelled = true;
+            probe.onerror = null;
+        };
+    }, [preview]);
+
+    useEffect(() => {
+        function resumePreviewMusic()
+        {
             const audio = audioRef.current;
             if (!audio || !preview) {
                 return;
             }
-            const playback = audio.play();
-            if (playback && typeof playback.catch === "function") {
-                playback.catch(() => {});
-            }
+            playAudio();
         }
 
         window.addEventListener("pointerdown", resumePreviewMusic);
         return () => window.removeEventListener("pointerdown", resumePreviewMusic);
     }, [preview]);
+
+    function measurePreviewBounds()
+    {
+        const grid = gridRef.current;
+        const main = grid ? grid.closest(".main-content") : null;
+        const element = main || grid;
+        if (!element) {
+            return { ...DEFAULT_BOUNDS, width: window.innerWidth, height: window.innerHeight };
+        }
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+    }
 
     function stopPreview()
     {
@@ -114,32 +219,56 @@ function Home()
         }
     }
 
-    function startPreviewMusic(mod)
+    function playAudio()
     {
         const audio = audioRef.current;
         if (!audio) {
             return;
         }
 
-        // Fallback de prueba mientras los mods no traigan su propio hover.
-        const source = mod.hoverMusic || demoHoverMusic;
-        if (!source) {
-            return;
+        try {
+            audio.currentTime = 0;
+        } catch {
+            // El audio todavía no tiene metadatos.
         }
-
-        if (musicSourceRef.current !== source) {
-            audio.src = source;
-            musicSourceRef.current = source;
-        }
-
-        audio.loop = true;
-        audio.volume = 0.5;
-        audio.currentTime = 0;
 
         const playback = audio.play();
         if (playback && typeof playback.catch === "function") {
             playback.catch(() => {});
         }
+    }
+
+    function startPreviewMusic(item)
+    {
+        const audio = audioRef.current;
+        if (!audio) {
+            return;
+        }
+
+        const preferred = item.hoverMusic || demoHoverMusic;
+        musicFallbackRef.current = !item.hoverMusic;
+
+        if (musicSourceRef.current !== preferred) {
+            audio.src = preferred;
+            musicSourceRef.current = preferred;
+        }
+
+        audio.loop = true;
+        audio.volume = 0.5;
+        playAudio();
+    }
+
+    function handleAudioError()
+    {
+        const audio = audioRef.current;
+        if (!audio || musicFallbackRef.current) {
+            return;
+        }
+
+        musicFallbackRef.current = true;
+        musicSourceRef.current = demoHoverMusic;
+        audio.src = demoHoverMusic;
+        playAudio();
     }
 
     function handleHoverStart(mod, event)
@@ -163,7 +292,8 @@ function Home()
 
         dwellTimer.current = setTimeout(() => {
             dwellTimer.current = null;
-            setPreview({ id, side });
+            setPreviewBounds(measurePreviewBounds());
+            setPreview({ id, side, item: mod });
             startPreviewMusic(mod);
         }, DWELL_MS);
     }
@@ -204,21 +334,38 @@ function Home()
         }
     }
 
+    const previewItem = preview ? preview.item : null;
+
     return (
         <div className={`${styles["home"]} ${preview ? styles["previewing"] : ""}`}>
-            <audio ref={audioRef} preload="none" />
+            <audio ref={audioRef} preload="auto" loop onError={handleAudioError} />
 
             {previewItem && (
-                <div className={styles["preview"]} aria-hidden="true">
-                    <div
+                <div
+                    className={styles["preview"]}
+                    style={{
+                        top: `${previewBounds.top}px`,
+                        left: `${previewBounds.left}px`,
+                        width: `${previewBounds.width}px`,
+                        height: `${previewBounds.height}px`
+                    }}
+                    aria-hidden="true"
+                >
+                    <img
                         className={styles["preview-media"]}
-                        style={{ backgroundImage: `url("${previewItem.hoverImage || demoHoverImage}")` }}
+                        src={previewImage || strandedHoverImage}
+                        alt=""
+                        onError={() => setPreviewImage(strandedHoverImage)}
                     />
                     <div className={styles["preview-shade"]} />
                     <div
                         className={styles["preview-accent"]}
-                        style={{ background: `linear-gradient(to top, ${previewItem.accentcolor || "var(--accent, #d9cd00)"}, transparent)` }}
+                        style={{ background: `linear-gradient(to top, ${previewItem.accentcolor || "#d9cd00"}, transparent)` }}
                     />
+                    <div className={`${styles["preview-info"]} ${preview.side === "left" ? styles["preview-info-left"] : styles["preview-info-right"]}`}>
+                        <h2 className={styles["preview-title"]}>{previewItem.name}</h2>
+                        <p className={styles["preview-desc"]}>{previewItem.description || "Sin descripción."}</p>
+                    </div>
                 </div>
             )}
 
@@ -283,13 +430,6 @@ function Home()
                     <p className={styles["empty-text"]}>
                         Los mods que instales aparecerán aquí como accesos directos, listos para ejecutarse.
                     </p>
-                </div>
-            )}
-
-            {previewItem && (
-                <div className={`${styles["preview-info"]} ${preview.side === "left" ? styles["preview-info-left"] : styles["preview-info-right"]}`}>
-                    <h2 className={styles["preview-title"]}>{previewItem.name}</h2>
-                    <p className={styles["preview-desc"]}>{previewItem.description || "Sin descripción."}</p>
                 </div>
             )}
         </div>
