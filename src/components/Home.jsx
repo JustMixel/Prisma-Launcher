@@ -8,6 +8,10 @@ import styles from "./Home.module.css";
 
 // Tiempo de espera antes de activar la vista previa (estilo PS5).
 const DWELL_MS = 1000;
+// Margen al salir del grid para no cortar la preview en un roce.
+const LEAVE_GRACE_MS = 150;
+// Duración del fundido de salida (imagen + audio).
+const EXIT_MS = 480;
 const DEFAULT_BOUNDS = { top: 0, left: 0, width: 1280, height: 720 };
 
 function PlayIcon()
@@ -30,8 +34,12 @@ function Home()
     const [preview, setPreview] = useState(null);
     const [previewBounds, setPreviewBounds] = useState(DEFAULT_BOUNDS);
     const [previewImage, setPreviewImage] = useState(null);
+    const [closing, setClosing] = useState(false);
 
     const dwellTimer = useRef(null);
+    const leaveTimer = useRef(null);
+    const closeTimer = useRef(null);
+    const audioFadeRef = useRef(null);
     const audioRef = useRef(null);
     const musicSourceRef = useRef(null);
     const musicFallbackRef = useRef(false);
@@ -94,8 +102,15 @@ function Home()
 
     useEffect(() => {
         return () => {
-            if (dwellTimer.current) {
-                clearTimeout(dwellTimer.current);
+            [dwellTimer, leaveTimer, closeTimer].forEach((timer) => {
+                if (timer.current) {
+                    clearTimeout(timer.current);
+                    timer.current = null;
+                }
+            });
+            if (audioFadeRef.current) {
+                cancelAnimationFrame(audioFadeRef.current);
+                audioFadeRef.current = null;
             }
             const audio = audioRef.current;
             if (audio) {
@@ -203,19 +218,119 @@ function Home()
         return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
     }
 
-    function stopPreview()
+    function clearTimers()
     {
-        if (dwellTimer.current) {
-            clearTimeout(dwellTimer.current);
-            dwellTimer.current = null;
+        [dwellTimer, leaveTimer, closeTimer].forEach((timer) => {
+            if (timer.current) {
+                clearTimeout(timer.current);
+                timer.current = null;
+            }
+        });
+    }
+
+    function cancelAudioFade(restoreVolume = true)
+    {
+        if (audioFadeRef.current) {
+            cancelAnimationFrame(audioFadeRef.current);
+            audioFadeRef.current = null;
+        }
+        if (restoreVolume) {
+            const audio = audioRef.current;
+            if (audio) {
+                audio.volume = 0.5;
+            }
+        }
+    }
+
+    function fadeAudioTo(targetVolume, duration, stopAtEnd = false)
+    {
+        const audio = audioRef.current;
+        if (!audio) {
+            return;
         }
 
-        setPreview(null);
+        cancelAudioFade(false);
 
-        const audio = audioRef.current;
-        if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
+        if (audio.paused) {
+            audio.volume = stopAtEnd ? 0.5 : targetVolume;
+            return;
+        }
+
+        const from = audio.volume;
+        const startedAt = performance.now();
+
+        function step(now)
+        {
+            const progress = Math.min(1, (now - startedAt) / duration);
+            audio.volume = from + (targetVolume - from) * progress;
+
+            if (progress < 1) {
+                audioFadeRef.current = requestAnimationFrame(step);
+                return;
+            }
+
+            audioFadeRef.current = null;
+            if (stopAtEnd) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+            audio.volume = 0.5;
+        }
+
+        audioFadeRef.current = requestAnimationFrame(step);
+    }
+
+    function fadeAudioOut(duration)
+    {
+        fadeAudioTo(0, duration, true);
+    }
+
+    // Fundido de salida: la imagen se desvanece, el audio baja y recién al
+    // final se desmonta la preview.
+    function beginClose()
+    {
+        if (closeTimer.current) {
+            return;
+        }
+
+        clearTimers();
+
+        if (!preview) {
+            return;
+        }
+
+        setClosing(true);
+        fadeAudioOut(EXIT_MS);
+
+        closeTimer.current = setTimeout(() => {
+            closeTimer.current = null;
+            setPreview(null);
+            setClosing(false);
+            setPreviewImage(null);
+        }, EXIT_MS);
+    }
+
+    function scheduleStop()
+    {
+        if (!preview || closeTimer.current) {
+            return;
+        }
+
+        if (leaveTimer.current) {
+            clearTimeout(leaveTimer.current);
+        }
+
+        leaveTimer.current = setTimeout(() => {
+            leaveTimer.current = null;
+            beginClose();
+        }, LEAVE_GRACE_MS);
+    }
+
+    function cancelScheduledStop()
+    {
+        if (leaveTimer.current) {
+            clearTimeout(leaveTimer.current);
+            leaveTimer.current = null;
         }
     }
 
@@ -225,6 +340,9 @@ function Home()
         if (!audio) {
             return;
         }
+
+        cancelAudioFade();
+        audio.volume = 0.5;
 
         try {
             audio.currentTime = 0;
@@ -273,8 +391,12 @@ function Home()
 
     function handleHoverStart(mod, event)
     {
+        cancelScheduledStop();
+
         const id = String(mod.id);
-        if (preview && preview.id === id) {
+        // Si ya se está desvaneciendo, dejar que termine: volver a mostrarla
+        // a mitad del fundido produciría un parpadeo.
+        if (preview && preview.id === id && !closeTimer.current) {
             return;
         }
 
@@ -308,7 +430,7 @@ function Home()
 
     async function handleRun(mod)
     {
-        stopPreview();
+        beginClose();
         setError("");
         setNotice("");
         setRunningId(String(mod.id));
@@ -336,13 +458,15 @@ function Home()
 
     const previewItem = preview ? preview.item : null;
 
+    const previewActive = Boolean(preview) && !closing;
+
     return (
-        <div className={`${styles["home"]} ${preview ? styles["previewing"] : ""}`}>
+        <div className={`${styles["home"]} ${previewActive ? styles["previewing"] : ""}`}>
             <audio ref={audioRef} preload="auto" loop onError={handleAudioError} />
 
             {previewItem && (
                 <div
-                    className={styles["preview"]}
+                    className={`${styles["preview"]} ${closing ? styles["preview-closing"] : ""}`}
                     style={{
                         top: `${previewBounds.top}px`,
                         left: `${previewBounds.left}px`,
@@ -378,12 +502,12 @@ function Home()
             {notice && <p className={styles["notice"]}>{notice}</p>}
 
             {desktopItems.length > 0 ? (
-                <div className={styles["grid"]} ref={gridRef} onMouseLeave={stopPreview}>
+                <div className={styles["grid"]} ref={gridRef} onMouseEnter={cancelScheduledStop} onMouseLeave={scheduleStop}>
                     {desktopItems.map((mod) => {
                         const key = String(mod.id);
                         const running = runningId === key;
                         const runnable = Boolean(mod.executablePath || mod.link);
-                        const dimmed = Boolean(preview) && preview.id !== key;
+                        const dimmed = previewActive && preview.id !== key;
                         return (
                             <div
                                 key={key}
