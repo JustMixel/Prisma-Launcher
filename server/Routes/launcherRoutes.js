@@ -293,6 +293,8 @@ function buildLegacyMod(mod) {
         ID: mod.m_id,
         ...mod,
         m_cover: assets[mod.m_assetids.cover]?.url || null,
+        m_hoverimage: assets[mod.m_assetids.hover_background]?.url || null,
+        m_hovermusic: assets[mod.m_assetids.hover_music]?.url || null,
         m_devgroupname: devgroups[mod.m_devgroupid]?.name || null,
         m_devgrouplogo: devgroups[mod.m_devgroupid]?.logo_url || null,
         m_producername: producers[mod.m_producerid]?.name || null,

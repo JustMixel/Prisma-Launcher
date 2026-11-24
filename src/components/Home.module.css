@@ -23,6 +23,8 @@
 
 .error,
 .notice {
+    position: relative;
+    z-index: 3;
     margin: 0 0 20px;
     font-size: 13px;
 }
@@ -37,6 +39,8 @@
 
 /* ---- Grid tipo escritorio ---- */
 .grid {
+    position: relative;
+    z-index: 2;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
     gap: 22px 16px;
@@ -49,46 +53,111 @@
     align-items: stretch;
     gap: 4px;
     min-width: 0;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.tile.dimmed {
+    opacity: 0.25;
+    filter: saturate(0.6);
 }
 
 .tile .icon {
     width: 100%;
 }
 
-.tile-actions {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.15s;
+/* ---- Vista previa al mantener el cursor (estilo PS5) ---- */
+.preview {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
 }
 
-.tile:hover .tile-actions,
-.tile:focus-within .tile-actions {
-    opacity: 1;
+.preview-media {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    animation: preview-fade 0.45s ease both;
 }
 
-.tile-action {
-    padding: 2px 6px;
-    font-family: inherit;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.6);
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 3px;
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
+.preview-shade {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(120% 100% at 50% 15%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.72) 100%),
+        linear-gradient(to right, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 45%);
 }
 
-.tile-action:hover {
+.preview-accent {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 38%;
+    opacity: 0.55;
+    filter: blur(1px);
+}
+
+.preview-info {
+    position: absolute;
+    bottom: 56px;
+    z-index: 3;
+    max-width: 420px;
+    pointer-events: none;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9);
+    animation: preview-info-in 0.4s ease both;
+}
+
+.preview-info-right {
+    right: 56px;
+    text-align: left;
+}
+
+.preview-info-left {
+    left: 56px;
+    text-align: left;
+}
+
+.preview-title {
+    margin: 0 0 10px;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.1;
     color: var(--c-gris-17, #ffffff);
-    border-color: rgba(255, 255, 255, 0.4);
 }
 
-.tile-action-danger:hover {
-    color: var(--c-red-2, #e07878);
-    border-color: var(--c-red-2, #e07878);
+.preview-desc {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.85);
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.previewing .header {
+    opacity: 0.25;
+}
+
+.header {
+    position: relative;
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes preview-fade {
+    from { opacity: 0; transform: scale(1.03); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes preview-info-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .icon {

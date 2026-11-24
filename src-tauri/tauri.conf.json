@@ -15,7 +15,8 @@
         "title": "Prisma Launcher",
         "width": 1289,
         "height": 630,
-        "visible": false
+        "visible": false,
+        "additionalBrowserArgs": "--autoplay-policy=no-user-gesture-required"
       }
     ],
     "security": {
